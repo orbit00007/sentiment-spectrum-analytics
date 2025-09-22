@@ -1,11 +1,141 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
+import { KPICard } from "@/components/dashboard/KPICard";
+import { SourceAnalysisChart } from "@/components/dashboard/SourceAnalysisChart";
+import { SourceMetricsTable } from "@/components/dashboard/SourceMetricsTable";
+import { CompetitorTable } from "@/components/dashboard/CompetitorTable";
+import { ContentImpactChart } from "@/components/dashboard/ContentImpactChart";
+import { ContentImpactCards } from "@/components/dashboard/ContentImpactCards";
+import { RecommendationCard } from "@/components/dashboard/RecommendationCard";
+import { Eye, MessageCircle, TrendingUp } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import mockData from "@/data/mockdata.json";
 
 const Index = () => {
+  const data = mockData;
+  const analysis = data.analysis;
+  const overallInsights = analysis.overall_insights;
+  const sourceAnalysis = analysis.source_analysis;
+  const competitorAnalysis = analysis.competitor_analysis;
+  const contentImpact = analysis.content_impact;
+  const recommendations = analysis.recommendations;
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+    <div className="min-h-screen bg-background p-6 space-y-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <DashboardHeader
+          brandName={data.brand_name}
+          analysisId={data.id}
+          createdAt={data.created_at}
+          status={data.status}
+        />
+
+        {/* FOLD 1 - Overall Insights */}
+        <section className="space-y-6">
+          <div>
+            <h2 className="text-2xl font-bold mb-2">Fold 1 - Overall Insights</h2>
+            <p className="text-muted-foreground mb-6">Key performance indicators derived from available data</p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <KPICard
+              title="AI Visibility Score"
+              value={overallInsights.ai_visibility.ai_visibility_score}
+              badge={overallInsights.ai_visibility.tier}
+              badgeVariant="outline"
+              description="Based on market performance. Dominant"
+              icon={Eye}
+            />
+            <KPICard
+              title="Sentiment Score"
+              value={overallInsights.dominant_sentiment.sentiment}
+              badge={overallInsights.dominant_sentiment.sentiment}
+              badgeVariant="secondary"
+              description="Based on privacy sentiment analysis"
+              icon={TrendingUp}
+            />
+            <KPICard
+              title="Total Brand Mentions"
+              value={overallInsights.brand_mentions.mentions_count}
+              badge={overallInsights.brand_mentions.level}
+              badgeVariant="secondary"
+              description={`Total mentions across sources: ${overallInsights.brand_mentions.total_sources_checked}`}
+              icon={MessageCircle}
+            />
+          </div>
+        </section>
+
+        <Separator className="my-8" />
+
+        {/* FOLD 2 - Source Analysis */}
+        <section className="space-y-6">
+          <div>
+            <h2 className="text-2xl font-bold mb-2">Fold 2 - Source Analysis</h2>
+            <p className="text-muted-foreground mb-6">Source Intelligence Data - Citation frequency across all results</p>
+          </div>
+          
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <SourceAnalysisChart data={sourceAnalysis} />
+            <SourceMetricsTable data={sourceAnalysis} />
+          </div>
+        </section>
+
+        <Separator className="my-8" />
+
+        {/* FOLD 3 - Competitor Analysis */}
+        <section className="space-y-6">
+          <div>
+            <h2 className="text-2xl font-bold mb-2">Fold 3 - Competitor Analysis</h2>
+            <p className="text-muted-foreground mb-6">Competitive positioning across key dimensions</p>
+          </div>
+          
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            {competitorAnalysis.table_1_by_dimension.map((dimensionData, index) => (
+              <CompetitorTable
+                key={index}
+                title={`Top 5 Competitors - ${dimensionData.dimension}`}
+                data={dimensionData.top_5_competitors}
+                ourBrand="Kommunicate"
+                dimension={dimensionData.dimension}
+              />
+            ))}
+          </div>
+        </section>
+
+        <Separator className="my-8" />
+
+        {/* FOLD 4 - Content Impact */}
+        <section className="space-y-6">
+          <div>
+            <h2 className="text-2xl font-bold mb-2">Fold 4 - Content Impact</h2>
+            <p className="text-muted-foreground mb-6">How much visibility comes from each content type</p>
+          </div>
+          
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            <div className="xl:col-span-1">
+              <ContentImpactChart data={contentImpact} />
+            </div>
+            <div className="xl:col-span-2">
+              <ContentImpactCards data={contentImpact} />
+            </div>
+          </div>
+        </section>
+
+        <Separator className="my-8" />
+
+        {/* FOLD 5 - Recommendations */}
+        <section className="space-y-6">
+          <div>
+            <h2 className="text-2xl font-bold mb-2">Fold 5 - Strategic Recommendations</h2>
+            <p className="text-muted-foreground mb-6">Actionable insights to improve AI platform visibility and performance</p>
+          </div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {recommendations.map((recommendation, index) => (
+              <RecommendationCard key={index} recommendation={recommendation} />
+            ))}
+          </div>
+        </section>
       </div>
     </div>
   );
