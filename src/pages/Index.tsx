@@ -3,9 +3,12 @@ import { KPICard } from "@/components/dashboard/KPICard";
 import { SourceAnalysisChart } from "@/components/dashboard/SourceAnalysisChart";
 import { SourceMetricsTable } from "@/components/dashboard/SourceMetricsTable";
 import { ComprehensiveCompetitorTable } from "@/components/dashboard/ComprehensiveCompetitorTable";
+import { CompetitorProfiles } from "@/components/dashboard/CompetitorProfiles";
 import { ContentImpactChart } from "@/components/dashboard/ContentImpactChart";
 import { ContentImpactTable } from "@/components/dashboard/ContentImpactTable";
 import { RecommendationCard } from "@/components/dashboard/RecommendationCard";
+import { AnalysisBreakdown } from "@/components/dashboard/AnalysisBreakdown";
+import { ModelOutputs } from "@/components/dashboard/ModelOutputs";
 import { Eye, MessageCircle, TrendingUp } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import mockData from "@/data/mockdata.json";
@@ -89,10 +92,13 @@ const Index = () => {
             <p className="text-muted-foreground mb-6">Competitive positioning across key dimensions</p>
           </div>
           
-          <ComprehensiveCompetitorTable 
-            data={competitorAnalysis.table_1_by_dimension}
-            ourBrand="Kommunicate"
-          />
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <ComprehensiveCompetitorTable 
+              data={competitorAnalysis.table_1_by_dimension}
+              ourBrand="Kommunicate"
+            />
+            <CompetitorProfiles data={competitorAnalysis.table_2_brand_profiles} />
+          </div>
         </section>
 
         <Separator className="my-8" />
@@ -127,6 +133,27 @@ const Index = () => {
             {recommendations.map((recommendation, index) => (
               <RecommendationCard key={index} recommendation={recommendation} />
             ))}
+          </div>
+        </section>
+
+        <Separator className="my-8" />
+
+        {/* Additional Data Sections */}
+        <section className="space-y-8">
+          <div>
+            <h2 className="text-2xl font-bold mb-2">Additional Analysis Data</h2>
+            <p className="text-muted-foreground mb-6">Detailed methodology and raw data insights</p>
+          </div>
+          
+          <div className="grid grid-cols-1 gap-6">
+            <AnalysisBreakdown 
+              data={overallInsights.ai_visibility.calculation_breakdown}
+              geoScore={overallInsights.ai_visibility.geo_score}
+              weightedTotal={overallInsights.ai_visibility.weighted_mentions_total}
+              queryCount={overallInsights.ai_visibility.distinct_queries_count}
+            />
+            
+            <ModelOutputs data={data.raw_model_outputs_mapped} />
           </div>
         </section>
       </div>
