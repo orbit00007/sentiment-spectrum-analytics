@@ -19,13 +19,26 @@ export const RecommendationCard = ({ recommendation }: RecommendationCardProps) 
   const getEffortBadge = (effort: string) => {
     switch (effort.toLowerCase()) {
       case "high":
-        return <Badge className="bg-priority-high text-white">High</Badge>;
+        return <Badge className="bg-red-500 text-white">High</Badge>;
       case "medium":
-        return <Badge className="bg-priority-medium text-white">Medium</Badge>;
+        return <Badge className="bg-yellow-500 text-white">Medium</Badge>;
       case "low":
-        return <Badge className="bg-priority-low text-white">Low</Badge>;
+        return <Badge className="bg-green-500 text-white">Low</Badge>;
       default:
         return <Badge variant="outline">{effort}</Badge>;
+    }
+  };
+
+  const getBorderColor = (effort: string) => {
+    switch (effort.toLowerCase()) {
+      case "high":
+        return "border-l-red-500";
+      case "medium":
+        return "border-l-yellow-500";
+      case "low":
+        return "border-l-green-500";
+      default:
+        return "border-l-brand-primary";
     }
   };
 
@@ -38,7 +51,7 @@ export const RecommendationCard = ({ recommendation }: RecommendationCardProps) 
   const CategoryIcon = getCategoryIcon(recommendation.category);
 
   return (
-    <Card className="shadow-elegant hover:shadow-dramatic transition-all duration-300 border-l-4 border-l-brand-primary">
+    <Card className={`shadow-elegant hover:shadow-dramatic transition-all duration-300 border-l-4 ${getBorderColor(recommendation.effort)} bg-white`}>
       <CardHeader>
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">

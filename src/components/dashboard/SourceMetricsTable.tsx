@@ -24,11 +24,11 @@ export const SourceMetricsTable = ({ data }: SourceMetricsTableProps) => {
   const getVisibilityBadge = (visibility: string) => {
     switch (visibility.toLowerCase()) {
       case "high":
-        return <Badge className="bg-success text-success-foreground">High</Badge>;
+        return <Badge className="bg-green-500 text-white">High</Badge>;
       case "medium":
-        return <Badge className="bg-warning text-warning-foreground">Medium</Badge>;
+        return <Badge className="bg-yellow-500 text-white">Medium</Badge>;
       case "low":
-        return <Badge className="bg-muted text-muted-foreground">Low</Badge>;
+        return <Badge className="bg-red-500 text-white">Low</Badge>;
       default:
         return <Badge variant="outline">{visibility}</Badge>;
     }
@@ -47,6 +47,7 @@ export const SourceMetricsTable = ({ data }: SourceMetricsTableProps) => {
           <TableHeader>
             <TableRow>
               <TableHead>Source</TableHead>
+              <TableHead>Example Websites</TableHead>
               <TableHead className="text-center">Citations</TableHead>
               <TableHead className="text-center">Visibility Score</TableHead>
             </TableRow>
@@ -55,12 +56,20 @@ export const SourceMetricsTable = ({ data }: SourceMetricsTableProps) => {
             {data.map((source, index) => (
               <TableRow key={index} className="hover:bg-muted/50">
                 <TableCell className="font-medium">
-                  <div>
-                    <div className="font-semibold">{source.category}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {source.examples.slice(0, 2).join(", ")}
-                      {source.examples.length > 2 && "..."}
-                    </div>
+                  <div className="font-semibold">{source.category}</div>
+                </TableCell>
+                <TableCell>
+                  <div className="text-sm">
+                    {source.examples.slice(0, 3).map((example, i) => (
+                      <div key={i} className="mb-1 last:mb-0 text-muted-foreground">
+                        • {example}
+                      </div>
+                    ))}
+                    {source.examples.length > 3 && (
+                      <div className="text-xs text-muted-foreground">
+                        +{source.examples.length - 3} more
+                      </div>
+                    )}
                   </div>
                 </TableCell>
                 <TableCell className="text-center font-mono">

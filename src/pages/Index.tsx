@@ -2,9 +2,9 @@ import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { KPICard } from "@/components/dashboard/KPICard";
 import { SourceAnalysisChart } from "@/components/dashboard/SourceAnalysisChart";
 import { SourceMetricsTable } from "@/components/dashboard/SourceMetricsTable";
-import { CompetitorTable } from "@/components/dashboard/CompetitorTable";
+import { ComprehensiveCompetitorTable } from "@/components/dashboard/ComprehensiveCompetitorTable";
 import { ContentImpactChart } from "@/components/dashboard/ContentImpactChart";
-import { ContentImpactCards } from "@/components/dashboard/ContentImpactCards";
+import { ContentImpactTable } from "@/components/dashboard/ContentImpactTable";
 import { RecommendationCard } from "@/components/dashboard/RecommendationCard";
 import { Eye, MessageCircle, TrendingUp } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
@@ -20,7 +20,7 @@ const Index = () => {
   const recommendations = analysis.recommendations;
 
   return (
-    <div className="min-h-screen bg-background p-6 space-y-8">
+    <div className="min-h-screen bg-white p-6 space-y-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <DashboardHeader
@@ -89,17 +89,10 @@ const Index = () => {
             <p className="text-muted-foreground mb-6">Competitive positioning across key dimensions</p>
           </div>
           
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            {competitorAnalysis.table_1_by_dimension.map((dimensionData, index) => (
-              <CompetitorTable
-                key={index}
-                title={`Top 5 Competitors - ${dimensionData.dimension}`}
-                data={dimensionData.top_5_competitors}
-                ourBrand="Kommunicate"
-                dimension={dimensionData.dimension}
-              />
-            ))}
-          </div>
+          <ComprehensiveCompetitorTable 
+            data={competitorAnalysis.table_1_by_dimension}
+            ourBrand="Kommunicate"
+          />
         </section>
 
         <Separator className="my-8" />
@@ -116,7 +109,7 @@ const Index = () => {
               <ContentImpactChart data={contentImpact} />
             </div>
             <div className="xl:col-span-2">
-              <ContentImpactCards data={contentImpact} />
+              <ContentImpactTable data={contentImpact} />
             </div>
           </div>
         </section>
