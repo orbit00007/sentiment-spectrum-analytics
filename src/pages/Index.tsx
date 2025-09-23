@@ -1,4 +1,7 @@
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
+import { ModelInfo } from "@/components/dashboard/ModelInfo";
+import { AnalysisScope } from "@/components/dashboard/AnalysisScope";
+import { CalculationProvenance } from "@/components/dashboard/CalculationProvenance";
 import { KPICard } from "@/components/dashboard/KPICard";
 import { SourceAnalysisChart } from "@/components/dashboard/SourceAnalysisChart";
 import { SourceMetricsTable } from "@/components/dashboard/SourceMetricsTable";
@@ -9,6 +12,7 @@ import { ContentImpactTable } from "@/components/dashboard/ContentImpactTable";
 import { RecommendationCard } from "@/components/dashboard/RecommendationCard";
 import { AnalysisBreakdown } from "@/components/dashboard/AnalysisBreakdown";
 import { ModelOutputs } from "@/components/dashboard/ModelOutputs";
+import { VisualGuidance } from "@/components/dashboard/VisualGuidance";
 import { Eye, MessageCircle, TrendingUp } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import mockData from "@/data/mockdata.json";
@@ -32,6 +36,41 @@ const Index = () => {
           createdAt={data.created_at}
           status={data.status}
         />
+
+        <Separator className="my-8" />
+
+        {/* Model Information */}
+        <section className="space-y-6">
+          <div>
+            <h2 className="text-2xl font-bold mb-2">Model Information</h2>
+            <p className="text-muted-foreground mb-6">AI model used for generating this report</p>
+          </div>
+          <ModelInfo data={data.model_reported} />
+        </section>
+
+        <Separator className="my-8" />
+
+        {/* Analysis Scope */}
+        <section className="space-y-6">
+          <div>
+            <h2 className="text-2xl font-bold mb-2">Analysis Scope</h2>
+            <p className="text-muted-foreground mb-6">Keywords, queries, and parameters used for analysis</p>
+          </div>
+          <AnalysisScope data={data.analysis_scope} />
+        </section>
+
+        <Separator className="my-8" />
+
+        {/* Calculation Provenance */}
+        <section className="space-y-6">
+          <div>
+            <h2 className="text-2xl font-bold mb-2">Calculation Methodology</h2>
+            <p className="text-muted-foreground mb-6">Formulas, thresholds, and methodology used</p>
+          </div>
+          <CalculationProvenance data={data.calculation_provenance} />
+        </section>
+
+        <Separator className="my-8" />
 
         {/* FOLD 1 - Overall Insights */}
         <section className="space-y-6">
@@ -138,23 +177,41 @@ const Index = () => {
 
         <Separator className="my-8" />
 
-        {/* Additional Data Sections */}
+        {/* Raw Model Outputs */}
+        <section className="space-y-6">
+          <div>
+            <h2 className="text-2xl font-bold mb-2">Raw Model Outputs</h2>
+            <p className="text-muted-foreground mb-6">Raw data snippets and mention positions for specific queries</p>
+          </div>
+          <ModelOutputs data={data.raw_model_outputs_mapped} />
+        </section>
+
+        <Separator className="my-8" />
+
+        {/* Visual Guidance */}
+        <section className="space-y-6">
+          <div>
+            <h2 className="text-2xl font-bold mb-2">Visual Guidance</h2>
+            <p className="text-muted-foreground mb-6">Notes on how to visually represent the data</p>
+          </div>
+          <VisualGuidance data={data.visual_guidance} />
+        </section>
+
+        <Separator className="my-8" />
+
+        {/* Additional Analysis Data */}
         <section className="space-y-8">
           <div>
-            <h2 className="text-2xl font-bold mb-2">Additional Analysis Data</h2>
-            <p className="text-muted-foreground mb-6">Detailed methodology and raw data insights</p>
+            <h2 className="text-2xl font-bold mb-2">Detailed Analysis Breakdown</h2>
+            <p className="text-muted-foreground mb-6">Detailed methodology and calculation breakdown</p>
           </div>
           
-          <div className="grid grid-cols-1 gap-6">
-            <AnalysisBreakdown 
-              data={overallInsights.ai_visibility.calculation_breakdown}
-              geoScore={overallInsights.ai_visibility.geo_score}
-              weightedTotal={overallInsights.ai_visibility.weighted_mentions_total}
-              queryCount={overallInsights.ai_visibility.distinct_queries_count}
-            />
-            
-            <ModelOutputs data={data.raw_model_outputs_mapped} />
-          </div>
+          <AnalysisBreakdown 
+            data={overallInsights.ai_visibility.calculation_breakdown}
+            geoScore={overallInsights.ai_visibility.geo_score}
+            weightedTotal={overallInsights.ai_visibility.weighted_mentions_total}
+            queryCount={overallInsights.ai_visibility.distinct_queries_count}
+          />
         </section>
       </div>
     </div>
