@@ -32,9 +32,12 @@ const Index = () => {
         {/* Header */}
         <DashboardHeader
           brandName={data.brand_name}
+          brandWebsite={data.brand_website}
           analysisId={data.id}
           createdAt={data.created_at}
           status={data.status}
+          type={data.type}
+          dominantSentiment={overallInsights.dominant_sentiment.sentiment}
         />
 
         <Separator className="my-8" />
