@@ -40,37 +40,14 @@ const Index = () => {
           dominantSentiment={overallInsights.dominant_sentiment.sentiment}
         />
 
-        <Separator className="my-8" />
-
-        {/* Model Information */}
-        <section className="space-y-6">
-          <div>
-            <h2 className="text-2xl font-bold mb-2">Model Information</h2>
-            <p className="text-muted-foreground mb-6">AI model used for generating this report</p>
+        {/* Summary Section */}
+        <section className="my-8">
+          <div className="bg-muted/50 border border-border rounded-lg p-6">
+            <h3 className="text-lg font-semibold mb-3">Analysis Summary</h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              {overallInsights.summary}
+            </p>
           </div>
-          <ModelInfo data={data.model_reported} />
-        </section>
-
-        <Separator className="my-8" />
-
-        {/* Analysis Scope */}
-        <section className="space-y-6">
-          <div>
-            <h2 className="text-2xl font-bold mb-2">Analysis Scope</h2>
-            <p className="text-muted-foreground mb-6">Keywords, queries, and parameters used for analysis</p>
-          </div>
-          <AnalysisScope data={data.analysis_scope} />
-        </section>
-
-        <Separator className="my-8" />
-
-        {/* Calculation Provenance */}
-        <section className="space-y-6">
-          <div>
-            <h2 className="text-2xl font-bold mb-2">Calculation Methodology</h2>
-            <p className="text-muted-foreground mb-6">Formulas, thresholds, and methodology used</p>
-          </div>
-          <CalculationProvenance data={data.calculation_provenance} />
         </section>
 
         <Separator className="my-8" />
@@ -107,6 +84,16 @@ const Index = () => {
               description={`Total mentions across sources: ${overallInsights.brand_mentions.total_sources_checked}`}
               icon={MessageCircle}
             />
+          </div>
+        </section>
+
+        {/* Sentiment Statement */}
+        <section className="my-8">
+          <div className="bg-muted/30 border border-border rounded-lg p-6">
+            <h3 className="text-lg font-semibold mb-3">AI Model Perspective</h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              {overallInsights.dominant_sentiment.statement}
+            </p>
           </div>
         </section>
 
@@ -187,17 +174,6 @@ const Index = () => {
             <p className="text-muted-foreground mb-6">Raw data snippets and mention positions for specific queries</p>
           </div>
           <ModelOutputs data={data.raw_model_outputs_mapped} />
-        </section>
-
-        <Separator className="my-8" />
-
-        {/* Visual Guidance */}
-        <section className="space-y-6">
-          <div>
-            <h2 className="text-2xl font-bold mb-2">Visual Guidance</h2>
-            <p className="text-muted-foreground mb-6">Notes on how to visually represent the data</p>
-          </div>
-          <VisualGuidance data={data.visual_guidance} />
         </section>
 
         <Separator className="my-8" />
