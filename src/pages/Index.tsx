@@ -42,8 +42,8 @@ const Index = () => {
 
         {/* Summary Section */}
         <section className="my-8">
-          <div className="bg-muted/50 border border-border rounded-lg p-6">
-            <h3 className="text-lg font-semibold mb-3">Analysis Summary</h3>
+          <div className="bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 rounded-lg p-6 hover-scale animate-scale-in shadow-lg">
+            <h3 className="text-lg font-semibold mb-3 text-primary">Analysis Summary</h3>
             <p className="text-sm text-muted-foreground leading-relaxed">
               {overallInsights.summary}
             </p>
@@ -52,10 +52,10 @@ const Index = () => {
 
         <Separator className="my-8" />
 
-        {/* FOLD 1 - Overall Insights */}
+        {/* Overall Insights */}
         <section className="space-y-6">
           <div>
-            <h2 className="text-2xl font-bold mb-2">Fold 1 - Overall Insights</h2>
+            <h2 className="text-2xl font-bold mb-2">Overall Insights</h2>
             <p className="text-muted-foreground mb-6">Key performance indicators derived from available data</p>
           </div>
           
@@ -89,8 +89,8 @@ const Index = () => {
 
         {/* Sentiment Statement */}
         <section className="my-8">
-          <div className="bg-muted/30 border border-border rounded-lg p-6">
-            <h3 className="text-lg font-semibold mb-3">AI Model Perspective</h3>
+          <div className="bg-gradient-to-r from-accent/10 to-secondary/10 border border-accent/20 rounded-lg p-6 hover-scale animate-scale-in shadow-lg">
+            <h3 className="text-lg font-semibold mb-3 text-accent">AI Sentiment</h3>
             <p className="text-sm text-muted-foreground leading-relaxed">
               {overallInsights.dominant_sentiment.statement}
             </p>
@@ -99,10 +99,10 @@ const Index = () => {
 
         <Separator className="my-8" />
 
-        {/* FOLD 2 - Source Analysis */}
+        {/* Source Analysis */}
         <section className="space-y-6">
           <div>
-            <h2 className="text-2xl font-bold mb-2">Fold 2 - Source Analysis</h2>
+            <h2 className="text-2xl font-bold mb-2">Source Analysis</h2>
             <p className="text-muted-foreground mb-6">Source Intelligence Data - Citation frequency across all results</p>
           </div>
           
@@ -114,10 +114,10 @@ const Index = () => {
 
         <Separator className="my-8" />
 
-        {/* FOLD 3 - Competitor Analysis */}
+        {/* Competitor Analysis */}
         <section className="space-y-6">
           <div>
-            <h2 className="text-2xl font-bold mb-2">Fold 3 - Competitor Analysis</h2>
+            <h2 className="text-2xl font-bold mb-2">Competitor Analysis</h2>
             <p className="text-muted-foreground mb-6">Competitive positioning across key dimensions</p>
           </div>
           
@@ -132,10 +132,10 @@ const Index = () => {
 
         <Separator className="my-8" />
 
-        {/* FOLD 4 - Content Impact */}
+        {/* Content Impact */}
         <section className="space-y-6">
           <div>
-            <h2 className="text-2xl font-bold mb-2">Fold 4 - Content Impact</h2>
+            <h2 className="text-2xl font-bold mb-2">Content Impact</h2>
             <p className="text-muted-foreground mb-6">How much visibility comes from each content type</p>
           </div>
           
@@ -151,10 +151,10 @@ const Index = () => {
 
         <Separator className="my-8" />
 
-        {/* FOLD 5 - Recommendations */}
+        {/* Strategic Recommendations */}
         <section className="space-y-6">
           <div>
-            <h2 className="text-2xl font-bold mb-2">Fold 5 - Strategic Recommendations</h2>
+            <h2 className="text-2xl font-bold mb-2">Strategic Recommendations</h2>
             <p className="text-muted-foreground mb-6">Actionable insights to improve AI platform visibility and performance</p>
           </div>
           
