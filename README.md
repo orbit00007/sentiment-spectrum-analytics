@@ -1,67 +1,73 @@
-React + Vite App (Dockerized)
-This project is a React application built with Vite and bundled inside a Docker container for easy deployment.
-It uses Node.js to build the app and Nginx to serve it in production.
+# Welcome to your Lovable project
 
-🚀 Features
-React with Vite and SWC plugin for fast builds
+## Project info
 
-Dockerized workflow for portability
+**URL**: https://lovable.dev/projects/c38e547c-835b-420a-a3d1-408b384068c3
 
-Nginx for serving optimized production builds
+## How can I edit this code?
 
-Custom Vite config with alias support (@ → src)
+There are several ways of editing your application.
 
-📂 Project Structure
-.
-├── Dockerfile
-├── nginx.conf
-├── package.json
-├── vite.config.ts
-├── src/
-└── public/
+**Use Lovable**
 
-⚙️ Vite Config
-Runs dev server on :: (all interfaces)
+Simply visit the [Lovable Project](https://lovable.dev/projects/c38e547c-835b-420a-a3d1-408b384068c3) and start prompting.
 
-Default dev port: 8080
+Changes made via Lovable will be committed automatically to this repo.
 
-Aliases @ → ./src
+**Use your preferred IDE**
 
-{
-  server: {
-    host: "::",
-    port: 8080,
-  }
-}
+If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
 
-🐳 Running with Docker
-Build Docker Image
+The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 
-docker build -t my-vite-app .
+Follow these steps:
 
-Run Container
+```sh
+# Step 1: Clone the repository using the project's Git URL.
+git clone <YOUR_GIT_URL>
 
-docker run -p 5173:5173 my-vite-app
+# Step 2: Navigate to the project directory.
+cd <YOUR_PROJECT_NAME>
 
-Now the app will be available at:
+# Step 3: Install the necessary dependencies.
+npm i
 
-👉 http://localhost:5173
-
-🛠 Development (without Docker)
-If you want to run locally:
-
-npm install
+# Step 4: Start the development server with auto-reloading and an instant preview.
 npm run dev
+```
 
-The dev server will run at: http://localhost:8080
+**Edit a file directly in GitHub**
 
-📦 Production Build (without Docker)
-npm run build
-npm run preview
+- Navigate to the desired file(s).
+- Click the "Edit" button (pencil icon) at the top right of the file view.
+- Make your changes and commit the changes.
 
-Runs the app locally with Vite’s preview server.
+**Use GitHub Codespaces**
 
-🔧 Nginx Config
-The app is served by Nginx using the config from nginx.conf.
+- Navigate to the main page of your repository.
+- Click on the "Code" button (green button) near the top right.
+- Select the "Codespaces" tab.
+- Click on "New codespace" to launch a new Codespace environment.
+- Edit files directly within the Codespace and commit and push your changes once you're done.
 
-Static files are located at /usr/share/nginx/html.
+## What technologies are used for this project?
+
+This project is built with:
+
+- Vite
+- TypeScript
+- React
+- shadcn-ui
+- Tailwind CSS
+
+## How can I deploy this project?
+
+Simply open [Lovable](https://lovable.dev/projects/c38e547c-835b-420a-a3d1-408b384068c3) and click on Share -> Publish.
+
+## Can I connect a custom domain to my Lovable project?
+
+Yes, you can!
+
+To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+
+Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)

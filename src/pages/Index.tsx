@@ -1,290 +1,199 @@
-import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/auth-context";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Layout } from "@/components/Layout";
-import {
-  Search,
-  TrendingUp,
-  Users,
-  Shield,
-  ArrowRight,
-  CheckCircle,
-  Zap,
-} from "lucide-react";
-import { getProductsByApplication } from "@/apiHelpers";
+import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
+import { ModelInfo } from "@/components/dashboard/ModelInfo";
+import { AnalysisScope } from "@/components/dashboard/AnalysisScope";
+import { CalculationProvenance } from "@/components/dashboard/CalculationProvenance";
+import { KPICard } from "@/components/dashboard/KPICard";
+import { SourceAnalysisChart } from "@/components/dashboard/SourceAnalysisChart";
+import { SourceMetricsTable } from "@/components/dashboard/SourceMetricsTable";
+import { ComprehensiveCompetitorTable } from "@/components/dashboard/ComprehensiveCompetitorTable";
+import { CompetitorProfiles } from "@/components/dashboard/CompetitorProfiles";
+import { ContentImpactChart } from "@/components/dashboard/ContentImpactChart";
+import { ContentImpactTable } from "@/components/dashboard/ContentImpactTable";
+import { RecommendationCard } from "@/components/dashboard/RecommendationCard";
+import { AnalysisBreakdown } from "@/components/dashboard/AnalysisBreakdown";
+import { ModelOutputs } from "@/components/dashboard/ModelOutputs";
+import { VisualGuidance } from "@/components/dashboard/VisualGuidance";
+import { Eye, MessageCircle, TrendingUp } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import mockData from "@/data/mockdata.json";
 
 const Index = () => {
-  const { user, isLoading } = useAuth();
-  const navigate = useNavigate();
-
-  const handleCheckVisibility = async () => {
-    if (!user) {
-      // Not logged in → go to login
-      navigate("/login");
-      return;
-    }
-
-    try {
-      const accessToken = localStorage.getItem("access_token") || "";
-      const applicationId = localStorage.getItem("application_id") || "";
-  
-      if (!applicationId) {
-        // No application ID → go to input
-        navigate("/input");
-        return;
-      }
-  
-      const products = await getProductsByApplication(applicationId, accessToken);
-  
-      if (products && Array.isArray(products) && products.length > 0) {
-        const firstProduct = products[0];
-  
-        // Store product id and keywords
-        localStorage.setItem("product_id", firstProduct.id);
-        localStorage.setItem("keywords", JSON.stringify(firstProduct.search_keywords || []));
-        localStorage.setItem("keyword_count", (firstProduct.search_keywords || []).length.toString());
-        
-        navigate("/results", {
-          state: {
-            website: firstProduct.website || firstProduct.name,
-            keywords: firstProduct.search_keywords || [],
-            productId: firstProduct.id,
-          },
-        });
-      } else {
-        // No products → go to input page
-        navigate("/input");
-      }
-    } catch (error) {
-      navigate("/input"); // fallback
-    }
-  };
-
-  const features = [
-    {
-      icon: <Search className="w-8 h-8 text-primary" />,
-      title: "AI Search Monitoring",
-      description:
-        "Real-time tracking of how AI assistants like ChatGPT and Gemini mention your brand",
-    },
-    {
-      icon: <TrendingUp className="w-8 h-8 text-primary" />,
-      title: "Competitor Analysis",
-      description:
-        "See who dominates AI responses in your category and identify opportunities",
-    },
-    {
-      icon: <Users className="w-8 h-8 text-primary" />,
-      title: "Source Influence",
-      description:
-        "Discover which websites shape what AI says about your industry",
-    },
-    {
-      icon: <Shield className="w-8 h-8 text-primary" />,
-      title: "Brand Defense",
-      description:
-        "Monitor your presence in alternative and competitive queries",
-    },
-  ];
-
-  const stats = [
-    { number: "60%", label: "Google searches end with no website visit" },
-    { number: "35%", label: "Drop in B2B SaaS organic traffic" },
-    { number: "45%", label: "Monthly increase in AI search sessions" },
-    { number: "5x", label: "Higher value per AI visitor" },
-  ];
-
-  // ✅ Handle loading state to prevent blank page
-  if (isLoading) {
-    return (
-      <Layout>
-        <div className="flex items-center justify-center min-h-screen text-lg">
-          Loading...
-        </div>
-      </Layout>
-    );
-  }
+  const data = mockData;
+  const analysis = data.analysis;
+  const overallInsights = analysis.overall_insights;
+  const sourceAnalysis = analysis.source_analysis;
+  const competitorAnalysis = analysis.competitor_analysis;
+  const contentImpact = analysis.content_impact;
+  const recommendations = analysis.recommendations;
 
   return (
-    <Layout>
-      <div className="min-h-screen">
-        {/* Hero Section */}
-        <section className="py-20 lg:py-32">
-          <div className="container mx-auto px-4">
-            <div className="max-w-4xl mx-auto text-center">
-              <Badge variant="secondary" className="mb-6 px-4 py-2">
-                AI Search Intelligence
-              </Badge>
-              <h1 className="text-5xl lg:text-7xl font-bold mb-6">
-                Are You <span className="gradient-text">Invisible</span> in AI
-                Search?
-              </h1>
-              <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
-                GeoRankers is the definitive AI search optimization platform
-                that helps B2B SaaS companies track, optimize, and build the
-                brand authority needed to get visible in AI search across
-                leading AI models like ChatGPT and Gemini.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                {user ? (
-                  <Button
-                    variant="hero"
-                    size="lg"
-                    className="text-lg px-8 w-full sm:w-auto"
-                    onClick={handleCheckVisibility}
-                  >
-                    New Analysis
-                    <ArrowRight className="w-5 h-5 ml-2" />
-                  </Button>
-                ) : (
-                  <>
-                    <Link to="/register" className="w-full sm:w-auto">
-                      <Button
-                        variant="hero"
-                        size="lg"
-                        className="text-lg px-8 w-full sm:w-auto"
-                      >
-                        <Zap className="w-5 h-5 mr-2" />
-                        Get Started Free
-                      </Button>
-                    </Link>
-                    <Button
-                      variant="outline"
-                      size="lg"
-                      className="text-lg px-8 w-full sm:w-auto"
-                      onClick={handleCheckVisibility}
-                    >
-                      Check Your Visibility
-                      <ArrowRight className="w-5 h-5 ml-2" />
-                    </Button>
-                  </>
-                )}
-              </div>
+    <div className="min-h-screen bg-white p-6 space-y-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <DashboardHeader
+          brandName={data.brand_name}
+          brandWebsite={data.brand_website}
+          analysisId={data.id}
+          createdAt={data.created_at}
+          status={data.status}
+          type={data.type}
+          dominantSentiment={overallInsights.dominant_sentiment.sentiment}
+        />
+
+        {/* Summary Section */}
+        <section className="my-8">
+          <div className="bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 rounded-lg p-6 hover-scale animate-scale-in shadow-lg">
+            <h3 className="text-lg font-semibold mb-3 text-primary">Analysis Summary</h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              {overallInsights.summary}
+            </p>
+          </div>
+        </section>
+
+        <Separator className="my-8" />
+
+        {/* Overall Insights */}
+        <section className="space-y-6">
+          <div>
+            <h2 className="text-2xl font-bold mb-2">Overall Insights</h2>
+            <p className="text-muted-foreground mb-6">Key performance indicators derived from available data</p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <KPICard
+              title="AI Visibility Score"
+              value={overallInsights.ai_visibility.ai_visibility_score}
+              badge={overallInsights.ai_visibility.tier}
+              badgeVariant="outline"
+              description="Based on market performance. Dominant"
+              icon={Eye}
+            />
+            <KPICard
+              title="Sentiment Score"
+              value={overallInsights.dominant_sentiment.sentiment}
+              badge={overallInsights.dominant_sentiment.sentiment}
+              badgeVariant="secondary"
+              description="Based on privacy sentiment analysis"
+              icon={TrendingUp}
+            />
+            <KPICard
+              title="Total Brand Mentions"
+              value={overallInsights.brand_mentions.mentions_count}
+              badge={overallInsights.brand_mentions.level}
+              badgeVariant="secondary"
+              description={`Total mentions across sources: ${overallInsights.brand_mentions.total_sources_checked}`}
+              icon={MessageCircle}
+            />
+          </div>
+        </section>
+
+        {/* Sentiment Statement */}
+        <section className="my-8">
+          <div className="bg-gradient-to-r from-accent/10 to-secondary/10 border border-accent/20 rounded-lg p-6 hover-scale animate-scale-in shadow-lg">
+            <h3 className="text-lg font-semibold mb-3 text-accent">AI Sentiment</h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              {overallInsights.dominant_sentiment.statement}
+            </p>
+          </div>
+        </section>
+
+        <Separator className="my-8" />
+
+        {/* Source Analysis */}
+        <section className="space-y-6">
+          <div>
+            <h2 className="text-2xl font-bold mb-2">Source Analysis</h2>
+            <p className="text-muted-foreground mb-6">Source Intelligence Data - Citation frequency across all results</p>
+          </div>
+          
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <SourceAnalysisChart data={sourceAnalysis} />
+            <SourceMetricsTable data={sourceAnalysis} />
+          </div>
+        </section>
+
+        <Separator className="my-8" />
+
+        {/* Competitor Analysis */}
+        <section className="space-y-6">
+          <div>
+            <h2 className="text-2xl font-bold mb-2">Competitor Analysis</h2>
+            <p className="text-muted-foreground mb-6">Competitive positioning across key dimensions</p>
+          </div>
+          
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <ComprehensiveCompetitorTable 
+              data={competitorAnalysis.table_1_by_dimension}
+              ourBrand="Kommunicate"
+            />
+            <CompetitorProfiles data={competitorAnalysis.table_2_brand_profiles} />
+          </div>
+        </section>
+
+        <Separator className="my-8" />
+
+        {/* Content Impact */}
+        <section className="space-y-6">
+          <div>
+            <h2 className="text-2xl font-bold mb-2">Content Impact</h2>
+            <p className="text-muted-foreground mb-6">How much visibility comes from each content type</p>
+          </div>
+          
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            <div className="xl:col-span-1">
+              <ContentImpactChart data={contentImpact} />
+            </div>
+            <div className="xl:col-span-2">
+              <ContentImpactTable data={contentImpact} />
             </div>
           </div>
         </section>
 
-        {/* Stats Section */}
-        <section className="py-16 border-y bg-muted/20">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold mb-4">
-                The AI Search Revolution: By the Numbers
-              </h2>
-              <p className="text-muted-foreground max-w-2xl mx-auto">
-                Traditional search is rapidly being displaced by AI-powered
-                discovery
-              </p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-              {stats.map((stat, index) => (
-                <Card
-                  key={index}
-                  className="card-gradient border-0 text-center"
-                >
-                  <CardContent className="p-6">
-                    <div className="text-4xl font-bold gradient-text mb-2">
-                      {stat.number}
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      {stat.label}
-                    </p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+        <Separator className="my-8" />
+
+        {/* Strategic Recommendations */}
+        <section className="space-y-6">
+          <div>
+            <h2 className="text-2xl font-bold mb-2">Strategic Recommendations</h2>
+            <p className="text-muted-foreground mb-6">Actionable insights to improve AI platform visibility and performance</p>
+          </div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {recommendations.map((recommendation, index) => (
+              <RecommendationCard key={index} recommendation={recommendation} />
+            ))}
           </div>
         </section>
 
-        {/* Features Section */}
-        <section className="py-20">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-16">
-              <h2 className="text-4xl font-bold mb-4">
-                Comprehensive AI Search Intelligence
-              </h2>
-              <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-                Monitor, analyze, and optimize your brand's presence across all
-                major AI platforms
-              </p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto">
-              {features.map((feature, index) => (
-                <Card
-                  key={index}
-                  className="card-gradient border-0 hover:shadow-elevated transition-smooth"
-                >
-                  <CardHeader>
-                    <div className="flex items-center space-x-4">
-                      <div className="p-3 rounded-lg bg-primary/10">
-                        {feature.icon}
-                      </div>
-                      <div>
-                        <CardTitle className="text-xl">
-                          {feature.title}
-                        </CardTitle>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <CardDescription className="text-base">
-                      {feature.description}
-                    </CardDescription>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+        <Separator className="my-8" />
+
+        {/* Raw Model Outputs */}
+        <section className="space-y-6">
+          <div>
+            <h2 className="text-2xl font-bold mb-2">Raw Model Outputs</h2>
+            <p className="text-muted-foreground mb-6">Raw data snippets and mention positions for specific queries</p>
           </div>
+          <ModelOutputs data={data.raw_model_outputs_mapped} />
         </section>
 
-        {/* CTA Section */}
-        <section className="py-20 bg-gradient-hero text-white">
-          <div className="container mx-auto px-4 text-center">
-            <div className="max-w-3xl mx-auto">
-              <h2 className="text-4xl font-bold mb-6">
-                Ready to Optimize for AI Search?
-              </h2>
-              <p className="text-xl mb-8 text-white/90">
-                Join thousands of brands already tracking and improving their AI
-                search visibility. Get your free analysis in minutes.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button
-                  variant="secondary"
-                  size="lg"
-                  className="text-lg px-8 bg-white text-primary hover:bg-white/90"
-                  onClick={handleCheckVisibility}
-                >
-                  <Search className="w-5 h-5 mr-2" />
-                  {user ? "New Analysis" : "Check Your Visibility"}
-                  <ArrowRight className="w-5 h-5 ml-2" />
-                </Button>
-                {!user && (
-                  <Link to="/register">
-                    <Button
-                      variant="outline"
-                      size="lg"
-                      className="text-lg px-8 border-white text-muted-foreground hover:bg-white hover:text-primary"
-                    >
-                      <CheckCircle className="w-5 h-5 mr-2" />
-                      Get Full Access
-                    </Button>
-                  </Link>
-                )}
-              </div>
-            </div>
+        <Separator className="my-8" />
+
+        {/* Additional Analysis Data */}
+        <section className="space-y-8">
+          <div>
+            <h2 className="text-2xl font-bold mb-2">Detailed Analysis Breakdown</h2>
+            <p className="text-muted-foreground mb-6">Detailed methodology and calculation breakdown</p>
           </div>
+          
+          <AnalysisBreakdown 
+            data={overallInsights.ai_visibility.calculation_breakdown}
+            geoScore={overallInsights.ai_visibility.geo_score}
+            weightedTotal={overallInsights.ai_visibility.weighted_mentions_total}
+            queryCount={overallInsights.ai_visibility.distinct_queries_count}
+          />
         </section>
       </div>
-    </Layout>
+    </div>
   );
 };
 
