@@ -311,10 +311,10 @@ export default function Results() {
             pollProductAnalytics(productId);
           }, 5000);
         } else {
+          console.log("Brand analysis completed");
           setIsLoading(false);
         }
       } catch (err) {
-        console.error(err);
         toast.error("Failed to fetch analytics");
         setIsLoading(false);
       }

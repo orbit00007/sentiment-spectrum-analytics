@@ -22,9 +22,7 @@ interface AuthContextType {
   register: (
     email: string,
     password: string,
-    firstName: string,
-    lastName: string,
-    appName?: string
+    fullName: string
   ) => Promise<void>;
   logout: () => void;
 }
@@ -43,9 +41,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const storedAppId = localStorage.getItem("application_id");
     const storedToken = localStorage.getItem("access_token");
-    
-    console.log("AuthProvider useEffect - storedAppId:", storedAppId);
-    console.log("AuthProvider useEffect - storedToken:", storedToken ? "present" : "missing");
+    const storedFirstName = localStorage.getItem("first_name");
     
     if (storedAppId) {
       setApplicationId(storedAppId);
@@ -53,8 +49,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     // If we have a token, restore user state (user is logged in)
     if (storedToken) {
-      console.log("Token found, restoring user state");
-      setUser({ id: "restored", email: "user@restored.com", first_name: "User", last_name: "Restored" });
+      setUser({ 
+        id: "restored", 
+        email: "user@restored.com", 
+        first_name: storedFirstName || "User", 
+        last_name: "User" 
+      });
     }
   }, []);
 
@@ -70,6 +70,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const extendedUser = res.user as ExtendedUser;
         setUser(extendedUser);
 
+        // Save first name to localStorage
+        localStorage.setItem("first_name", extendedUser.first_name);
+
         // Pick applicationId from response (apiHelpers already saves it to localStorage)
         let appId: string | null = null;
         if (extendedUser.owned_applications?.length) {
@@ -81,6 +84,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (appId) {
           setApplicationId(appId);
         }
+
+        console.log("Login completed successfully");
       }
     } finally {
       setIsLoading(false);
@@ -93,18 +98,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const register = async (
     email: string,
     password: string,
-    firstName: string,
-    lastName: string,
-    appName: string = "DefaultApp"
+    fullName: string
   ) => {
     setIsLoading(true);
     try {
+      // Split full name on first space
+      const parts = fullName.trim().split(' ');
+      const firstName = parts[0] || '';
+      const lastName = parts.slice(1).join(' ') || '';
+
       const payload: RegisterRequest = {
         email,
         password,
         first_name: firstName,
         last_name: lastName,
-        app_name: appName,
+        app_name: "My Company",
       };
 
       const response: RegisterResponse = await registerAPI(payload);
@@ -113,8 +121,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setApplicationId(response.application.id);
       }
 
+      // Save first name to localStorage
+      localStorage.setItem("first_name", firstName);
+
       // Auto-login (ensures consistency with login flow)
       await login(email, password);
+      
+      console.log("Registration completed successfully");
     } finally {
       setIsLoading(false);
     }
@@ -126,6 +139,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = () => {
     localStorage.removeItem("access_token");
     localStorage.removeItem("application_id");
+    localStorage.removeItem("first_name");
+    localStorage.removeItem("keywords");
+    localStorage.removeItem("keyword_count");
+    localStorage.removeItem("product_id");
     setUser(null);
     setApplicationId(null);
   };

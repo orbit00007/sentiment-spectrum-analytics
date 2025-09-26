@@ -169,11 +169,18 @@ export default function InputPage() {
         search_keywords: keywords,
       };
 
-      console.log("📦 Sending payload:", payload);
+      console.log("Brand analysis generation started");
 
       const data = await fetchProductsWithKeywords(payload);
 
-      console.log("✅ API Response:", data);
+      console.log("Brand analysis created");
+      
+      // Save to localStorage
+      localStorage.setItem("keywords", JSON.stringify(keywords));
+      localStorage.setItem("keyword_count", keywords.length.toString());
+      if (data.product?.id) {
+        localStorage.setItem("product_id", data.product.id);
+      }
 
       toast({
         title: "Analysis started",
@@ -188,7 +195,6 @@ export default function InputPage() {
         },
       });
     } catch (error: any) {
-      console.error("❌ API Error:", error.response?.data || error.message);
       toast({
         title: "Error",
         description: "Failed to start analysis. Please try again.",

@@ -15,9 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Eye, EyeOff } from "lucide-react";
 
 const Register = () => {
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [appName, setAppName] = useState(""); 
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -49,7 +47,7 @@ const Register = () => {
     }
 
     try {
-      await register(email, password, firstName, lastName, appName || "DefaultApp");
+      await register(email, password, fullName);
       toast({
         title: "Account created!",
         description: "Welcome to AI Search Visibility Checker.",
@@ -79,48 +77,18 @@ const Register = () => {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* First & Last Name */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">First Name</Label>
-                <Input
-                  id="firstName"
-                  type="text"
-                  placeholder="Enter your first name"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  required
-                  className="bg-background"
-                  autoComplete="off"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Last Name</Label>
-                <Input
-                  id="lastName"
-                  type="text"
-                  placeholder="Enter your last name"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  required
-                  className="bg-background"
-                  autoComplete="off"
-                />
-              </div>
-            </div>
-
-            {/* App Name */}
+            {/* Full Name */}
             <div className="space-y-2">
-              <Label htmlFor="appName">Application Name</Label>
+              <Label htmlFor="fullName">Full Name</Label>
               <Input
-                id="appName"
+                id="fullName"
                 type="text"
-                placeholder="Enter your application name"
-                value={appName}
-                onChange={(e) => setAppName(e.target.value)}
+                placeholder="Enter your full name"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
                 required
                 className="bg-background"
-                autoComplete="off"
+                autoComplete="name"
               />
             </div>
 

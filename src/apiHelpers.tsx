@@ -92,7 +92,6 @@ export const login = async (payload: LoginRequest): Promise<LoginResponse | null
 
     return res.data;
   } catch (error) {
-    console.error("login error:", error);
     return null;
   }
 };
@@ -110,7 +109,6 @@ export const register = async (payload: RegisterRequest): Promise<RegisterRespon
 
     return res.data;
   } catch (error) {
-    console.error("register error:", error);
     return null;
   }
 };
@@ -147,7 +145,6 @@ export const createProductWithKeywords = async (payload: ProductPayload): Promis
     const res = await API.post(API_ENDPOINTS.createProductWithKeywords, body);
     return res.data;
   } catch (error) {
-    console.error("createProductWithKeywords error:", error);
     return null;
   }
 };
@@ -157,7 +154,6 @@ export const fetchProductsWithKeywords = async (payload: ProductPayload): Promis
     const res = await API.post(API_ENDPOINTS.createProductWithKeywords, payload);
     return res.data;
   } catch (error) {
-    console.error("fetchProductsWithKeywords error:", error);
     return null;
   }
 };
@@ -178,7 +174,6 @@ export const getProductAnalytics = async (
     });
     return res?.data || null;
   } catch (error) {
-    console.error("getProductAnalytics error:", error);
     return null;
   }
 };
@@ -196,7 +191,6 @@ export const getKeywordAnalytics = async (
     });
     return res?.data || null;
   } catch (error) {
-    console.error("getKeywordAnalytics error:", error);
     return null;
   }
 };
@@ -213,7 +207,6 @@ export const getProductsByApplication = async (
     });
     return res?.data || null;
   } catch (error) {
-    console.error("getProductsByApplication error:", error);
     return null;
   }
 };
