@@ -1,9 +1,8 @@
-// src/pages/Results.tsx
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/auth-context";
 import { Layout } from "@/components/Layout";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   ArrowLeft,
@@ -12,6 +11,10 @@ import {
   TrendingUp,
   TrendingDown,
   Minus,
+  Globe,
+  Users,
+  BarChart3,
+  Target,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -27,21 +30,6 @@ interface InputStateAny {
   analytics?: any;
 }
 
-interface InsightCard {
-  title: string;
-  value: string;
-  trend?: "up" | "down" | "stable" | "unknown" | "emerging" | "consistent" | "increasing" | "maintained";
-  description?: string;
-}
-
-interface RecommendedAction {
-  category: string;
-  priority?: string;
-  action?: string;
-  impact?: string;
-  effort?: string;
-}
-
 // New interface for the API response structure
 interface AnalyticsResponse {
   analytics: AnalyticsData[];
@@ -50,7 +38,7 @@ interface AnalyticsResponse {
   product_id: string;
 }
 
-// Updated AnalyticsData interface
+// Updated AnalyticsData interface to match new nested structure
 interface AnalyticsData {
   id?: string;
   product_id?: string;
@@ -58,14 +46,101 @@ interface AnalyticsData {
   date?: string;
   status?: string;
   analytics?: {
-    insight_cards?: InsightCard[];
-    recommended_actions?: RecommendedAction[];
-    drilldowns?: {
-      query_explorer?: any[];
-      sources_list?: any[];
-      attributes_matrix?: any[];
+    id?: string;
+    type?: string;
+    status?: string;
+    brand_name?: string;
+    brand_website?: string;
+    analysis?: {
+      overall_insights?: {
+        ai_visibility?: {
+          tier?: string;
+          ai_visibility_score?: { Value: number };
+          geo_score?: { Value: number };
+          weighted_mentions_total?: { Value: number };
+          distinct_queries_count?: { Value: number };
+          calculation_breakdown?: Array<{
+            query: string;
+            weighted_points_for_brand: { Value: number };
+            explanation: string;
+          }>;
+        };
+        brand_mentions?: {
+          level?: string;
+          mentions_count?: { Value: number };
+          total_sources_checked?: { Value: number };
+        };
+        dominant_sentiment?: {
+          sentiment?: string;
+          statement?: string;
+        };
+        summary?: string;
+      };
+      source_analysis?: Array<{
+        category: string;
+        sources: string[];
+        total_citations: { Value: number };
+        visibility: string;
+        cited_by_models: string[];
+        notes: string;
+      }>;
+      competitor_analysis?: {
+        dimensions?: Array<{
+          dimension: string;
+          top_3_competitors: string[];
+          our_brand_position: { Value: number };
+          our_brand_sentiment: string;
+          evidence_snippet: string;
+        }>;
+        table_1_by_dimension?: Array<{
+          dimension: string;
+          top_5_competitors: Array<{
+            brand: string;
+            visibility_count: { Value: number };
+          }>;
+          our_brand_position: { Value: number };
+          our_brand_visibility_count: { Value: number };
+        }>;
+        table_2_brand_profiles?: Array<{
+          brand_name: string;
+          ai_description: string;
+          ai_sentiment: string;
+          sources: string[];
+          evidence_snippets: string[];
+        }>;
+      };
+      content_impact?: {
+        [key: string]: {
+          top_3_brands?: Array<{
+            brand: string;
+            position: { Value: number };
+            visibility: { Value: number };
+          }>;
+          our_brand_position?: {
+            brand: string;
+            position: { Value: number };
+            visibility: { Value: number };
+          };
+        };
+      };
+      recommendations?: Array<{
+        category: string;
+        action: string;
+        timeframe: string;
+        rationale: string;
+        expected_impact: string;
+        effort: string;
+      }>;
     };
-    reason_missing?: string;
+    raw_model_outputs_mapped?: Array<{
+      query: string;
+      snippet: string;
+      mention_positions: Array<{
+        brand: string;
+        first_position_index: { Value: number };
+      }>;
+      sources_mentioned: string[];
+    }>;
   };
   created_at?: string;
   updated_at?: string;
@@ -100,31 +175,39 @@ export default function Results() {
     const baseClasses = type === "priority" ? "font-semibold" : "font-medium";
 
     if (lower.includes("high"))
-      return `${baseClasses} text-white bg-red-500 border-red-500`;
+      return `${baseClasses} text-white bg-destructive border-destructive`;
     if (lower.includes("medium"))
-      return `${baseClasses} text-black bg-yellow-400 border-yellow-400`;
+      return `${baseClasses} text-background bg-warning border-warning`;
     if (lower.includes("low"))
-      return `${baseClasses} text-white bg-green-600 border-green-500`;
+      return `${baseClasses} text-white bg-success border-success`;
 
-    // default fallback
-    return `${baseClasses} text-gray-700 bg-gray-100 border-gray-300`;
+    return `${baseClasses} text-muted-foreground bg-muted border-muted`;
   };
 
-  const getTrendIcon = (trend?: string) => {
-    const trendLower = (trend || "").toLowerCase();
-    switch (trendLower) {
-      case "up":
-      case "increasing":
-      case "emerging":
-        return <TrendingUp className="w-4 h-4 text-green-500" />;
-      case "down":
-        return <TrendingDown className="w-4 h-4 text-red-500" />;
-      case "stable":
-      case "consistent":
-      case "maintained":
-        return <Minus className="w-4 h-4 text-blue-500" />;
+  const getTierColor = (tier?: string) => {
+    const tierLower = (tier || "").toLowerCase();
+    switch (tierLower) {
+      case "high":
+        return "text-success";
+      case "medium":
+        return "text-warning";
+      case "low":
+        return "text-destructive";
       default:
-        return <Minus className="w-4 h-4 text-muted-foreground" />;
+        return "text-muted-foreground";
+    }
+  };
+
+  const getSentimentColor = (sentiment?: string) => {
+    const sentimentLower = (sentiment || "").toLowerCase();
+    switch (sentimentLower) {
+      case "positive":
+        return "text-success";
+      case "negative":
+        return "text-destructive";
+      case "neutral":
+      default:
+        return "text-muted-foreground";
     }
   };
 
@@ -142,11 +225,8 @@ export default function Results() {
   const getCleanDomainName = (url?: string) => {
     if (!url) return "";
     try {
-      // Remove protocol if present
       const cleanUrl = url.replace(/^https?:\/\//, "");
-      // Remove www. if present
       const withoutWww = cleanUrl.replace(/^www\./, "");
-      // Remove trailing slash and any path
       const domain = withoutWww.split('/')[0];
       return domain;
     } catch {
@@ -205,7 +285,7 @@ export default function Results() {
     };
   }, []);
 
-  // Updated poll product analytics function
+  // Poll product analytics function
   const pollProductAnalytics = useCallback(
     async (productId: string) => {
       if (!productId || !accessToken || !mountedRef.current) return;
@@ -217,13 +297,11 @@ export default function Results() {
 
         if (res) {
           setAnalyticsResponse(res);
-          // Extract the first analytics item from the array
           if (res.analytics && res.analytics.length > 0) {
             setCurrentAnalytics(res.analytics[0]);
           }
         }
 
-        // Check status from the first analytics item
         const status = res?.analytics?.[0]?.status?.toLowerCase() || "";
         if (status !== "completed") {
           if (pollingRef.current.productTimer) {
@@ -273,10 +351,14 @@ export default function Results() {
   }
 
   const overallStatus = currentAnalytics?.status || "pending";
+  const analytics = currentAnalytics?.analytics;
+  const overallInsights = analytics?.analysis?.overall_insights;
+  const aiVisibility = overallInsights?.ai_visibility;
+  const brandMentions = overallInsights?.brand_mentions;
+  const dominantSentiment = overallInsights?.dominant_sentiment;
   
-  // Get the clean website name from either the current analytics or results data
   const websiteName = getCleanDomainName(
-    currentAnalytics?.product_name || 
+    analytics?.brand_name || 
     resultsData.website || 
     resultsData.product.name
   );
@@ -288,14 +370,13 @@ export default function Results() {
         <div className="sticky top-16 z-40 bg-background/95 backdrop-blur border-b">
           <div className="container mx-auto px-4 py-4">
             <div className="flex flex-col space-y-4">
-              {/* Brand Info */}
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 rounded-lg bg-gradient-hero flex items-center justify-center text-white font-bold">
                   {websiteName?.charAt(0)?.toUpperCase() || "C"}
                 </div>
                 <div>
                   <h1 className="font-semibold text-lg">
-                    {websiteName || "Unknown Website"}
+                    {analytics?.brand_name || websiteName || "Unknown Website"}
                   </h1>
                   <p className="text-sm text-muted-foreground">
                     Analysis completed on {formatDate(currentAnalytics?.updated_at || currentAnalytics?.date)}
@@ -303,13 +384,10 @@ export default function Results() {
                 </div>
               </div>
 
-              {/* Stats Row */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 text-sm">
                 <div className="flex items-center space-x-2">
                   <Search className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">
-                    Keywords analyzed:
-                  </span>
+                  <span className="text-muted-foreground">Keywords analyzed:</span>
                   <span className="font-semibold">
                     {resultsData.search_keywords?.length ?? 0}
                   </span>
@@ -326,257 +404,237 @@ export default function Results() {
 
         {/* Main */}
         <div className="container mx-auto px-4 py-8">
-          {/* <div className="mb-6">
-            <Button
-              variant="ghost"
-              onClick={() => navigate("/input")}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              New Analysis
-            </Button>
-          </div> */}
-
           {/* Show banner when analyzing */}
           {overallStatus !== "completed" && (
-            <div className="mb-6 p-4 rounded-md bg-yellow-50 border border-yellow-200 text-sm">
+            <div className="mb-6 p-4 rounded-md bg-warning/10 border border-warning/20 text-sm">
               <div className="flex items-center gap-3">
                 <Search className="w-5 h-5 animate-spin text-muted-foreground" />
                 <div>
                   <div className="font-semibold">Analysis in progress</div>
                   <div className="text-xs text-muted-foreground">
-                    We are gathering and analyzing AI answers — this usually
-                    takes a few seconds to a couple of minutes depending on
-                    keywords and sources.
+                    We are gathering and analyzing AI answers — this usually takes a few seconds to a couple of minutes.
                   </div>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Content */}
-          {currentAnalytics ? (
-            <>
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">
-                {(currentAnalytics.analytics?.insight_cards || []).length > 0 ? (
-                  currentAnalytics.analytics!.insight_cards!.map((card, i) => (
-                    <Card key={i} className="card-gradient border-0">
-                      <CardContent className="p-6">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center space-x-2">
-                            <div className="w-3 h-3 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full" />
-                            <span className="text-sm font-medium">
-                              {card.title}
-                            </span>
-                          </div>
-                          {getTrendIcon(card.trend)}
-                        </div>
-                        <div className="text-lg font-semibold mb-2">
-                          {card.value || "—"}
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          {card.description}
-                        </p>
-                      </CardContent>
-                    </Card>
-                  ))
-                ) : (
-                  <p className="text-muted-foreground text-sm">
-                    No insight cards available
+          {/* Summary Section */}
+          {overallInsights?.summary && (
+            <div className="mb-6 animate-in fade-in-50 zoom-in-95 duration-300">
+              <Card className="card-gradient border-0">
+                <CardHeader>
+                  <CardTitle className="text-xl">Analysis Summary</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground leading-relaxed">
+                    {overallInsights.summary}
                   </p>
-                )}
-              </div>
-
-              <Card className="card-gradient border-0 mb-8">
-                <CardContent className="p-6">
-                  <h3 className="text-xl font-semibold mb-4">
-                    Recommended Actions
-                  </h3>
-                  <div className="space-y-4">
-                    {(currentAnalytics.analytics?.recommended_actions || [])
-                      .length > 0 ? (
-                      currentAnalytics.analytics!.recommended_actions!.map(
-                        (action, i) => (
-                          <div key={i} className="p-4 rounded-lg bg-accent/50">
-                            <div className="flex items-center space-x-2 mb-2">
-                              <Badge
-                                className={`${getColorClass(
-                                  action.priority
-                                )} border`}
-                              >
-                                {(action.priority || "").toUpperCase()}
-                              </Badge>
-                              <span className="font-semibold">
-                                {action.category}
-                              </span>
-                              <Badge
-                                variant="outline"
-                                className={getColorClass(action.effort)}
-                              >
-                                {action.effort} effort
-                              </Badge>
-                            </div>
-                            <p className="text-sm mb-2">{action.action}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {action.impact}
-                            </p>
-                          </div>
-                        )
-                      )
-                    ) : (
-                      <p className="text-muted-foreground text-sm">
-                        No recommended actions
-                      </p>
-                    )}
-                  </div>
                 </CardContent>
               </Card>
+            </div>
+          )}
 
-              <div className="grid gap-6 md:grid-cols-2 mb-8">
-                <Card className="card-gradient border-0">
-                  <CardContent className="p-6">
-                    <h3 className="font-semibold mb-4">Query Explorer</h3>
-                    <div className="space-y-3">
-                      {(
-                        currentAnalytics.analytics?.drilldowns?.query_explorer ||
-                        []
-                      ).length > 0 ? (
-                        currentAnalytics
-                          .analytics!.drilldowns!.query_explorer!.slice(0, 8)
-                          .map((q, idx) => (
-                            <div
-                              key={idx}
-                              className="flex items-start space-x-2"
-                            >
-                              <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-medium flex-shrink-0 mt-1">
-                                {q.performance_score}
-                              </div>
-                              <div className="flex-1">
-                                <p className="text-sm">{q.query}</p>
-                                <div className="flex items-center space-x-2 mt-1">
-                                  <Badge
-                                    variant="outline"
-                                    className={`text-xs ${getColorClass(
-                                      q.search_volume
-                                    )}`}
-                                  >
-                                    {q.search_volume}
-                                  </Badge>
-                                  <Badge
-                                    variant="outline"
-                                    className={`text-xs ${getColorClass(
-                                      q.competition
-                                    )}`}
-                                  >
-                                    {q.competition}
-                                  </Badge>
-                                </div>
-                              </div>
-                            </div>
-                          ))
-                      ) : (
-                        <p className="text-muted-foreground text-sm">
-                          No queries found
-                        </p>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
+          {/* AI Sentiment */}
+          {dominantSentiment?.statement && (
+            <div className="mb-6 animate-in fade-in-50 zoom-in-95 duration-300 delay-100">
+              <Card className="card-gradient border-0">
+                <CardHeader>
+                  <CardTitle className="text-xl">AI Sentiment</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="text-sm font-medium text-muted-foreground">Overall Sentiment:</span>
+                    <Badge className={`${getSentimentColor(dominantSentiment.sentiment)} bg-background border`}>
+                      {dominantSentiment.sentiment?.toUpperCase() || "NEUTRAL"}
+                    </Badge>
+                  </div>
+                  <p className="text-muted-foreground leading-relaxed">
+                    {dominantSentiment.statement}
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          )}
 
-                <Card className="card-gradient border-0">
-                  <CardContent className="p-6">
-                    <h3 className="font-semibold mb-4">Top Sources</h3>
-                    <div className="space-y-3">
-                      {(currentAnalytics.analytics?.drilldowns?.sources_list || [])
-                        .length > 0 ? (
-                        currentAnalytics.analytics!.drilldowns!.sources_list!.map(
-                          (source, i) => (
-                            <div
-                              key={i}
-                              className="flex items-center justify-between"
-                            >
-                              <div className="flex-1">
-                                <p className="text-sm font-medium">
-                                  {source.source}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                  {source.url}
-                                </p>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <Badge variant="outline">
-                                  {source.frequency}
-                                </Badge>
-                                <div className="w-16 h-2 bg-muted rounded-full">
-                                  <div
-                                    className="h-full bg-primary rounded-full"
-                                    style={{
-                                      width: `${Math.min(
-                                        (source.relevance_score / 10) * 100,
-                                        100
-                                      )}%`,
-                                    }}
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                          )
-                        )
-                      ) : (
-                        <p className="text-muted-foreground text-sm">
-                          No sources found
-                        </p>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
+          {/* Overall Insights */}
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
+            {aiVisibility && (
               <Card className="card-gradient border-0">
                 <CardContent className="p-6">
-                  <h3 className="font-semibold mb-4">Key Attributes</h3>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    {(
-                      currentAnalytics.analytics?.drilldowns?.attributes_matrix ||
-                      []
-                    ).length > 0 ? (
-                      currentAnalytics.analytics!.drilldowns!.attributes_matrix!.map(
-                        (attr, i) => (
-                          <div key={i} className="p-4 rounded-lg bg-accent/30">
-                            <div className="flex items-center justify-between mb-2">
-                              <h4 className="font-medium">{attr.attribute}</h4>
-                              <Badge
-                                className={getColorClass(
-                                  attr.importance,
-                                  "importance"
-                                )}
-                              >
-                                {(attr.importance || "").toUpperCase()}
-                              </Badge>
-                            </div>
-                            <p className="text-sm text-muted-foreground mb-2">
-                              {attr.value}
-                            </p>
-                            <div className="flex items-center space-x-2">
-                              <span className="text-xs">Frequency:</span>
-                              <Badge variant="outline">{attr.frequency}</Badge>
-                            </div>
-                          </div>
-                        )
-                      )
-                    ) : (
-                      <p className="text-muted-foreground text-sm">
-                        No attributes found
-                      </p>
-                    )}
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center space-x-2">
+                      <BarChart3 className="w-4 h-4 text-primary" />
+                      <span className="text-sm font-medium">AI Visibility</span>
+                    </div>
+                    <Badge className={`${getTierColor(aiVisibility.tier)} bg-background border`}>
+                      {aiVisibility.tier?.toUpperCase() || "UNKNOWN"}
+                    </Badge>
                   </div>
+                  <div className="text-lg font-semibold mb-2">
+                    {aiVisibility.ai_visibility_score?.Value || 0}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Score: {aiVisibility.weighted_mentions_total?.Value || 0} × {aiVisibility.distinct_queries_count?.Value || 0}
+                  </p>
                 </CardContent>
               </Card>
-            </>
-          ) : (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">No analytics data available</p>
-            </div>
+            )}
+
+            {brandMentions && (
+              <Card className="card-gradient border-0">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center space-x-2">
+                      <Users className="w-4 h-4 text-primary" />
+                      <span className="text-sm font-medium">Brand Mentions</span>
+                    </div>
+                    <Badge className={`${getTierColor(brandMentions.level)} bg-background border`}>
+                      {brandMentions.level?.toUpperCase() || "UNKNOWN"}
+                    </Badge>
+                  </div>
+                  <div className="text-lg font-semibold mb-2">
+                    {brandMentions.mentions_count?.Value || 0}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    From {brandMentions.total_sources_checked?.Value || 0} sources
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
+            <Card className="card-gradient border-0">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center space-x-2">
+                    <Globe className="w-4 h-4 text-primary" />
+                    <span className="text-sm font-medium">Brand Name</span>
+                  </div>
+                </div>
+                <div className="text-lg font-semibold mb-2">
+                  {analytics?.brand_name || "Unknown"}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Primary brand identity
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="card-gradient border-0">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center space-x-2">
+                    <Target className="w-4 h-4 text-primary" />
+                    <span className="text-sm font-medium">Analysis Type</span>
+                  </div>
+                </div>
+                <div className="text-lg font-semibold mb-2">
+                  {analytics?.type?.replace('_', ' ')?.toUpperCase() || "Intelligence"}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Report category
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Source Analysis */}
+          {analytics?.analysis?.source_analysis && (
+            <Card className="card-gradient border-0 mb-8">
+              <CardHeader>
+                <CardTitle className="text-xl">Source Analysis</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {analytics.analysis.source_analysis.map((source, i) => (
+                    <div key={i} className="p-4 rounded-lg bg-accent/30">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-medium">{source.category}</h4>
+                        <Badge className={`${getTierColor(source.visibility)} bg-background border`}>
+                          {source.visibility?.toUpperCase()}
+                        </Badge>
+                      </div>
+                      <div className="text-sm text-muted-foreground mb-2">
+                        {source.total_citations?.Value || 0} citations
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {source.sources?.slice(0, 3).join(", ")}
+                        {source.sources?.length > 3 && ` +${source.sources.length - 3} more`}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Competitor Analysis */}
+          {analytics?.analysis?.competitor_analysis?.dimensions && (
+            <Card className="card-gradient border-0 mb-8">
+              <CardHeader>
+                <CardTitle className="text-xl">Competitor Analysis</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {analytics.analysis.competitor_analysis.dimensions.map((dimension, i) => (
+                    <div key={i} className="p-4 rounded-lg bg-accent/30">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-medium">{dimension.dimension}</h4>
+                        <div className="flex items-center space-x-2">
+                          <Badge variant="outline">
+                            Position #{dimension.our_brand_position?.Value || "N/A"}
+                          </Badge>
+                          <Badge className={`${getSentimentColor(dimension.our_brand_sentiment)} bg-background border`}>
+                            {dimension.our_brand_sentiment?.toUpperCase()}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="text-sm text-muted-foreground mb-2">
+                        Top competitors: {dimension.top_3_competitors?.join(", ")}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {dimension.evidence_snippet}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Recommendations */}
+          {analytics?.analysis?.recommendations && (
+            <Card className="card-gradient border-0">
+              <CardHeader>
+                <CardTitle className="text-xl">Recommendations</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {analytics.analysis.recommendations.map((recommendation, i) => (
+                    <div key={i} className="p-4 rounded-lg bg-accent/50">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <Badge variant="outline" className="font-semibold">
+                          {recommendation.category}
+                        </Badge>
+                        <Badge className={getColorClass(recommendation.effort)} variant="outline">
+                          {recommendation.effort} effort
+                        </Badge>
+                      </div>
+                      <div className="mb-2">
+                        <p className="text-sm font-medium mb-1">{recommendation.action}</p>
+                        <p className="text-xs text-muted-foreground mb-1">
+                          <span className="font-medium">Timeline:</span> {recommendation.timeframe}
+                        </p>
+                      </div>
+                      <div className="text-xs text-muted-foreground space-y-1">
+                        <p><span className="font-medium">Rationale:</span> {recommendation.rationale}</p>
+                        <p><span className="font-medium">Expected Impact:</span> {recommendation.expected_impact}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           )}
         </div>
       </div>
