@@ -188,13 +188,13 @@ export default function Results() {
     const tierLower = (tier || "").toLowerCase();
     switch (tierLower) {
       case "high":
-        return "text-success";
+        return "text-destructive bg-destructive/10 border-destructive/20";
       case "medium":
-        return "text-warning";
+        return "text-warning bg-warning/10 border-warning/20";
       case "low":
-        return "text-destructive";
+        return "text-success bg-success/10 border-success/20";
       default:
-        return "text-muted-foreground";
+        return "text-muted-foreground bg-muted/10 border-muted/20";
     }
   };
 
@@ -202,12 +202,26 @@ export default function Results() {
     const sentimentLower = (sentiment || "").toLowerCase();
     switch (sentimentLower) {
       case "positive":
-        return "text-success";
+        return "text-success bg-success/10 border-success/20";
       case "negative":
-        return "text-destructive";
+        return "text-destructive bg-destructive/10 border-destructive/20";
       case "neutral":
       default:
-        return "text-muted-foreground";
+        return "text-warning bg-warning/10 border-warning/20";
+    }
+  };
+
+  const getEffortColor = (effort?: string) => {
+    const effortLower = (effort || "").toLowerCase();
+    switch (effortLower) {
+      case "high":
+        return "border-destructive/30";
+      case "medium":
+        return "border-warning/30";
+      case "low":
+        return "border-success/30";
+      default:
+        return "border-muted/30";
     }
   };
 
@@ -443,9 +457,9 @@ export default function Results() {
                   <CardTitle className="text-xl">AI Sentiment</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center gap-3 mb-2">
+                   <div className="flex items-center gap-3 mb-2">
                     <span className="text-sm font-medium text-muted-foreground">Overall Sentiment:</span>
-                    <Badge className={`${getSentimentColor(dominantSentiment.sentiment)} bg-background border`}>
+                    <Badge className={getSentimentColor(dominantSentiment.sentiment)}>
                       {dominantSentiment.sentiment?.toUpperCase() || "NEUTRAL"}
                     </Badge>
                   </div>
@@ -467,7 +481,7 @@ export default function Results() {
                       <BarChart3 className="w-4 h-4 text-primary" />
                       <span className="text-sm font-medium">AI Visibility</span>
                     </div>
-                    <Badge className={`${getTierColor(aiVisibility.tier)} bg-background border`}>
+                     <Badge className={getTierColor(aiVisibility.tier)}>
                       {aiVisibility.tier?.toUpperCase() || "UNKNOWN"}
                     </Badge>
                   </div>
@@ -489,7 +503,7 @@ export default function Results() {
                       <Users className="w-4 h-4 text-primary" />
                       <span className="text-sm font-medium">Brand Mentions</span>
                     </div>
-                    <Badge className={`${getTierColor(brandMentions.level)} bg-background border`}>
+                     <Badge className={getTierColor(brandMentions.level)}>
                       {brandMentions.level?.toUpperCase() || "UNKNOWN"}
                     </Badge>
                   </div>
@@ -550,7 +564,7 @@ export default function Results() {
                     <div key={i} className="p-4 rounded-lg bg-accent/30">
                       <div className="flex items-center justify-between mb-2">
                         <h4 className="font-medium">{source.category}</h4>
-                        <Badge className={`${getTierColor(source.visibility)} bg-background border`}>
+                        <Badge className={getTierColor(source.visibility)}>
                           {source.visibility?.toUpperCase()}
                         </Badge>
                       </div>
@@ -584,7 +598,7 @@ export default function Results() {
                           <Badge variant="outline">
                             Position #{dimension.our_brand_position?.Value || "N/A"}
                           </Badge>
-                          <Badge className={`${getSentimentColor(dimension.our_brand_sentiment)} bg-background border`}>
+                          <Badge className={getSentimentColor(dimension.our_brand_sentiment)}>
                             {dimension.our_brand_sentiment?.toUpperCase()}
                           </Badge>
                         </div>
@@ -611,7 +625,7 @@ export default function Results() {
               <CardContent>
                 <div className="space-y-4">
                   {analytics.analysis.recommendations.map((recommendation, i) => (
-                    <div key={i} className="p-4 rounded-lg bg-accent/50">
+                    <div key={i} className={`p-4 rounded-lg bg-accent/30 border-l-4 ${getEffortColor(recommendation.effort)}`}>
                       <div className="flex items-center space-x-2 mb-2">
                         <Badge variant="outline" className="font-semibold">
                           {recommendation.category}
