@@ -1,0 +1,247 @@
+{
+    "id": "example-analytics-123",
+    "type": "product",
+    "status": "completed",
+    "analytics": {
+        "insight_cards": [
+            {
+                "title": "Market Performance",
+                "value": "Dominant",
+                "trend": "up",
+                "description": "Google is presented as the most popular and accurate search engine with fast performance and broad feature coverage across Search, Images, Ads, Workspace, and AI integrations.",
+                "icon": "performance"
+            },
+            {
+                "title": "Competition Level",
+                "value": "High",
+                "trend": "stable",
+                "description": "Multiple competitors and alternatives are actively referenced including Bing, DuckDuckGo, Startpage, Ecosia, Qwant and specialized image sources which maintain competitive pressure on privacy and niche features.",
+                "icon": "competition"
+            },
+            {
+                "title": "Privacy Sentiment",
+                "value": "Concerns Noted",
+                "trend": "stable",
+                "description": "Search results repeatedly flag privacy concerns and recommend privacy-focused alternatives such as DuckDuckGo, Startpage and Brave Search while Google documents extensive privacy controls users can manage.",
+                "icon": "privacy"
+            },
+            {
+                "title": "Monetization and Ad Pricing",
+                "value": "Pay Per Click Dominant",
+                "trend": "stable",
+                "description": "Google Ads is highlighted as the primary monetization channel with typical CPC ranges cited and alternatives like Microsoft Advertising and Amazon Advertising noted for comparison.",
+                "icon": "monetization"
+            },
+            {
+                "title": "AI Features Availability",
+                "value": "Rolling Out",
+                "trend": "emerging",
+                "description": "Gemini and AI Mode in Search are referenced as new conversational features with limited regional availability and integration across Search, Chrome and Workspace reported.",
+                "icon": "ai"
+            }
+        ],
+        "recommended_actions": [
+            {
+                "category": "Privacy and Trust",
+                "priority": "high",
+                "action": "Simplify and highlight privacy controls and guidance pages to reduce perceived complexity and address recurring user privacy concerns referenced across search results.",
+                "impact": "Increase user trust and reduce churn to privacy-first alternatives",
+                "effort": "medium"
+            },
+            {
+                "category": "Product and Feature Adoption",
+                "priority": "high",
+                "action": "Accelerate clear documentation and in-product prompts for AI Mode and Gemini features to address limited rollout confusion and support wider adoption.",
+                "impact": "Higher engagement with AI features and improved user experience",
+                "effort": "high"
+            },
+            {
+                "category": "Ads and Monetization",
+                "priority": "medium",
+                "action": "Publish clearer small business guidance on expected CPC ranges and setup steps for Performance Max and Merchant Center workflows referenced in results.",
+                "impact": "Lower advertiser setup friction and improved ad spend efficiency",
+                "effort": "medium"
+            },
+            {
+                "category": "Support and Documentation",
+                "priority": "medium",
+                "action": "Consolidate help center, recovery, and developer resources links into curated flows for common intents such as account recovery, device support, and developer onboarding.",
+                "impact": "Reduce support friction and improve self-service resolution rates",
+                "effort": "low"
+            },
+            {
+                "category": "SEO and Content",
+                "priority": "medium",
+                "action": "Produce targeted content around common informational queries uncovered in the dataset such as image search filters, advanced search operators, account recovery, and Workspace comparisons.",
+                "impact": "Improve organic discovery for informational queries and reduce reliance on community sources",
+                "effort": "medium"
+            }
+        ],
+        "drilldowns": {
+            "query_explorer": [
+                {
+                    "query": "Google search homepage features Sign in flow and privacy settings explained",
+                    "performance_score": 5,
+                    "search_volume": "high",
+                    "competition": "high"
+                },
+                {
+                    "query": "how to use Images search and advanced filters from the search homepage",
+                    "performance_score": 5,
+                    "search_volume": "high",
+                    "competition": "medium"
+                },
+                {
+                    "query": "how businesses buy advertising on the search platform and typical ad pricing",
+                    "performance_score": 5,
+                    "search_volume": "high",
+                    "competition": "high"
+                },
+                {
+                    "query": "compare top web search engines for privacy accuracy and speed",
+                    "performance_score": 5,
+                    "search_volume": "medium",
+                    "competition": "medium"
+                },
+                {
+                    "query": "how to change search Settings personalization and location preferences",
+                    "performance_score": 5,
+                    "search_volume": "medium",
+                    "competition": "medium"
+                },
+                {
+                    "query": "How to enable AI Mode in Search and use Gemini for conversational answers",
+                    "performance_score": 5,
+                    "search_volume": "medium",
+                    "competition": "medium"
+                },
+                {
+                    "query": "Gemini image editing features how to use Canvas Image generation and Reimagine",
+                    "performance_score": 3,
+                    "search_volume": "low",
+                    "competition": "low"
+                },
+                {
+                    "query": "Compare Google Workspace plans and pricing for small businesses",
+                    "performance_score": 5,
+                    "search_volume": "medium",
+                    "competition": "medium"
+                },
+                {
+                    "query": "How to use google.com advanced search operators to find precise results",
+                    "performance_score": 0,
+                    "search_volume": "low",
+                    "competition": "unknown"
+                },
+                {
+                    "query": "Sign in problems on google.com and how to recover my account",
+                    "performance_score": 5,
+                    "search_volume": "high",
+                    "competition": "low"
+                }
+            ],
+            "sources_list": [
+                {
+                    "source": "https://support.google.com",
+                    "frequency": 23,
+                    "relevance_score": 10,
+                    "url": "https://support.google.com"
+                },
+                {
+                    "source": "https://www.google.com",
+                    "frequency": 15,
+                    "relevance_score": 6.5,
+                    "url": "https://www.google.com"
+                },
+                {
+                    "source": "https://duckduckgo.com",
+                    "frequency": 6,
+                    "relevance_score": 2.6,
+                    "url": "https://duckduckgo.com"
+                },
+                {
+                    "source": "https://www.bing.com",
+                    "frequency": 5,
+                    "relevance_score": 2.17,
+                    "url": "https://www.bing.com"
+                },
+                {
+                    "source": "https://www.ecosia.org",
+                    "frequency": 5,
+                    "relevance_score": 2.17,
+                    "url": "https://www.ecosia.org"
+                },
+                {
+                    "source": "https://startpage.com",
+                    "frequency": 3,
+                    "relevance_score": 1.3,
+                    "url": "https://startpage.com"
+                },
+                {
+                    "source": "https://www.yahoo.com",
+                    "frequency": 4,
+                    "relevance_score": 1.74,
+                    "url": "https://www.yahoo.com"
+                },
+                {
+                    "source": "https://ads.google.com",
+                    "frequency": 2,
+                    "relevance_score": 0.87,
+                    "url": "https://ads.google.com"
+                }
+            ],
+            "attributes_matrix": [
+                {
+                    "attribute": "Privacy Controls",
+                    "value": "Comprehensive but complex",
+                    "frequency": 12,
+                    "importance": "high"
+                },
+                {
+                    "attribute": "Search Accuracy",
+                    "value": "High accuracy and relevance",
+                    "frequency": 9,
+                    "importance": "high"
+                },
+                {
+                    "attribute": "Speed",
+                    "value": "Very fast",
+                    "frequency": 6,
+                    "importance": "medium"
+                },
+                {
+                    "attribute": "Image Search Features",
+                    "value": "Advanced filters available",
+                    "frequency": 6,
+                    "importance": "medium"
+                },
+                {
+                    "attribute": "Advertising Pricing",
+                    "value": "CPC based varies by industry",
+                    "frequency": 6,
+                    "importance": "high"
+                },
+                {
+                    "attribute": "AI and Gemini Features",
+                    "value": "Emerging conversational features with limited rollout",
+                    "frequency": 7,
+                    "importance": "high"
+                },
+                {
+                    "attribute": "Workspace Plans and Storage",
+                    "value": "Tiered plans with defined storage limits",
+                    "frequency": 5,
+                    "importance": "medium"
+                },
+                {
+                    "attribute": "Support and Help Resources",
+                    "value": "Extensive official documentation and community support",
+                    "frequency": 10,
+                    "importance": "high"
+                }
+            ]
+        }
+    },
+    "created_at": "2025-09-12T17:14:03.835Z",
+    "updated_at": "2025-09-12T17:15:46.97Z"
+}
