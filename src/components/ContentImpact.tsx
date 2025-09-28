@@ -12,12 +12,12 @@ import { Badge } from "@/components/ui/badge";
 interface ContentImpactProps {
   contentImpact: {
     [key: string]: {
-      top_3_brands: Array<{
+      top_3_brands?: Array<{
         brand: string;
         position: { Value: number };
         visibility: { Value: number };
       }>;
-      our_brand_position: {
+      our_brand_position?: {
         brand: string;
         position: { Value: number };
         visibility: { Value: number };
@@ -50,7 +50,7 @@ export const ContentImpact = ({ contentImpact }: ContentImpactProps) => {
                   <TableCell className="font-medium">{platform}</TableCell>
                   {[0, 1, 2].map((rankIndex) => (
                     <TableCell key={rankIndex}>
-                      {data.top_3_brands[rankIndex] ? (
+                      {data.top_3_brands && data.top_3_brands[rankIndex] ? (
                         <div className="text-center">
                           <div className="font-semibold">
                             {data.top_3_brands[rankIndex].brand}
@@ -68,15 +68,19 @@ export const ContentImpact = ({ contentImpact }: ContentImpactProps) => {
                     </TableCell>
                   ))}
                   <TableCell>
-                    <div className="text-center bg-primary/5 rounded p-2">
-                      <Badge variant="outline" className="text-xs">
-                        Position : {data.our_brand_position.position.Value}
-                      </Badge>
-                      <div className="text-sm text-muted-foreground">
-                        Visibility Score:{" "}
-                        {data.our_brand_position.visibility.Value}
+                    {data.our_brand_position ? (
+                      <div className="text-center bg-primary/5 rounded p-2">
+                        <Badge variant="outline" className="text-xs">
+                          Position : {data.our_brand_position.position.Value}
+                        </Badge>
+                        <div className="text-sm text-muted-foreground">
+                          Visibility Score:{" "}
+                          {data.our_brand_position.visibility.Value}
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      <div className="text-center text-muted-foreground">-</div>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}

@@ -12,14 +12,14 @@ import { Trophy, Star, Target } from "lucide-react";
 
 interface CompetitorAnalysisProps {
   analysis: {
-    dimensions: Array<{
+    dimensions?: Array<{
       dimension: string;
       top_3_competitors: string[];
       our_brand_position: { Value: number };
       our_brand_sentiment: string;
       evidence_snippet: string;
     }>;
-    table_1_by_dimension: Array<{
+    table_1_by_dimension?: Array<{
       dimension: string;
       top_5_competitors: Array<{
         brand: string;
@@ -28,7 +28,7 @@ interface CompetitorAnalysisProps {
       our_brand_position: { Value: number };
       our_brand_visibility_count: { Value: number };
     }>;
-    table_2_brand_profiles: Array<{
+    table_2_brand_profiles?: Array<{
       brand_name: string;
       ai_description: string;
       ai_sentiment: string;
@@ -82,8 +82,9 @@ export const CompetitorAnalysis = ({ analysis }: CompetitorAnalysisProps) => {
       </h2>
 
       {/* Dimensions Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {analysis.dimensions.map((dimension, index) => (
+      {analysis.dimensions && analysis.dimensions.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {analysis.dimensions.map((dimension, index) => (
           <Card
             key={index}
             className={getCardBorderColor(dimension.our_brand_sentiment)}
@@ -127,11 +128,13 @@ export const CompetitorAnalysis = ({ analysis }: CompetitorAnalysisProps) => {
               </div>
             </CardContent>
           </Card>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* Competitive Rankings by Dimension */}
-      <Card>
+      {analysis.table_1_by_dimension && analysis.table_1_by_dimension.length > 0 && (
+        <Card>
         <CardHeader>
           <CardTitle className="text-lg">
             Competitive Rankings by Dimension
@@ -197,10 +200,12 @@ export const CompetitorAnalysis = ({ analysis }: CompetitorAnalysisProps) => {
             </TableBody>
           </Table>
         </CardContent>
-      </Card>
+        </Card>
+      )}
 
       {/* Brand Profiles */}
-      <Card>
+      {analysis.table_2_brand_profiles && analysis.table_2_brand_profiles.length > 0 && (
+        <Card>
         <CardHeader>
           <CardTitle className="text-lg">Competitor Brand Profiles</CardTitle>
         </CardHeader>
@@ -264,7 +269,8 @@ export const CompetitorAnalysis = ({ analysis }: CompetitorAnalysisProps) => {
             ))}
           </div>
         </CardContent>
-      </Card>
+        </Card>
+      )}
     </div>
   );
 };

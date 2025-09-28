@@ -254,42 +254,42 @@ export default function Results() {
           
           if (analysisToUse) {
             setCurrentAnalytics(analysisToUse);
+          
+          // Check the status to determine if we should stop polling
+          const status = analysisToUse.status?.toLowerCase() || "";
+          
+          if (status === "completed") {
+            // Analysis is complete, stop polling and loading
+            setIsLoading(false);
+            setError(null);
+            console.log("Brand analysis completed successfully");
             
-            // Check the status to determine if we should stop polling
-            const status = analysisToUse.status?.toLowerCase() || "";
-            
-            if (status === "completed") {
-              // Analysis is complete, stop polling and loading
-              setIsLoading(false);
-              setError(null);
-              console.log("Brand analysis completed successfully");
-              
-              // Clear any existing timer
-              if (pollingRef.current.productTimer) {
-                clearTimeout(pollingRef.current.productTimer);
-              }
-            } else if (status === "failed") {
-              // Analysis failed, stop polling and show error
-              setIsLoading(false);
-              setError("Analysis failed. Please try again.");
-              toast.error("Analysis failed. Please try again.");
-              
-              // Clear any existing timer
-              if (pollingRef.current.productTimer) {
-                clearTimeout(pollingRef.current.productTimer);
-              }
-            } else {
-              // Analysis is still in progress, continue polling every 2 minutes
-              setError(null);
-              
-              if (pollingRef.current.productTimer) {
-                clearTimeout(pollingRef.current.productTimer);
-              }
-              
-              pollingRef.current.productTimer = window.setTimeout(() => {
-                pollProductAnalytics(productId);
-              }, 5000); // 2 minutes = 120,000 milliseconds
+            // Clear any existing timer
+            if (pollingRef.current.productTimer) {
+              clearTimeout(pollingRef.current.productTimer);
             }
+          } else if (status === "failed") {
+            // Analysis failed, stop polling and show error
+            setIsLoading(false);
+            setError("Analysis failed. Please try again.");
+            toast.error("Analysis failed. Please try again.");
+            
+            // Clear any existing timer
+            if (pollingRef.current.productTimer) {
+              clearTimeout(pollingRef.current.productTimer);
+            }
+          } else {
+            // Analysis is still in progress, continue polling every 10 seconds
+            setError(null);
+            
+            if (pollingRef.current.productTimer) {
+              clearTimeout(pollingRef.current.productTimer);
+            }
+            
+            pollingRef.current.productTimer = window.setTimeout(() => {
+              pollProductAnalytics(productId);
+            }, 10000); // Poll every 10 seconds until completed
+          }
           } else {
             // No analysis data found, continue polling
             if (pollingRef.current.productTimer) {
@@ -298,7 +298,7 @@ export default function Results() {
             
             pollingRef.current.productTimer = window.setTimeout(() => {
               pollProductAnalytics(productId);
-            }, 120000); // 2 minutes
+            }, 10000); // Poll every 10 seconds
           }
         } else {
           throw new Error("Invalid response format");
