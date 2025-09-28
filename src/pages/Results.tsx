@@ -262,17 +262,15 @@ export default function Results() {
             // Analysis is complete, stop polling and loading
             setIsLoading(false);
             setError(null);
-            console.log("Brand analysis completed successfully");
             
             // Clear any existing timer
             if (pollingRef.current.productTimer) {
               clearTimeout(pollingRef.current.productTimer);
             }
           } else if (status === "failed") {
-            // Analysis failed, stop polling and show error
+            // Analysis failed, stop polling but don't show error
             setIsLoading(false);
-            setError("Analysis failed. Please try again.");
-            toast.error("Analysis failed. Please try again.");
+            setError(null);
             
             // Clear any existing timer
             if (pollingRef.current.productTimer) {
@@ -283,9 +281,7 @@ export default function Results() {
             setError(null);
             
             // Only show the "analysis started" message once
-            if (!pollingRef.current.hasShownStartMessage) {
-              console.log("Brand analysis generation started");
-              toast.success("Brand analysis generation started");
+            if (!pollingRef.current.hasShownStartMessage && mountedRef.current) {
               pollingRef.current.hasShownStartMessage = true;
             }
             
@@ -294,7 +290,9 @@ export default function Results() {
             }
             
             pollingRef.current.productTimer = window.setTimeout(() => {
-              pollProductAnalytics(productId);
+              if (mountedRef.current) {
+                pollProductAnalytics(productId);
+              }
             }, 30000); // Poll every 30 seconds
           }
           } else {
@@ -304,7 +302,9 @@ export default function Results() {
             }
             
             pollingRef.current.productTimer = window.setTimeout(() => {
-              pollProductAnalytics(productId);
+              if (mountedRef.current) {
+                pollProductAnalytics(productId);
+              }
             }, 30000); // Poll every 30 seconds
           }
         } else {
@@ -312,14 +312,17 @@ export default function Results() {
         }
       } catch (err) {
         console.error("Failed to fetch analytics:", err);
-        setError("Failed to fetch analytics. Please try again.");
-        toast.error("Failed to fetch analytics");
-        setIsLoading(false);
-        
-        // Clear any existing timer on error
+        // Continue polling on error, don't show error messages
         if (pollingRef.current.productTimer) {
           clearTimeout(pollingRef.current.productTimer);
         }
+        
+        // Retry after 30 seconds on error
+        pollingRef.current.productTimer = window.setTimeout(() => {
+          if (mountedRef.current) {
+            pollProductAnalytics(productId);
+          }
+        }, 30000);
       }
     },
     [accessToken]
@@ -341,40 +344,13 @@ export default function Results() {
     return (
       <Layout>
         <div className="container mx-auto px-4 py-20">
-          <div className="flex items-center justify-center min-h-[60vh]">
-            <div className="text-center max-w-2xl mx-auto space-y-6">
-              <div className="relative">
-                <Search className="w-20 h-20 mx-auto text-primary mb-6 animate-pulse" />
-                <div className="absolute inset-0 w-20 h-20 mx-auto border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-              </div>
-              
-              <div className="space-y-4">
-                <h2 className="text-3xl font-bold text-foreground">
-                  Brand Intelligence Analysis in Progress
-                </h2>
-                <div className="space-y-2">
-                  <p className="text-lg text-muted-foreground">
-                    Our advanced AI is conducting a comprehensive analysis of your brand's market positioning
-                  </p>
-                  <p className="text-base text-muted-foreground">
-                    Please allow a few minutes while we gather insights from multiple data sources and competitive intelligence platforms
-                  </p>
-                </div>
-                
-                <div className="mt-8 p-6 bg-gradient-to-r from-primary/5 to-secondary/5 rounded-lg border border-primary/20">
-                  <p className="text-sm font-medium text-foreground italic">
-                    "Strategic insights are born from patience and precision in analysis"
-                  </p>
-                </div>
-              </div>
-              
-              {error && (
-                <div className="mt-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
-                  <p className="text-destructive font-medium">
-                    {error}
-                  </p>
-                </div>
-              )}
+          <div className="flex items-center justify-center min-h-64">
+            <div className="text-center">
+              <Search className="w-16 h-16 mx-auto text-muted-foreground mb-4 animate-spin" />
+              <h2 className="text-2xl font-bold mb-2">Analysis Started</h2>
+              <p className="text-muted-foreground">
+                We are preparing your brand's comprehensive analysis. This strategic process ensures precision in every insight.
+              </p>
             </div>
           </div>
         </div>
