@@ -2,21 +2,14 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/auth-context";
 import { Layout } from "@/components/Layout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import {
-  ArrowLeft,
-  Calendar,
-  Search,
-  TrendingUp,
-  TrendingDown,
-  Minus,
-  Globe,
-  Users,
-  BarChart3,
-  Target,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { BrandHeader } from "@/components/BrandHeader";
+import { OverallInsights } from "@/components/OverallInsights";
+import { SourceAnalysis } from "@/components/SourceAnalysis";
+import { CompetitorAnalysis } from "@/components/CompetitorAnalysis";
+import { ContentImpact } from "@/components/ContentImpact";
+import { Recommendations } from "@/components/Recommendations";
+import { QueryAnalysis } from "@/components/QueryAnalysis";
+import { Search } from "lucide-react";
 import { toast } from "sonner";
 import { getProductAnalytics } from "@/apiHelpers";
 
@@ -30,7 +23,7 @@ interface InputStateAny {
   analytics?: any;
 }
 
-// New interface for the API response structure
+// Updated interface for the API response structure
 interface AnalyticsResponse {
   analytics: AnalyticsData[];
   count: number;
@@ -38,7 +31,7 @@ interface AnalyticsResponse {
   product_id: string;
 }
 
-// Updated AnalyticsData interface to match new nested structure
+// Updated AnalyticsData interface to match the provided JSON structure
 interface AnalyticsData {
   id?: string;
   product_id?: string;
@@ -51,6 +44,11 @@ interface AnalyticsData {
     status?: string;
     brand_name?: string;
     brand_website?: string;
+    model_reported?: {
+      model_name?: string;
+      model_version?: string;
+      report_generated_at?: string;
+    };
     analysis?: {
       overall_insights?: {
         ai_visibility?: {
@@ -141,6 +139,11 @@ interface AnalyticsData {
       }>;
       sources_mentioned: string[];
     }>;
+    visual_guidance?: {
+      scorecard_note?: string;
+      competitor_table_note?: string;
+      source_chart_note?: string;
+    };
   };
   created_at?: string;
   updated_at?: string;
@@ -156,7 +159,8 @@ export default function Results() {
   const [resultsData, setResultsData] = useState<ResultsData | null>(null);
   const [analyticsResponse, setAnalyticsResponse] = useState<AnalyticsResponse | null>(null);
   const [currentAnalytics, setCurrentAnalytics] = useState<AnalyticsData | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   const { user } = useAuth();
   const accessToken = localStorage.getItem("access_token") || "";
@@ -164,77 +168,6 @@ export default function Results() {
   const location = useLocation();
   const pollingRef = useRef<{ productTimer?: number }>({});
   const mountedRef = useRef(true);
-
-  const getColorClass = (
-    text?: string,
-    type: "priority" | "importance" = "priority"
-  ) => {
-    if (!text) return "";
-    const lower = text.toLowerCase();
-
-    const baseClasses = type === "priority" ? "font-semibold" : "font-medium";
-
-    if (lower.includes("high"))
-      return `${baseClasses} text-white bg-destructive border-destructive`;
-    if (lower.includes("medium"))
-      return `${baseClasses} text-background bg-warning border-warning`;
-    if (lower.includes("low"))
-      return `${baseClasses} text-white bg-success border-success`;
-
-    return `${baseClasses} text-muted-foreground bg-muted border-muted`;
-  };
-
-  const getTierColor = (tier?: string) => {
-    const tierLower = (tier || "").toLowerCase();
-    switch (tierLower) {
-      case "high":
-        return "text-destructive bg-destructive/10 border-destructive/20";
-      case "medium":
-        return "text-warning bg-warning/10 border-warning/20";
-      case "low":
-        return "text-success bg-success/10 border-success/20";
-      default:
-        return "text-muted-foreground bg-muted/10 border-muted/20";
-    }
-  };
-
-  const getSentimentColor = (sentiment?: string) => {
-    const sentimentLower = (sentiment || "").toLowerCase();
-    switch (sentimentLower) {
-      case "positive":
-        return "text-success bg-success/10 border-success/20";
-      case "negative":
-        return "text-destructive bg-destructive/10 border-destructive/20";
-      case "neutral":
-      default:
-        return "text-warning bg-warning/10 border-warning/20";
-    }
-  };
-
-  const getEffortColor = (effort?: string) => {
-    const effortLower = (effort || "").toLowerCase();
-    switch (effortLower) {
-      case "high":
-        return "border-destructive/30";
-      case "medium":
-        return "border-warning/30";
-      case "low":
-        return "border-success/30";
-      default:
-        return "border-muted/30";
-    }
-  };
-
-  const formatDate = (iso?: string) => {
-    const d = iso ? new Date(iso) : new Date();
-    return d.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
 
   const getCleanDomainName = (url?: string) => {
     if (!url) return "";
@@ -303,34 +236,83 @@ export default function Results() {
   const pollProductAnalytics = useCallback(
     async (productId: string) => {
       if (!productId || !accessToken || !mountedRef.current) return;
+      
       try {
-        setIsLoading(true);
         const today = new Date().toISOString().split("T")[0];
         const res = await getProductAnalytics(productId, today, accessToken);
+        
         if (!mountedRef.current) return;
 
-        if (res) {
+        if (res && res.analytics && Array.isArray(res.analytics)) {
           setAnalyticsResponse(res);
-          if (res.analytics && res.analytics.length > 0) {
-            setCurrentAnalytics(res.analytics[0]);
+          
+          // Find the most recent completed analysis or the first one
+          const completedAnalysis = res.analytics.find(item => 
+            item.status?.toLowerCase() === "completed"
+          );
+          const analysisToUse = completedAnalysis || res.analytics[0];
+          
+          if (analysisToUse) {
+            setCurrentAnalytics(analysisToUse);
+            
+            // Check the status to determine if we should stop polling
+            const status = analysisToUse.status?.toLowerCase() || "";
+            
+            if (status === "completed") {
+              // Analysis is complete, stop polling and loading
+              setIsLoading(false);
+              setError(null);
+              console.log("Brand analysis completed successfully");
+              
+              // Clear any existing timer
+              if (pollingRef.current.productTimer) {
+                clearTimeout(pollingRef.current.productTimer);
+              }
+            } else if (status === "failed") {
+              // Analysis failed, stop polling and show error
+              setIsLoading(false);
+              setError("Analysis failed. Please try again.");
+              toast.error("Analysis failed. Please try again.");
+              
+              // Clear any existing timer
+              if (pollingRef.current.productTimer) {
+                clearTimeout(pollingRef.current.productTimer);
+              }
+            } else {
+              // Analysis is still in progress, continue polling every 2 minutes
+              setError(null);
+              
+              if (pollingRef.current.productTimer) {
+                clearTimeout(pollingRef.current.productTimer);
+              }
+              
+              pollingRef.current.productTimer = window.setTimeout(() => {
+                pollProductAnalytics(productId);
+              }, 5000); // 2 minutes = 120,000 milliseconds
+            }
+          } else {
+            // No analysis data found, continue polling
+            if (pollingRef.current.productTimer) {
+              clearTimeout(pollingRef.current.productTimer);
+            }
+            
+            pollingRef.current.productTimer = window.setTimeout(() => {
+              pollProductAnalytics(productId);
+            }, 120000); // 2 minutes
           }
-        }
-
-        const status = res?.analytics?.[0]?.status?.toLowerCase() || "";
-        if (status !== "completed") {
-          if (pollingRef.current.productTimer) {
-            clearTimeout(pollingRef.current.productTimer);
-          }
-          pollingRef.current.productTimer = window.setTimeout(() => {
-            pollProductAnalytics(productId);
-          }, 5000);
         } else {
-          console.log("Brand analysis completed");
-          setIsLoading(false);
+          throw new Error("Invalid response format");
         }
       } catch (err) {
+        console.error("Failed to fetch analytics:", err);
+        setError("Failed to fetch analytics. Please try again.");
         toast.error("Failed to fetch analytics");
         setIsLoading(false);
+        
+        // Clear any existing timer on error
+        if (pollingRef.current.productTimer) {
+          clearTimeout(pollingRef.current.productTimer);
+        }
       }
     },
     [accessToken]
@@ -345,8 +327,8 @@ export default function Results() {
     }
   }, [resultsData, pollProductAnalytics]);
 
-  // Loading state
-  if (isLoading || !resultsData) {
+  // Show loading state if still loading or if analysis is not completed
+  if (isLoading || !resultsData || !currentAnalytics || currentAnalytics.status?.toLowerCase() !== "completed") {
     return (
       <Layout>
         <div className="container mx-auto px-4 py-20">
@@ -355,8 +337,13 @@ export default function Results() {
               <Search className="w-16 h-16 mx-auto text-muted-foreground mb-4 animate-spin" />
               <h2 className="text-2xl font-bold mb-2">Analyzing...</h2>
               <p className="text-muted-foreground">
-                Please wait while we prepare your results.
+                Please wait while we prepare your results. This may take a few minutes.
               </p>
+              {error && (
+                <p className="text-destructive mt-2">
+                  {error}
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -364,291 +351,69 @@ export default function Results() {
     );
   }
 
-  const overallStatus = currentAnalytics?.status || "pending";
-  const analytics = currentAnalytics?.analytics;
-  const overallInsights = analytics?.analysis?.overall_insights;
-  const aiVisibility = overallInsights?.ai_visibility;
-  const brandMentions = overallInsights?.brand_mentions;
-  const dominantSentiment = overallInsights?.dominant_sentiment;
+  // Extract data for components (only when analysis is completed)
+  const analytics = currentAnalytics.analytics;
+  const analysis = analytics?.analysis;
   
-  const websiteName = getCleanDomainName(
-    analytics?.brand_name || 
-    resultsData.website || 
-    resultsData.product.name
-  );
+  // Prepare data for BrandHeader
+  const brandName = analytics?.brand_name || getCleanDomainName(resultsData.website) || "Unknown Brand";
+  const brandWebsite = analytics?.brand_website || resultsData.website || "";
+  const keywordsAnalyzed = analysis?.overall_insights?.ai_visibility?.distinct_queries_count?.Value || resultsData.search_keywords?.length || 0;
+  const status = currentAnalytics.status || "completed";
+  const date = currentAnalytics.updated_at || currentAnalytics.date || new Date().toISOString();
 
   return (
     <Layout>
-      <div className="min-h-screen">
-        {/* Header */}
-        <div className="sticky top-16 z-40 bg-background/95 backdrop-blur border-b">
-          <div className="container mx-auto px-4 py-4">
-            <div className="flex flex-col space-y-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-lg bg-gradient-hero flex items-center justify-center text-white font-bold">
-                  {websiteName?.charAt(0)?.toUpperCase() || "C"}
-                </div>
-                <div>
-                  <h1 className="font-semibold text-lg">
-                    {analytics?.brand_name || websiteName || "Unknown Website"}
-                  </h1>
-                  <p className="text-sm text-muted-foreground">
-                    Analysis completed on {formatDate(currentAnalytics?.updated_at || currentAnalytics?.date)}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3 text-sm">
-                <div className="flex items-center space-x-2">
-                  <Search className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">Keywords analyzed:</span>
-                  <span className="font-semibold">
-                    {resultsData.search_keywords?.length ?? 0}
-                  </span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Calendar className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">Status:</span>
-                  <span className="font-semibold">{overallStatus}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Main */}
-        <div className="container mx-auto px-4 py-8">
-          {/* Show banner when analyzing */}
-          {overallStatus !== "completed" && (
-            <div className="mb-6 p-4 rounded-md bg-warning/10 border border-warning/20 text-sm">
-              <div className="flex items-center gap-3">
-                <Search className="w-5 h-5 animate-spin text-muted-foreground" />
-                <div>
-                  <div className="font-semibold">Analysis in progress</div>
-                  <div className="text-xs text-muted-foreground">
-                    We are gathering and analyzing AI answers — this usually takes a few seconds to a couple of minutes.
-                  </div>
-                </div>
-              </div>
-            </div>
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 py-8 space-y-8">
+          <BrandHeader 
+            brandName={brandName}
+            brandWebsite={brandWebsite}
+            keywordsAnalyzed={keywordsAnalyzed}
+            status={status}
+            date={date}
+          />
+          
+          {analysis?.overall_insights && (
+            <>
+            <OverallInsights insights={analysis.overall_insights} />
+            <div className="border-t border-foreground my-12" />
+            </>
           )}
-
-          {/* Summary Section */}
-          {overallInsights?.summary && (
-            <div className="mb-6 animate-in fade-in-50 zoom-in-95 duration-300">
-              <Card className="card-gradient border-0">
-                <CardHeader>
-                  <CardTitle className="text-xl">Analysis Summary</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground leading-relaxed">
-                    {overallInsights.summary}
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
+          
+          {analysis?.source_analysis && (
+            <>
+            <SourceAnalysis sources={analysis.source_analysis} />
+            <div className="border-t border-foreground my-12" />
+            </>
           )}
-
-          {/* AI Sentiment */}
-          {dominantSentiment?.statement && (
-            <div className="mb-6 animate-in fade-in-50 zoom-in-95 duration-300 delay-100">
-              <Card className="card-gradient border-0">
-                <CardHeader>
-                  <CardTitle className="text-xl">AI Sentiment</CardTitle>
-                </CardHeader>
-                <CardContent>
-                   <div className="flex items-center gap-3 mb-2">
-                    <span className="text-sm font-medium text-muted-foreground">Overall Sentiment:</span>
-                    <Badge className={getSentimentColor(dominantSentiment.sentiment)}>
-                      {dominantSentiment.sentiment?.toUpperCase() || "NEUTRAL"}
-                    </Badge>
-                  </div>
-                  <p className="text-muted-foreground leading-relaxed">
-                    {dominantSentiment.statement}
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
+          
+          {analysis?.competitor_analysis && (
+            <>
+            <CompetitorAnalysis analysis={analysis.competitor_analysis} />
+            <div className="border-t border-foreground my-12" />
+            </>
           )}
-
-          {/* Overall Insights */}
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
-            {aiVisibility && (
-              <Card className="card-gradient border-0">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center space-x-2">
-                      <BarChart3 className="w-4 h-4 text-primary" />
-                      <span className="text-sm font-medium">AI Visibility</span>
-                    </div>
-                     <Badge className={getTierColor(aiVisibility.tier)}>
-                      {aiVisibility.tier?.toUpperCase() || "UNKNOWN"}
-                    </Badge>
-                  </div>
-                  <div className="text-lg font-semibold mb-2">
-                    {aiVisibility.ai_visibility_score?.Value || 0}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Score: {aiVisibility.weighted_mentions_total?.Value || 0} × {aiVisibility.distinct_queries_count?.Value || 0}
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-
-            {brandMentions && (
-              <Card className="card-gradient border-0">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center space-x-2">
-                      <Users className="w-4 h-4 text-primary" />
-                      <span className="text-sm font-medium">Brand Mentions</span>
-                    </div>
-                     <Badge className={getTierColor(brandMentions.level)}>
-                      {brandMentions.level?.toUpperCase() || "UNKNOWN"}
-                    </Badge>
-                  </div>
-                  <div className="text-lg font-semibold mb-2">
-                    {brandMentions.mentions_count?.Value || 0}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    From {brandMentions.total_sources_checked?.Value || 0} sources
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-
-            <Card className="card-gradient border-0">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center space-x-2">
-                    <Globe className="w-4 h-4 text-primary" />
-                    <span className="text-sm font-medium">Brand Name</span>
-                  </div>
-                </div>
-                <div className="text-lg font-semibold mb-2">
-                  {analytics?.brand_name || "Unknown"}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Primary brand identity
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="card-gradient border-0">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center space-x-2">
-                    <Target className="w-4 h-4 text-primary" />
-                    <span className="text-sm font-medium">Analysis Type</span>
-                  </div>
-                </div>
-                <div className="text-lg font-semibold mb-2">
-                  {analytics?.type?.replace('_', ' ')?.toUpperCase() || "Intelligence"}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Report category
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Source Analysis */}
-          {analytics?.analysis?.source_analysis && (
-            <Card className="card-gradient border-0 mb-8">
-              <CardHeader>
-                <CardTitle className="text-xl">Source Analysis</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {analytics.analysis.source_analysis.map((source, i) => (
-                    <div key={i} className="p-4 rounded-lg bg-accent/30">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-medium">{source.category}</h4>
-                        <Badge className={getTierColor(source.visibility)}>
-                          {source.visibility?.toUpperCase()}
-                        </Badge>
-                      </div>
-                      <div className="text-sm text-muted-foreground mb-2">
-                        {source.total_citations?.Value || 0} citations
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {source.sources?.slice(0, 3).join(", ")}
-                        {source.sources?.length > 3 && ` +${source.sources.length - 3} more`}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+          
+          {analysis?.content_impact && (
+            <>
+            <ContentImpact contentImpact={analysis.content_impact} />
+            <div className="border-t border-foreground my-12" />
+            </>
           )}
-
-          {/* Competitor Analysis */}
-          {analytics?.analysis?.competitor_analysis?.dimensions && (
-            <Card className="card-gradient border-0 mb-8">
-              <CardHeader>
-                <CardTitle className="text-xl">Competitor Analysis</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {analytics.analysis.competitor_analysis.dimensions.map((dimension, i) => (
-                    <div key={i} className="p-4 rounded-lg bg-accent/30">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-medium">{dimension.dimension}</h4>
-                        <div className="flex items-center space-x-2">
-                          <Badge variant="outline">
-                            Position #{dimension.our_brand_position?.Value || "N/A"}
-                          </Badge>
-                          <Badge className={getSentimentColor(dimension.our_brand_sentiment)}>
-                            {dimension.our_brand_sentiment?.toUpperCase()}
-                          </Badge>
-                        </div>
-                      </div>
-                      <div className="text-sm text-muted-foreground mb-2">
-                        Top competitors: {dimension.top_3_competitors?.join(", ")}
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        {dimension.evidence_snippet}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+          
+          {analysis?.recommendations && (
+            <>
+            <Recommendations recommendations={analysis.recommendations} />
+            <div className="border-t border-foreground my-12" />
+            </>
           )}
-
-          {/* Recommendations */}
-          {analytics?.analysis?.recommendations && (
-            <Card className="card-gradient border-0">
-              <CardHeader>
-                <CardTitle className="text-xl">Recommendations</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {analytics.analysis.recommendations.map((recommendation, i) => (
-                    <div key={i} className={`p-4 rounded-lg bg-accent/30 border-l-4 ${getEffortColor(recommendation.effort)}`}>
-                      <div className="flex items-center space-x-2 mb-2">
-                        <Badge variant="outline" className="font-semibold">
-                          {recommendation.category}
-                        </Badge>
-                        <Badge className={getColorClass(recommendation.effort)} variant="outline">
-                          {recommendation.effort} effort
-                        </Badge>
-                      </div>
-                      <div className="mb-2">
-                        <p className="text-sm font-medium mb-1">{recommendation.action}</p>
-                        <p className="text-xs text-muted-foreground mb-1">
-                          <span className="font-medium">Timeline:</span> {recommendation.timeframe}
-                        </p>
-                      </div>
-                      <div className="text-xs text-muted-foreground space-y-1">
-                        <p><span className="font-medium">Rationale:</span> {recommendation.rationale}</p>
-                        <p><span className="font-medium">Expected Impact:</span> {recommendation.expected_impact}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+          
+          {analytics?.raw_model_outputs_mapped && (
+            <>
+            <QueryAnalysis rawOutputs={analytics.raw_model_outputs_mapped} />
+            <div className="border-t border-foreground my-8" />
+            </>
           )}
         </div>
       </div>

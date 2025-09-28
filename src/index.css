@@ -150,6 +150,12 @@ All colors MUST be HSL. Inspired by GeoRankers branding with blue gradients.
     background: hsl(var(--gradient-bg));
   }
 
+  .executive-summary {
+    border: 2px solid;
+    border-image: var(--gradient-hero) 1;
+    box-shadow: 0 10px 15px -3px hsl(210 100% 68% / 0.2), 0 4px 6px -4px hsl(210 100% 68% / 0.1);
+  }
+
   /* Custom component classes */
   .gradient-text {
     background: var(--gradient-hero);
@@ -173,5 +179,17 @@ All colors MUST be HSL. Inspired by GeoRankers branding with blue gradients.
 
   .transition-bounce {
     transition: var(--transition-bounce);
+  }
+}
+
+@layer utilities {
+  .border-excutive-summary {
+    border: 2px solid transparent;
+    background: linear-gradient(hsl(var(--background)), hsl(var(--background))) padding-box,
+                var(--gradient-hero) border-box;
+  }
+  
+  .shadow-excutive-summary\/20 {
+    box-shadow: 0 10px 15px -3px hsl(210 100% 68% / 0.2), 0 4px 6px -4px hsl(210 100% 68% / 0.1);
   }
 }

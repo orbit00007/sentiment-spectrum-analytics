@@ -11,7 +11,6 @@ import InputPage from "./pages/InputPage";
 import Results from "./pages/Results";
 import NotFound from "./pages/NotFound";
 import { ScrollToTop } from "./ScrollToTop";
-import ExampleResults from "./pages/exampleResult"
 
 const queryClient = new QueryClient();
 
@@ -29,7 +28,6 @@ const App = () => (
             <Route path="/register" element={<Register />} />
             <Route path="/input" element={<InputPage />} />
             <Route path="/results" element={<Results />} />
-            <Route path="/example-results" element={<ExampleResults />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
