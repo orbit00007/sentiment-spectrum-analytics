@@ -166,7 +166,7 @@ export default function Results() {
   const accessToken = localStorage.getItem("access_token") || "";
   const navigate = useNavigate();
   const location = useLocation();
-  const pollingRef = useRef<{ productTimer?: number }>({});
+  const pollingRef = useRef<{ productTimer?: number; hasShownStartMessage?: boolean }>({});
   const mountedRef = useRef(true);
 
   const getCleanDomainName = (url?: string) => {
@@ -279,8 +279,15 @@ export default function Results() {
               clearTimeout(pollingRef.current.productTimer);
             }
           } else {
-            // Analysis is still in progress, continue polling every 10 seconds
+            // Analysis is still in progress, continue polling every 30 seconds
             setError(null);
+            
+            // Only show the "analysis started" message once
+            if (!pollingRef.current.hasShownStartMessage) {
+              console.log("Brand analysis generation started");
+              toast.success("Brand analysis generation started");
+              pollingRef.current.hasShownStartMessage = true;
+            }
             
             if (pollingRef.current.productTimer) {
               clearTimeout(pollingRef.current.productTimer);
@@ -288,7 +295,7 @@ export default function Results() {
             
             pollingRef.current.productTimer = window.setTimeout(() => {
               pollProductAnalytics(productId);
-            }, 10000); // Poll every 10 seconds until completed
+            }, 30000); // Poll every 30 seconds
           }
           } else {
             // No analysis data found, continue polling
@@ -298,7 +305,7 @@ export default function Results() {
             
             pollingRef.current.productTimer = window.setTimeout(() => {
               pollProductAnalytics(productId);
-            }, 10000); // Poll every 10 seconds
+            }, 30000); // Poll every 30 seconds
           }
         } else {
           throw new Error("Invalid response format");
@@ -320,6 +327,8 @@ export default function Results() {
 
   useEffect(() => {
     if (resultsData?.product?.id) {
+      // Reset the start message flag for new analysis
+      pollingRef.current.hasShownStartMessage = false;
       if (pollingRef.current.productTimer) {
         clearTimeout(pollingRef.current.productTimer);
       }
@@ -332,17 +341,39 @@ export default function Results() {
     return (
       <Layout>
         <div className="container mx-auto px-4 py-20">
-          <div className="flex items-center justify-center min-h-64">
-            <div className="text-center">
-              <Search className="w-16 h-16 mx-auto text-muted-foreground mb-4 animate-spin" />
-              <h2 className="text-2xl font-bold mb-2">Analyzing...</h2>
-              <p className="text-muted-foreground">
-                Please wait while we prepare your results. This may take a few minutes.
-              </p>
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <div className="text-center max-w-2xl mx-auto space-y-6">
+              <div className="relative">
+                <Search className="w-20 h-20 mx-auto text-primary mb-6 animate-pulse" />
+                <div className="absolute inset-0 w-20 h-20 mx-auto border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+              </div>
+              
+              <div className="space-y-4">
+                <h2 className="text-3xl font-bold text-foreground">
+                  Brand Intelligence Analysis in Progress
+                </h2>
+                <div className="space-y-2">
+                  <p className="text-lg text-muted-foreground">
+                    Our advanced AI is conducting a comprehensive analysis of your brand's market positioning
+                  </p>
+                  <p className="text-base text-muted-foreground">
+                    Please allow a few minutes while we gather insights from multiple data sources and competitive intelligence platforms
+                  </p>
+                </div>
+                
+                <div className="mt-8 p-6 bg-gradient-to-r from-primary/5 to-secondary/5 rounded-lg border border-primary/20">
+                  <p className="text-sm font-medium text-foreground italic">
+                    "Strategic insights are born from patience and precision in analysis"
+                  </p>
+                </div>
+              </div>
+              
               {error && (
-                <p className="text-destructive mt-2">
-                  {error}
-                </p>
+                <div className="mt-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+                  <p className="text-destructive font-medium">
+                    {error}
+                  </p>
+                </div>
               )}
             </div>
           </div>
