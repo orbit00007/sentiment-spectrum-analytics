@@ -13,7 +13,7 @@ export const TOOLTIP_CONTENT = {
   aiVisibility: {
     title: "AI Visibility Score",
     description: "Measures how prominently your brand appears in AI-generated responses.",
-    formula: "Score based on weighted mentions: Top 2 positions (highest weight) + Top 5 positions (medium weight) + Later mentions (lower weight)",
+    formula: "Score = (Top 2 Mentions × 3) + (Top 5 Mentions × 2) + (Later Mentions × 1)",
     tiers: {
       high: "≥ 250 points",
       medium: "100-249 points", 
@@ -47,6 +47,16 @@ export const TOOLTIP_CONTENT = {
     description: "Strategic overview of your brand's AI visibility performance, including competitive positioning, key strengths and weaknesses, and prioritized action items for improvement."
   },
 
+  // Brand Header
+  brandHeader: {
+    brandName: "Your brand's name being analyzed for AI visibility",
+    website: "Official website URL of the brand",
+    keywords: "Target keywords analyzed to measure AI visibility across platforms",
+    status: "Current analysis status: Completed, Processing, or Error",
+    model: "AI model used to perform the visibility analysis (e.g., GPT-5)",
+    date: "Timestamp when the analysis was completed"
+  },
+
   // Platform-wise Performance
   platformPerformance: {
     title: "Platform-wise Brand Performance",
@@ -63,7 +73,9 @@ export const TOOLTIP_CONTENT = {
   sourceAnalysis: {
     title: "Source Analysis",
     description: "Detailed breakdown of individual AI sources where your brand appears, showing mention counts and visibility ratings.",
-    calculation: "Each source is rated based on your brand's mention ratio compared to the highest-mentioned brand in that specific source."
+    calculation: "Each source is rated based on your brand's mention ratio compared to the highest-mentioned brand in that specific source.",
+    mentions: "Total number of times your brand appears in this source category",
+    tier: "Performance tier calculated using: Tier = (Mentions / Max Mentions in Row) × 100. High: ≥70%, Medium: 40-69%, Low: <40%"
   },
 
   // Query Analysis
@@ -77,21 +89,26 @@ export const TOOLTIP_CONTENT = {
   competitorAnalysis: {
     title: "Competitor Analysis",
     description: "Comparative analysis of your brand versus competitors across all AI platforms.",
-    explanation: "Shows total mentions, visibility scores, and relative market position against key competitors."
+    visibilityTable: "Shows total visibility scores for each competitor across different keywords analyzed",
+    sentimentTable: "Summarizes market positioning and sentiment for each competitor brand",
+    sentiment: "Overall perception (Positive, Neutral, or Negative) of the brand in AI-generated responses"
   },
 
   // Content Impact
   contentImpact: {
-    title: "Content Impact",
+    title: "Content Impact Analysis",
     description: "Performance of your content across different source types and platforms.",
-    explanation: "Identifies which content types and platforms are most effective for your brand visibility in AI responses."
+    explanation: "Identifies which content types and platforms are most effective for your brand visibility in AI responses.",
+    mentions: "Total brand mentions in this platform category",
+    tier: "Calculated as: (Brand Mentions / Top Brand Mentions) × 100. High: ≥70%, Medium: 40-69%, Low: <40%"
   },
 
   // Recommendations
   recommendations: {
     title: "Strategic Recommendations",
     description: "AI-powered actionable recommendations to improve your brand's visibility across AI platforms.",
-    explanation: "Based on performance data, competitive gaps, and industry best practices."
+    effort: "Implementation effort required: High (extensive resources), Medium (moderate resources), Low (quick win)",
+    impact: "Expected visibility improvement: High (significant gain), Medium (moderate gain), Low (minimal gain)"
   }
 };
 

@@ -8,7 +8,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { BarChart3 } from "lucide-react";
+import { BarChart3, Info } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { TOOLTIP_CONTENT } from "@/lib/formulas";
 
 interface ContentImpactProps {
   brandName: string;
@@ -28,10 +35,10 @@ interface ContentImpactProps {
 
 const getMentionScoreColor = (tier: string) => {
   const tierLower = tier.toLowerCase();
-  if (tierLower === "high") return "bg-emerald-500 text-white";
-  if (tierLower === "medium") return "bg-yellow-500 text-black";
+  if (tierLower === "high") return "bg-success text-success-foreground";
+  if (tierLower === "medium") return "bg-muted text-muted-foreground";
   if (tierLower === "low" || tierLower === "absent")
-    return "bg-red-500 text-white";
+    return "bg-destructive text-destructive-foreground";
   return "bg-secondary text-secondary-foreground";
 };
 
@@ -55,18 +62,40 @@ export const ContentImpact = ({
   }
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
-        <BarChart3 className="h-7 w-7 text-primary" />
-        Content Impact Analysis
-      </h2>
+    <TooltipProvider>
+      <div className="space-y-6">
+        <div className="flex items-center gap-2">
+          <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
+            <BarChart3 className="h-7 w-7 text-primary" />
+            Content Impact Analysis
+          </h2>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Info className="h-5 w-5 text-muted-foreground cursor-help" />
+            </TooltipTrigger>
+            <TooltipContent className="max-w-sm">
+              <p className="font-semibold">{TOOLTIP_CONTENT.contentImpact.title}</p>
+              <p className="text-sm mb-2">{TOOLTIP_CONTENT.contentImpact.description}</p>
+              <p className="text-xs">{TOOLTIP_CONTENT.contentImpact.explanation}</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">
-            Platform-wise Brand Performance
-          </CardTitle>
-        </CardHeader>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              Platform-wise Brand Performance
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-sm">
+                  <p className="text-sm">{TOOLTIP_CONTENT.platformPerformance.description}</p>
+                  <p className="text-xs mt-1 font-semibold">Formula: {TOOLTIP_CONTENT.platformPerformance.formula}</p>
+                </TooltipContent>
+              </Tooltip>
+            </CardTitle>
+          </CardHeader>
         <CardContent className="overflow-x-auto">
           <Table>
             <TableHeader>
@@ -136,11 +165,28 @@ export const ContentImpact = ({
                                 isYourBrand ? "text-primary font-bold" : ""
                               }`}
                             >
-                              Mentions: {mentions}
+                              <div className="flex items-center justify-center gap-1">
+                                Mentions: {mentions}
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p className="text-xs">{TOOLTIP_CONTENT.contentImpact.mentions}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </div>
                             </div>
-                            <Badge className={getMentionScoreColor(tier)}>
-                              {tier}
-                            </Badge>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Badge className={getMentionScoreColor(tier)}>
+                                  {tier}
+                                </Badge>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p className="text-xs">{TOOLTIP_CONTENT.contentImpact.tier}</p>
+                              </TooltipContent>
+                            </Tooltip>
                           </div>
                         </TableCell>
                       );
@@ -152,6 +198,7 @@ export const ContentImpact = ({
           </Table>
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </TooltipProvider>
   );
 };

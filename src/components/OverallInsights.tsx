@@ -74,11 +74,11 @@ const getSentimentColor = (sentiment: string) => {
   const lowerSentiment = sentiment.toLowerCase();
   switch (lowerSentiment) {
     case "positive":
-      return "bg-positive text-positive-foreground";
+      return "bg-success text-success-foreground";
     case "negative":
-      return "bg-negative text-negative-foreground";
+      return "bg-destructive text-destructive-foreground";
     case "neutral":
-      return "bg-warning text-warning-foreground";
+      return "bg-muted text-muted-foreground";
     default:
       return "bg-secondary text-secondary-foreground";
   }
@@ -279,7 +279,7 @@ export const OverallInsights = ({
 
         {/* Executive Summary Section */}
         {executiveSummary && (
-          <Card>
+          <Card className="executive-summary">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <TrendingUp className="h-5 w-5 text-primary" />

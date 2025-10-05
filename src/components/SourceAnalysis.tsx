@@ -1,8 +1,15 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
-import { Database, Users, FileText } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as ChartTooltip, ResponsiveContainer, Cell } from "recharts";
+import { Database, Users, FileText, Info } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { TOOLTIP_CONTENT } from "@/lib/formulas";
 
 interface SourceAnalysisProps {
   contentImpact: {
@@ -23,12 +30,12 @@ interface SourceAnalysisProps {
 const getVisibilityColor = (visibility: string) => {
   switch (visibility.toLowerCase()) {
     case 'high':
-      return 'bg-emerald-500 text-white';
+      return 'bg-success text-success-foreground';
     case 'medium':
-      return 'bg-yellow-500 text-white';
+      return 'bg-muted text-muted-foreground';
     case 'low':
     case 'absent':
-      return 'bg-red-500 text-white';
+      return 'bg-destructive text-destructive-foreground';
     default:
       return 'bg-secondary text-secondary-foreground';
   }
@@ -122,26 +129,39 @@ export const SourceAnalysis = ({ contentImpact, brandName }: SourceAnalysisProps
   const getBarColor = (visibility: string) => {
     switch (visibility.toLowerCase()) {
       case 'high':
-        return '#10b981';
+        return 'hsl(var(--success))';
       case 'medium':
-        return '#eab308';
+        return 'hsl(var(--muted-foreground))';
       case 'low':
       case 'absent':
-        return '#ef4444';
+        return 'hsl(var(--destructive))';
       default:
         return 'hsl(var(--primary))';
     }
   };
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-foreground">Source Analysis</h2>
+    <TooltipProvider>
+      <div className="space-y-6">
+        <div className="flex items-center gap-2">
+          <h2 className="text-2xl font-bold text-foreground">Source Analysis</h2>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Info className="h-5 w-5 text-muted-foreground cursor-help" />
+            </TooltipTrigger>
+            <TooltipContent className="max-w-sm">
+              <p className="font-semibold">{TOOLTIP_CONTENT.sourceAnalysis.title}</p>
+              <p className="text-sm mb-2">{TOOLTIP_CONTENT.sourceAnalysis.description}</p>
+              <p className="text-xs">{TOOLTIP_CONTENT.sourceAnalysis.calculation}</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
 
-      {/* Chart */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Citation Distribution by Source Category</CardTitle>
-        </CardHeader>
+        {/* Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Citation Distribution by Source Category</CardTitle>
+          </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={chartData}>
@@ -171,7 +191,7 @@ export const SourceAnalysis = ({ contentImpact, brandName }: SourceAnalysisProps
                 }}
               />
               <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
-              <Tooltip
+              <ChartTooltip
                 contentStyle={{
                   backgroundColor: 'hsl(var(--card))',
                   border: '1px solid hsl(var(--border))',
@@ -188,22 +208,46 @@ export const SourceAnalysis = ({ contentImpact, brandName }: SourceAnalysisProps
         </CardContent>
       </Card>
 
-      {/* Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Source Details for {brandName}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Source</TableHead>
-                <TableHead className="text-center">Mentions</TableHead>
-                <TableHead className="text-center">Tier</TableHead>
-                <TableHead>Insights</TableHead>
-                <TableHead>Pages Used</TableHead>
-              </TableRow>
-            </TableHeader>
+        {/* Table */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Source Details for {brandName}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Source</TableHead>
+                  <TableHead className="text-center">
+                    <div className="flex items-center justify-center gap-2">
+                      Mentions
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-xs">{TOOLTIP_CONTENT.sourceAnalysis.mentions}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                  </TableHead>
+                  <TableHead className="text-center">
+                    <div className="flex items-center justify-center gap-2">
+                      Tier
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs">
+                          <p className="text-xs">{TOOLTIP_CONTENT.sourceAnalysis.tier}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                  </TableHead>
+                  <TableHead>Insights</TableHead>
+                  <TableHead>Pages Used</TableHead>
+                </TableRow>
+              </TableHeader>
             <TableBody>
               {sources.map((source, index) => (
                 <TableRow key={index}>
@@ -231,10 +275,11 @@ export const SourceAnalysis = ({ contentImpact, brandName }: SourceAnalysisProps
                   </TableCell>
                 </TableRow>
               ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-    </div>
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
+    </TooltipProvider>
   );
 };
