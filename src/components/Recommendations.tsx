@@ -22,7 +22,7 @@ interface RecommendationsProps {
 const getEffortColor = (effort: string) => {
   const effortLower = effort.toLowerCase();
   if (effortLower === 'high') return 'bg-destructive text-destructive-foreground';
-  if (effortLower === 'medium') return 'bg-muted text-muted-foreground';
+  if (effortLower === 'medium') return 'bg-muted text-foreground border border-muted-foreground';
   if (effortLower === 'low') return 'bg-success text-success-foreground';
   return 'bg-secondary text-secondary-foreground';
 };
@@ -32,7 +32,7 @@ const getImpactColor = (impact: string) => {
     case 'high':
       return 'bg-success text-success-foreground';
     case 'medium':
-      return 'bg-muted text-muted-foreground';
+      return 'bg-muted text-foreground border border-muted-foreground';
     case 'low':
       return 'bg-destructive text-destructive-foreground';
     default:

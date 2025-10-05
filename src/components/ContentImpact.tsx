@@ -36,7 +36,7 @@ interface ContentImpactProps {
 const getMentionScoreColor = (tier: string) => {
   const tierLower = tier.toLowerCase();
   if (tierLower === "high") return "bg-success text-success-foreground";
-  if (tierLower === "medium") return "bg-muted text-muted-foreground";
+  if (tierLower === "medium") return "bg-muted text-foreground border border-muted-foreground";
   if (tierLower === "low" || tierLower === "absent")
     return "bg-destructive text-destructive-foreground";
   return "bg-secondary text-secondary-foreground";
@@ -111,7 +111,7 @@ export const ContentImpact = ({
                     Competitor {i + 1}
                   </TableHead>
                 ))}
-                <TableHead className="text-center min-w-[120px] font-bold bg-primary/10">
+                <TableHead className="text-center min-w-[120px] font-bold bg-primary/20 text-primary">
                   Your Brand
                 </TableHead>
               </TableRow>
@@ -149,7 +149,7 @@ export const ContentImpact = ({
                         <TableCell
                           key={index}
                           className={`text-center ${
-                            isYourBrand ? "bg-primary/5" : ""
+                            isYourBrand ? "bg-primary/15 border-l-4 border-primary" : ""
                           }`}
                         >
                           <div className="space-y-1">

@@ -32,7 +32,7 @@ const getVisibilityColor = (visibility: string) => {
     case 'high':
       return 'bg-success text-success-foreground';
     case 'medium':
-      return 'bg-muted text-muted-foreground';
+      return 'bg-muted text-foreground border border-muted-foreground';
     case 'low':
     case 'absent':
       return 'bg-destructive text-destructive-foreground';
@@ -129,12 +129,12 @@ export const SourceAnalysis = ({ contentImpact, brandName }: SourceAnalysisProps
   const getBarColor = (visibility: string) => {
     switch (visibility.toLowerCase()) {
       case 'high':
-        return 'hsl(var(--success))';
+        return 'hsl(142 76% 36%)';
       case 'medium':
-        return 'hsl(var(--muted-foreground))';
+        return 'hsl(45 93% 47%)';
       case 'low':
       case 'absent':
-        return 'hsl(var(--destructive))';
+        return 'hsl(0 84% 60%)';
       default:
         return 'hsl(var(--primary))';
     }
@@ -163,25 +163,27 @@ export const SourceAnalysis = ({ contentImpact, brandName }: SourceAnalysisProps
             <CardTitle className="text-lg">Citation Distribution by Source Category</CardTitle>
           </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={chartData}>
+          <ResponsiveContainer width="100%" height={350}>
+            <BarChart data={chartData} margin={{ bottom: 60, top: 20 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis
                 dataKey="category"
                 stroke="hsl(var(--muted-foreground))"
-                fontSize={12}
+                fontSize={11}
+                interval={0}
                 tick={({ x, y, payload }) => {
                   const lines = payload.value.split("\n");
                   return (
-                    <g transform={`translate(${x},${y + 10})`}>
+                    <g transform={`translate(${x},${y + 5})`}>
                       {lines.map((line, index) => (
                         <text
                           key={index}
                           x={0}
-                          y={index * 12}
+                          y={index * 11}
                           textAnchor="middle"
-                          fontSize={12}
-                          fill="hsl(var(--muted-foreground))"
+                          fontSize={10}
+                          fill="hsl(var(--foreground))"
+                          fontWeight="500"
                         >
                           {line}
                         </text>

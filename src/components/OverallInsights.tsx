@@ -60,11 +60,11 @@ const getTierColor = (tier: string) => {
   const lowerTier = tier.toLowerCase();
   switch (lowerTier) {
     case "high":
-      return "bg-positive text-positive-foreground";
+      return "bg-success text-success-foreground";
     case "medium":
-      return "bg-warning text-warning-foreground";
+      return "bg-muted text-muted-foreground border border-muted-foreground";
     case "low":
-      return "bg-negative text-negative-foreground";
+      return "bg-destructive text-destructive-foreground";
     default:
       return "bg-secondary text-secondary-foreground";
   }

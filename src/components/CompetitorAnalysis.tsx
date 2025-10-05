@@ -114,7 +114,7 @@ export const CompetitorAnalysis = ({
                     return (
                       <TableRow
                         key={rowIndex}
-                        className={isYourBrand ? "bg-primary/10" : ""}
+                        className={isYourBrand ? "bg-primary/15 border-l-4 border-primary" : ""}
                       >
                         <TableCell
                           className={`font-medium ${
@@ -178,7 +178,7 @@ export const CompetitorAnalysis = ({
                     return (
                       <TableRow
                         key={rowIndex}
-                        className={isYourBrand ? "bg-primary/10" : ""}
+                        className={isYourBrand ? "bg-primary/15 border-l-4 border-primary" : ""}
                       >
                         <TableCell
                           className={`font-semibold ${
