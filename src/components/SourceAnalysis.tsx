@@ -1,27 +1,34 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { Database, Users, FileText } from "lucide-react";
 
 interface SourceAnalysisProps {
-  sources: Array<{
-    category: string;
-    sources: string[];
-    total_citations: { Value: number };
-    visibility: string;
-    cited_by_models: string[];
-    notes: string;
-  }>;
+  contentImpact: {
+    header: string[];
+    rows: (string | number | string[])[][];
+    depth_notes?: {
+      [brand: string]: {
+        [source: string]: {
+          insight: string;
+          pages_used: string[];
+        };
+      };
+    };
+  };
+  brandName: string;
 }
 
 const getVisibilityColor = (visibility: string) => {
   switch (visibility.toLowerCase()) {
     case 'high':
-      return 'bg-success text-success-foreground';
+      return 'bg-emerald-500 text-white';
     case 'medium':
-      return 'bg-warning text-warning-foreground';
+      return 'bg-yellow-500 text-white';
     case 'low':
-      return 'bg-destructive text-destructive-foreground';
+    case 'absent':
+      return 'bg-red-500 text-white';
     default:
       return 'bg-secondary text-secondary-foreground';
   }
@@ -40,21 +47,87 @@ const getCategoryIcon = (category: string) => {
   }
 };
 
-export const SourceAnalysis = ({ sources }: SourceAnalysisProps) => {
+const getMentionTier = (ratio: number) => {
+  if (ratio >= 70) return "High";
+  if (ratio >= 40) return "Medium";
+  if (ratio > 0) return "Low";
+  return "N/A";
+};
+
+export const SourceAnalysis = ({ contentImpact, brandName }: SourceAnalysisProps) => {
+  const brandColumnIndex = contentImpact.header.findIndex(h => h === brandName);
+
+  const sources = contentImpact.rows.map(row => {
+    const sourceName = row[0] as string;
+    const mentions = row[brandColumnIndex + 1] as number;
+    
+    // Find max mentions in this row across all brands
+    const brandNames: string[] = [];
+    for (let i = 1; i < contentImpact.header.length - 2; i += 3) {
+      brandNames.push(contentImpact.header[i] as string);
+    }
+    
+    const mentionCounts: number[] = [];
+    for (let i = 0; i < brandNames.length; i++) {
+      mentionCounts.push(row[1 + i * 3 + 1] as number);
+    }
+    const maxMentions = Math.max(...mentionCounts);
+    
+    // Calculate mention ratio
+    const mentionRatio = maxMentions > 0 ? (mentions / maxMentions) * 100 : 0;
+    const tier = getMentionTier(mentionRatio);
+
+    const depthNote = contentImpact.depth_notes?.[brandName]?.[sourceName];
+
+    // Map source names to chart-friendly short/wrapped names
+    const getShortName = (name: string) => {
+      const mapping: Record<string, string> = {
+        'Analyst platforms': 'Analyst\nplatforms',
+        'Review sites': 'Review\nsites',
+        'Blogs': 'Blogs',
+        'Communities': 'Communities',
+        'Brand pages': 'Owned\nContent',
+        'Tech news': 'Tech\nNews',
+        'Social': 'Social',
+        'Academic': 'Academic',
+        'Podcasts': 'Podcasts',
+        'Developer hubs': 'Dev\nHubs',
+        'Marketplaces': 'Market\nplaces',
+        'Events': 'Events',
+        'Jobs': 'Jobs',
+        'Aggregators': 'Aggregators',
+        'Regional/local engines': 'Regional\nEngines',
+        'Integrations': 'Integrations'
+      };
+      return mapping[name] || name.replace(/ /g, '\n');
+    };
+
+    return {
+      category: sourceName,
+      shortCategory: getShortName(sourceName),
+      mentions,
+      mentionRatio,
+      score: tier,
+      insight: depthNote?.insight || '',
+      pages_used: depthNote?.pages_used || []
+    };
+  });
+
   const chartData = sources.map(source => ({
-    category: source.category,
-    citations: source.total_citations.Value,
-    visibility: source.visibility
+    category: source.shortCategory,
+    citations: source.mentions,
+    visibility: source.score
   }));
 
   const getBarColor = (visibility: string) => {
     switch (visibility.toLowerCase()) {
       case 'high':
-        return 'hsl(var(--success))';
+        return '#10b981';
       case 'medium':
-        return 'hsl(var(--warning))';
+        return '#eab308';
       case 'low':
-        return 'hsl(var(--destructive))';
+      case 'absent':
+        return '#ef4444';
       default:
         return 'hsl(var(--primary))';
     }
@@ -63,7 +136,8 @@ export const SourceAnalysis = ({ sources }: SourceAnalysisProps) => {
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold text-foreground">Source Analysis</h2>
-      
+
+      {/* Chart */}
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Citation Distribution by Source Category</CardTitle>
@@ -72,24 +146,39 @@ export const SourceAnalysis = ({ sources }: SourceAnalysisProps) => {
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis 
-                dataKey="category" 
-                stroke="hsl(var(--muted-foreground))" 
+              <XAxis
+                dataKey="category"
+                stroke="hsl(var(--muted-foreground))"
                 fontSize={12}
-                tickFormatter={(value) => value.split(' ')[0]}
+                tick={({ x, y, payload }) => {
+                  const lines = payload.value.split("\n");
+                  return (
+                    <g transform={`translate(${x},${y + 10})`}>
+                      {lines.map((line, index) => (
+                        <text
+                          key={index}
+                          x={0}
+                          y={index * 12}
+                          textAnchor="middle"
+                          fontSize={12}
+                          fill="hsl(var(--muted-foreground))"
+                        >
+                          {line}
+                        </text>
+                      ))}
+                    </g>
+                  );
+                }}
               />
               <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: 'hsl(var(--card))', 
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: 'hsl(var(--card))',
                   border: '1px solid hsl(var(--border))',
                   borderRadius: '6px'
-                }} 
+                }}
               />
-              <Bar 
-                dataKey="citations" 
-                radius={[4, 4, 0, 0]}
-              >
+              <Bar dataKey="citations" radius={[4, 4, 0, 0]}>
                 {chartData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={getBarColor(entry.visibility)} />
                 ))}
@@ -99,60 +188,53 @@ export const SourceAnalysis = ({ sources }: SourceAnalysisProps) => {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {sources.map((source, index) => (
-          <Card key={index} className={`border-2 ${
-            source.visibility.toLowerCase() === 'high' ? 'border-success shadow-success/20 shadow-lg' :
-            source.visibility.toLowerCase() === 'medium' ? 'border-warning shadow-warning/20 shadow-lg' :
-            source.visibility.toLowerCase() === 'low' ? 'border-destructive shadow-destructive/20 shadow-lg' :
-            'border-border'
-          }`}>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  {getCategoryIcon(source.category)}
-                  {source.category}
-                </CardTitle>
-                <Badge className={getVisibilityColor(source.visibility)} variant="secondary">
-                  {source.visibility}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-primary">{source.total_citations.Value}</div>
-                <div className="text-sm text-muted-foreground">Total Citations</div>
-              </div>
-              
-              <div>
-                <h4 className="font-semibold text-sm mb-2">Key Sources</h4>
-                <div className="flex flex-wrap gap-1">
-                  {source.sources.map((src, srcIndex) => (
-                    <Badge key={srcIndex} variant="outline" className="text-xs">
-                      {src}
+      {/* Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Source Details for {brandName}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Source</TableHead>
+                <TableHead className="text-center">Mentions</TableHead>
+                <TableHead className="text-center">Tier</TableHead>
+                <TableHead>Insights</TableHead>
+                <TableHead>Pages Used</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sources.map((source, index) => (
+                <TableRow key={index}>
+                  <TableCell className="font-medium flex flex-col gap-1 break-words">
+                    <div className="flex items-center gap-2">{getCategoryIcon(source.category)}</div>
+                    <div className="whitespace-pre-line">{source.category}</div>
+                  </TableCell>
+                  <TableCell className="text-center font-semibold">{source.mentions}</TableCell>
+                  <TableCell className="text-center">
+                    <Badge className={getVisibilityColor(source.score)} variant="secondary">
+                      {source.score}
                     </Badge>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <h4 className="font-semibold text-sm mb-2">Models</h4>
-                <div className="flex flex-wrap gap-1">
-                  {source.cited_by_models.map((model, modelIndex) => (
-                    <Badge key={modelIndex} variant="secondary" className="text-xs">
-                      {model}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <p className="text-sm text-muted-foreground">{source.notes}</p>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{source.insight || 'No insights available'}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {source.pages_used && source.pages_used.length > 0 ? (
+                      <ul className="list-disc list-inside space-y-1">
+                        {source.pages_used.map((page, idx) => (
+                          <li key={idx}>{page}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      'No pages listed'
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 };
