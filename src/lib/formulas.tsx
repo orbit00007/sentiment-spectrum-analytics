@@ -1,157 +1,249 @@
 /**
- * Formulas and calculation explanations for the AI Visibility Dashboard
+ * Utility functions for the AI Visibility Dashboard
+ * All calculations are done on the backend - this file only contains display helpers
  */
 
+// ============= TOOLTIP CONTENT =============
 export const TOOLTIP_CONTENT = {
-  // Overall Insights Section
   overallInsights: {
-    title: "Overall Insights",
-    description: "Comprehensive overview of your brand's performance across AI platforms including search, chat, and recommendations. This dashboard aggregates data from multiple AI sources to provide actionable insights."
+    description: "Comprehensive overview of your brand's performance across AI platforms including search, chat, and recommendations."
   },
-
-  // AI Visibility Card
   aiVisibility: {
-    title: "AI Visibility Score",
-    description: "Measures how prominently your brand appears in AI-generated responses.",
-    formula: "Score = (Top 2 Mentions × 3) + (Top 5 Mentions × 2) + (Later Mentions × 1)",
+    description: "Measures how prominently your brand appears in AI-generated responses using percentile ranking.",
+    formula: "Percentile = (Brands with lower GEO score / Total brands) × 100",
+    calculation: "GEO score is calculated, then ranked against all competitors to derive percentile position.",
     tiers: {
-      high: "≥ 250 points",
-      medium: "100-249 points", 
-      low: "< 100 points"
+      high: "≥ 80 percentile",
+      medium: "40-79 percentile", 
+      low: "< 40 percentile"
     }
   },
-
-  // Brand Mentions Card
   brandMentions: {
-    title: "Brand Mentions",
-    description: "Total mentions of your brand across all AI platforms compared to the top-performing competitor.",
-    formula: "Mention Ratio = (Your Brand's Total Mentions / Top Brand's Total Mentions) × 100",
-    calculation: "Total calculated by summing all mentions across platforms from the Platform-wise Brand Performance table",
+    description: "Total mentions of your brand across all AI platforms, ranked as a percentile against competitors.",
+    formula: "Percentile = (Brands with lower mention score / Total brands) × 100",
+    calculation: "Mention score calculated and ranked to derive percentile position.",
     tiers: {
-      high: "≥ 70% of top brand",
-      medium: "40-69% of top brand",
-      low: "< 40% of top brand"
+      high: "≥ 80 percentile",
+      medium: "40-79 percentile",
+      low: "< 40 percentile"
     }
   },
-
-  // Sentiment Analysis Card
   sentimentAnalysis: {
-    title: "Sentiment Analysis",
     description: "Overall sentiment tone of your brand mentions across AI platforms.",
-    explanation: "Analyzes the context and tone in which your brand is mentioned to determine if the overall sentiment is Positive, Neutral, or Negative."
+    explanation: "Analyzes the context and tone in which your brand is mentioned."
   },
-
-  // Executive Summary
   executiveSummary: {
-    title: "Executive Summary",
-    description: "Strategic overview of your brand's AI visibility performance, including competitive positioning, key strengths and weaknesses, and prioritized action items for improvement."
+    description: "Strategic overview of your brand's AI visibility performance, including competitive positioning and prioritized actions."
   },
-
-  // Brand Header
   brandHeader: {
-    brandName: "Your brand's name being analyzed for AI visibility",
-    website: "Official website URL of the brand",
-    keywords: "Target keywords analyzed to measure AI visibility across platforms",
-    status: "Current analysis status: Completed, Processing, or Error",
-    model: "AI model used to perform the visibility analysis (e.g., GPT-5)",
-    date: "Timestamp when the analysis was completed"
+    model: "AI model used to perform the visibility analysis",
   },
-
-  // Platform-wise Performance
   platformPerformance: {
-    title: "Platform-wise Brand Performance",
-    description: "Breakdown of your brand's performance across different AI platform types (Blogs, Chat, Search, etc.)",
+    description: "Breakdown of your brand's performance across different AI platform types.",
     formula: "Mention Ratio = (Brand's Mentions in Source / Highest Mentions in Source) × 100",
     tiers: {
-      high: "≥ 70% of top brand in that source",
-      medium: "40-69% of top brand in that source",
+      high: "≥ 80% of top brand in that source",
+      medium: "40-79% of top brand in that source",
       low: "< 40% of top brand in that source"
     }
   },
-
-  // Source Analysis
   sourceAnalysis: {
-    title: "Source Analysis",
-    description: "Detailed breakdown of individual AI sources where your brand appears, showing mention counts and visibility ratings.",
-    calculation: "Each source is rated based on your brand's mention ratio compared to the highest-mentioned brand in that specific source.",
+    description: "Detailed breakdown of individual AI sources where your brand appears.",
+    calculation: "Each source is rated based on your brand's mention ratio compared to the highest-mentioned brand.",
     mentions: "Total number of times your brand appears in this source category",
-    tier: "Performance tier calculated using: Tier = (Mentions / Max Mentions in Row) × 100. High: ≥70%, Medium: 40-69%, Low: <40%"
+    tier: "Performance tier: High ≥80%, Medium 40-79%, Low <40%"
   },
-
-  // Query Analysis
   queryAnalysis: {
-    title: "Query Analysis",
-    description: "Analysis of specific search queries and AI prompts where your brand appears, showing ranking positions and context.",
-    explanation: "Helps identify which types of queries trigger mentions of your brand and your position relative to competitors."
+    description: "Analysis of specific search queries where your brand appears.",
+    explanation: "Helps identify which types of queries trigger mentions of your brand."
   },
-
-  // Competitor Analysis
   competitorAnalysis: {
-    title: "Competitor Analysis",
     description: "Comparative analysis of your brand versus competitors across all AI platforms.",
-    visibilityTable: "Shows total visibility scores for each competitor across different keywords analyzed",
-    sentimentTable: "Summarizes market positioning and sentiment for each competitor brand",
-    sentiment: "Overall perception (Positive, Neutral, or Negative) of the brand in AI-generated responses"
+    visibilityTable: "Shows total mention scores for each competitor across different keywords",
+    sentimentTable: "Summarizes market positioning and sentiment for each competitor",
+    sentiment: "Overall perception of the brand in AI-generated responses"
   },
-
-  // Content Impact
   contentImpact: {
-    title: "Content Impact Analysis",
     description: "Performance of your content across different source types and platforms.",
-    explanation: "Identifies which content types and platforms are most effective for your brand visibility in AI responses.",
+    explanation: "Identifies which content types are most effective for AI visibility.",
     mentions: "Total brand mentions in this platform category",
-    tier: "Calculated as: (Brand Mentions / Top Brand Mentions) × 100. High: ≥70%, Medium: 40-69%, Low: <40%"
+    tier: "Calculated as: (Brand Mentions / Top Brand Mentions) × 100"
   },
-
-  // Recommendations
   recommendations: {
-    title: "Strategic Recommendations",
-    description: "AI-powered actionable recommendations to improve your brand's visibility across AI platforms.",
-    effort: "Implementation effort required: High (extensive resources), Medium (moderate resources), Low (quick win)",
-    impact: "Expected visibility improvement: High (significant gain), Medium (moderate gain), Low (minimal gain)"
+    description: "Actionable recommendations to improve your brand's AI visibility.",
+    overallInsight: "Key insight from analyzing visibility patterns",
+    suggestedAction: "Specific action recommended to improve visibility",
+    effort: "Implementation effort: High, Medium, or Low",
+    impact: "Expected visibility improvement: High, Medium, or Low"
+  }
+};
+
+// ============= TIER THRESHOLDS =============
+export const PERCENTILE_TIERS = {
+  HIGH: 80,
+  MEDIUM: 40,
+  LOW: 0
+};
+
+// ============= UTILITY FUNCTIONS =============
+
+/**
+ * Safely convert value to number
+ */
+export const safeNumber = (value: any, fallback: number = 0): number => {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : fallback;
+};
+
+/**
+ * Get tier from percentile score (0-100)
+ */
+export const getTierFromPercentile = (percentile: number): string => {
+  const safe = safeNumber(percentile, 0);
+  if (safe >= PERCENTILE_TIERS.HIGH) return "High";
+  if (safe >= PERCENTILE_TIERS.MEDIUM) return "Medium";
+  if (safe > 0) return "Low";
+  return "Low";
+};
+
+/**
+ * Get tier badge color class
+ */
+export const getTierColor = (tier: string): string => {
+  const lowerTier = tier?.toLowerCase() || "";
+  switch (lowerTier) {
+    case "high":
+      return "bg-success text-success-foreground";
+    case "medium":
+      return "bg-medium-neutral text-medium-neutral-foreground";
+    case "low":
+    case "absent":
+      return "bg-destructive text-destructive-foreground";
+    default:
+      return "bg-secondary text-secondary-foreground";
   }
 };
 
 /**
- * Calculate AI Visibility Tier based on score
+ * Get sentiment badge color class
  */
-export const calculateAIVisibilityTier = (score: number): string => {
-  if (score >= 250) return "High";
-  if (score >= 100) return "Medium";
-  if (score > 0) return "Low";
-  return "N/A";
+export const getSentimentColor = (sentiment: string): string => {
+  const lowerSentiment = sentiment?.toLowerCase() || "";
+  switch (lowerSentiment) {
+    case "positive":
+      return "bg-success text-success-foreground";
+    case "negative":
+      return "bg-destructive text-destructive-foreground";
+    case "neutral":
+      return "bg-medium-neutral text-medium-neutral-foreground";
+    default:
+      return "bg-secondary text-secondary-foreground";
+  }
 };
 
 /**
- * Calculate Brand Mentions Tier based on ratio to top brand
+ * Get border color class based on tier
  */
-export const calculateBrandMentionsTier = (
-  yourBrandTotal: number,
-  topBrandTotal: number
-): { tier: string; ratio: number } => {
-  const ratio = topBrandTotal > 0 ? (yourBrandTotal / topBrandTotal) * 100 : 0;
-  
-  let tier = "N/A";
-  if (ratio >= 70) tier = "High";
-  else if (ratio >= 40) tier = "Medium";
-  else if (ratio > 0) tier = "Low";
-
-  return { tier, ratio };
+export const getTierBorderColor = (tier: string): string => {
+  const lowerTier = tier?.toLowerCase() || "";
+  switch (lowerTier) {
+    case "high":
+      return "border-success";
+    case "medium":
+      return "border-medium-neutral";
+    case "low":
+      return "border-destructive";
+    default:
+      return "border-border";
+  }
 };
 
 /**
- * Calculate Platform-wise Mention Tier
+ * Get HSL color for speedometer needle based on tier
  */
-export const calculatePlatformMentionTier = (
+export const getTierNeedleColor = (tier: string): string => {
+  const lowerTier = tier?.toLowerCase() || "";
+  switch (lowerTier) {
+    case "high":
+      return "hsl(var(--success))";
+    case "medium":
+      return "hsl(var(--medium-neutral))";
+    case "low":
+      return "hsl(var(--destructive))";
+    default:
+      return "hsl(var(--primary))";
+  }
+};
+
+/**
+ * Get effort badge color (inverse - High effort = red)
+ */
+export const getEffortColor = (effort: string): string => {
+  const lowerEffort = effort?.toLowerCase() || "";
+  switch (lowerEffort) {
+    case "high":
+      return "bg-destructive text-destructive-foreground";
+    case "medium":
+      return "bg-medium-neutral text-medium-neutral-foreground";
+    case "low":
+      return "bg-success text-success-foreground";
+    default:
+      return "bg-secondary text-secondary-foreground";
+  }
+};
+
+/**
+ * Get impact badge color (High impact = green)
+ */
+export const getImpactColor = (impact: string): string => {
+  const lowerImpact = impact?.toLowerCase() || "";
+  switch (lowerImpact) {
+    case "high":
+      return "bg-success text-success-foreground";
+    case "medium":
+      return "bg-medium-neutral text-medium-neutral-foreground";
+    case "low":
+      return "bg-destructive text-destructive-foreground";
+    default:
+      return "bg-secondary text-secondary-foreground";
+  }
+};
+
+/**
+ * Get tier from ratio percentage (0-100)
+ */
+export const getTierFromRatio = (ratio: number): string => {
+  const safe = safeNumber(ratio, 0);
+  if (safe >= 80) return "High";
+  if (safe >= 40) return "Medium";
+  return "Low";
+};
+
+/**
+ * Calculate mention ratio for source/platform analysis
+ */
+export const calculateMentionRatio = (
   brandMentions: number,
-  topBrandMentions: number
-): { tier: string; ratio: number } => {
-  const ratio = topBrandMentions > 0 ? (brandMentions / topBrandMentions) * 100 : 0;
-  
-  let tier = "N/A";
-  if (ratio >= 70) tier = "High";
-  else if (ratio >= 40) tier = "Medium";
-  else if (ratio > 0) tier = "Low";
+  maxMentions: number
+): number => {
+  if (maxMentions <= 0) return 0;
+  return (brandMentions / maxMentions) * 100;
+};
 
-  return { tier, ratio };
+/**
+ * Get chart bar color based on tier
+ */
+export const getBarColor = (tier: string): string => {
+  const lowerTier = tier?.toLowerCase() || "";
+  switch (lowerTier) {
+    case "high":
+      return "hsl(var(--success))";
+    case "medium":
+      return "hsl(var(--medium-neutral))";
+    case "low":
+    case "absent":
+      return "hsl(var(--destructive))";
+    default:
+      return "hsl(var(--primary))";
+  }
 };

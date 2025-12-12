@@ -1,0 +1,242 @@
+{
+    "analytics": [
+        {
+            "id": "693263da66eb4e53d1274e46",
+            "product_id": "ee19a7f2-7042-4ff5-9afc-66cdf50d3a62",
+            "product_name": "Tesla",
+            "date": "2025-12-05T04:48:32.787Z",
+            "status": "completed",
+            "analytics": {
+                "brand_name": "Tesla",
+                "brand_website": "https://tesla.com/",
+                "model_name": "openai,gemini",
+                "status": "completed",
+                "analysis_scope": {
+                    "search_keywords": [
+                        "clean energy generation and storage",
+                        "self driving and autonomous vehicles",
+                        "EV"
+                    ],
+                    "date_range": {
+                        "from": null,
+                        "to": null
+                    }
+                },
+                "ai_visibility": {
+                    "geo_score": 18,
+                    "percentile_visibility": 83,
+                    "percentile_trace": {
+                        "sorted_brand_info": [
+                            {
+                                "brand": "Lucid",
+                                "geo_score": 6,
+                                "mention_score": 0,
+                                "mention_count": 6,
+                                "logo": "https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://lucidmotors.com&size=64"
+                            },
+                            {
+                                "brand": "Enphase",
+                                "geo_score": 7,
+                                "mention_score": 17,
+                                "mention_count": 7,
+                                "logo": "https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://enphase.com&size=64"
+                            },
+                            {
+                                "brand": "Mercedes-Benz",
+                                "geo_score": 7,
+                                "mention_score": 17,
+                                "mention_count": 7,
+                                "logo": "https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://mercedes-benz.com&size=64"
+                            },
+                            {
+                                "brand": "Ford",
+                                "geo_score": 8,
+                                "mention_score": 50,
+                                "mention_count": 8,
+                                "logo": "https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://ford.com&size=64"
+                            },
+                            {
+                                "brand": "Hyundai",
+                                "geo_score": 10,
+                                "mention_score": 67,
+                                "mention_count": 10,
+                                "logo": "https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://hyundai.com&size=64"
+                            },
+                            {
+                                "brand": "Tesla",
+                                "geo_score": 18,
+                                "mention_score": 83,
+                                "mention_count": 18,
+                                "logo": "https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://tesla.com&size=64"
+                            }
+                        ],
+                        "brands_with_lower_geo_score": 5,
+                        "total_brands": 6,
+                        "calculation": "(5/6) × 100 = 83%"
+                    },
+                    "tier_mapping_method": "Percentile rank tiers (High ≥80, Medium 40–79, Low <40)",
+                    "brand_tier": "High",
+                    "explanation": "With a GEO score of 18 and percentile rank 83, Tesla is categorized as High visibility."
+                },
+                "sentiment": {
+                    "dominant_sentiment": "Positive",
+                    "summary": "Tesla demonstrates powerhouse visibility within AI-generated search results, consistently ranking in the top positions for core electric vehicle and clean energy storage queries. The brand is frequently presented as a category leader and benchmark against which competitors are measured, indicating a strong and positive sentiment regarding its prominence and authority in these domains."
+                },
+                "competitor_visibility_table": {
+                    "header": [
+                        "brand_names",
+                        "clean energy generation and storage",
+                        "self driving and autonomous vehicles",
+                        "EV"
+                    ],
+                    "rows": [
+                        ["Enphase", 7, 0, 0],
+                        ["Mercedes-Benz", 0, 3, 4],
+                        ["Ford", 0, 5, 3],
+                        ["Hyundai", 0, 3, 7],
+                        ["Lucid", 0, 0, 6],
+                        ["Tesla", 9, 3, 6]
+                    ]
+                },
+                "competitor_sentiment_table": {
+                    "header": ["Brand", "Sentiment Summary", "overall outlook"],
+                    "rows": [
+                        ["Enphase", "Niche visibility as a key player in home energy storage, but absent in broader EV and autonomous driving conversations.", "Neutral"],
+                        ["Mercedes-Benz", "Strong visibility as a leader in Level 3 autonomous driving and a top contender in the luxury long-range EV market.", "Positive"],
+                        ["Ford", "Operational visibility with a strong presence in hands-free driving (BlueCruise) and affordable EV categories.", "Positive"],
+                        ["Hyundai", "Strong and growing visibility, particularly in affordable EV and advanced driver-assistance systems (ADAS) categories.", "Positive"],
+                        ["Lucid", "Niche powerhouse, positioned as a direct competitor to Tesla at the highest end of the long-range EV market.", "Neutral"],
+                        ["Tesla", "Leader and benchmark in AI-surfaced results for core EV and energy storage topics, consistently holding top-tier rankings.", "Positive"]
+                    ]
+                },
+                "brand_mentions": {
+                    "total_mentions": 6,
+                    "queries_with_mentions": 4,
+                    "total_sources_checked": 8,
+                    "alignment_with_visibility": "Mentions directly reflect weighted scoring; each mention counted by position weight."
+                },
+                "platform_presence": {
+                    "reddit": "https://www.reddit.com/r/teslamotors",
+                    "linkedin": "https://www.linkedin.com/company/tesla-motors",
+                    "wikipedia": "https://en.wikipedia.org/wiki/Tesla,_Inc.",
+                    "product_hunt": "",
+                    "medium": "",
+                    "github": "https://github.com/teslamotors",
+                    "x": "https://x.com/Tesla"
+                },
+                "llm_wise_data": {
+                    "gemini": {
+                        "brand_mentions_count": 4,
+                        "queries_with_brand": 4,
+                        "average_brand_rank": 1.8
+                    },
+                    "openai": {
+                        "brand_mentions_count": 2,
+                        "queries_with_brand": 2,
+                        "average_brand_rank": 1.5
+                    }
+                },
+                "sources_and_content_impact": {
+                    "header": [
+                        "Sources",
+                        "Enphase", "Enphase Mentions", "Enphase Mention Score",
+                        "Mercedes-Benz", "Mercedes-Benz Mentions", "Mercedes-Benz Mention Score",
+                        "Ford", "Ford Mentions", "Ford Mention Score",
+                        "Hyundai", "Hyundai Mentions", "Hyundai Mention Score",
+                        "Lucid", "Lucid Mentions", "Lucid Mention Score",
+                        "Tesla", "Tesla Mentions", "Tesla Mention Score"
+                    ],
+                    "rows": [
+                        ["Automotive Media", "Absent", 0, "Low", "Present", 3, "Low", "Present", 3, "Low", "Present", 3, "Low", "Present", 2, "Low", "Present", 3, "Low"],
+                        ["Energy & Solar Review Sites", "Present", 3, "Low", "Absent", 0, "Low", "Absent", 0, "Low", "Absent", 0, "Low", "Absent", 0, "Low", "Present", 3, "Low"],
+                        ["Tech News", "Absent", 0, "Low", "Absent", 0, "Low", "Absent", 0, "Low", "Present", 1, "Low", "Absent", 0, "Low", "Absent", 0, "Low"]
+                    ],
+                    "depth_notes": {
+                        "Tesla": {
+                            "Automotive Media": {
+                                "insight": "Frequently positioned as a top-tier long-range EV, especially the Model S, in direct comparison with luxury and performance brands.",
+                                "pages_used": ["Longest Range EV Guides 2025", "Best Self-Driving Car Reviews"]
+                            },
+                            "Energy & Solar Review Sites": {
+                                "insight": "Consistently ranked as a leading home energy storage solution with the Powerwall, praised for its capacity and integration.",
+                                "pages_used": ["Best Home Batteries 2025", "Affordable Energy Storage Systems 2023"]
+                            },
+                            "Tech News": {
+                                "insight": "Mentioned in the context of home energy backup systems, but less frequently than in specialized automotive or energy media.",
+                                "pages_used": ["Home Battery Backup System Guides"]
+                            }
+                        }
+                    }
+                },
+                "recommendations": [
+                    {
+                        "overall_insight": "Tesla's AI visibility is dominant in its core markets but shows gaps in 'affordable' and value-oriented search queries where competitors like Hyundai and Ford are gaining traction.",
+                        "suggested_action": "Develop and promote structured content (e.g., blog posts, dedicated web pages) targeting affordability keywords like 'best value EV' or 'cost-effective home solar storage' to capture a wider audience in AI-generated results.",
+                        "overall_effort": "Medium",
+                        "impact": "High"
+                    },
+                    {
+                        "overall_insight": "Competitors like Mercedes-Benz are successfully shaping the narrative around 'Level 3' autonomous driving, while Tesla's 'FSD Beta' is often categorized as an advanced 'Level 2' system by LLMs.",
+                        "suggested_action": "Create clear, structured documentation (FAQs, technical briefs) that explicitly defines FSD's capabilities and roadmap. Use JSON-LD schema to highlight these features for better machine readability and to influence more nuanced AI summaries.",
+                        "overall_effort": "Medium",
+                        "impact": "High"
+                    },
+                    {
+                        "overall_insight": "The brand's visibility is highly concentrated in specialized automotive and energy media, with less presence in broader tech news sources compared to some competitors.",
+                        "suggested_action": "Increase outreach to general technology publications to feature Tesla's core technology (battery chemistry, AI training for FSD) in broader articles about sustainable tech and artificial intelligence, moving beyond vehicle reviews.",
+                        "overall_effort": "High",
+                        "impact": "Medium"
+                    },
+                    {
+                        "overall_insight": "Tesla is completely absent from AI-generated results for queries like 'affordable autonomous vehicles with advanced safety features,' ceding this ground to brands like Hyundai, Ford, and Chevrolet.",
+                        "suggested_action": "Optimize existing content on the Tesla website and in press materials for keywords related to 'safety,' 'value,' and 'standard safety features' to improve visibility in these crucial mid-market segments.",
+                        "overall_effort": "Low",
+                        "impact": "Medium"
+                    },
+                    {
+                        "overall_insight": "Analysis of LLM-wise data shows a slightly lower average rank on Gemini (1.8) compared to OpenAI (1.5), suggesting a potential variance in how different models interpret and rank source material.",
+                        "suggested_action": "Analyze the specific sources cited by Gemini for queries where Tesla is not ranked #1. Prioritize engagement and content placement with those publications to improve ranking signals for future model training cycles.",
+                        "overall_effort": "Medium",
+                        "impact": "Medium"
+                    }
+                ],
+                "executive_summary": {
+                    "brand_score_and_tier": "GEO Score: 18, High Tier.",
+                    "strengths": [
+                        "Dominant top-of-funnel visibility, consistently ranking #1 or #2 in core EV and energy storage queries.",
+                        "Strong brand association with 'long-range' EVs and integrated home energy solutions like the Powerwall.",
+                        "High GEO score (18) and percentile rank (83%) place it firmly in the top tier of AI visibility against key competitors."
+                    ],
+                    "weaknesses": [
+                        "Significant visibility gaps in 'affordable' and 'value-oriented' search segments, where competitors are more prominent.",
+                        "The narrative around its autonomous technology (FSD) is being out-positioned by competitors' 'Level 3' certifications in AI summaries.",
+                        "Limited presence in broader tech media, with visibility concentrated in specialized automotive and energy review sites."
+                    ],
+                    "competitor_positioning": {
+                        "leaders": [{"name": "Tesla (GEO 18)", "summary": "The clear leader, setting the benchmark in core categories."}],
+                        "mid_tier": [
+                            {"name": "Hyundai (GEO 10)", "summary": "A strong challenger, leading in affordable EV and ADAS queries."},
+                            {"name": "Ford (GEO 8)", "summary": "Visible for its hands-free driving tech and growing EV presence."}
+                        ],
+                        "laggards": [
+                            {"name": "Mercedes-Benz (GEO 7)", "summary": "A niche leader in luxury EV and Level 3 autonomy."},
+                            {"name": "Enphase (GEO 7)", "summary": "A niche leader, but only visible in the energy storage vertical."},
+                            {"name": "Lucid (GEO 6)", "summary": "A direct high-end competitor but with narrower visibility."}
+                        ]
+                    },
+                    "prioritized_actions": [
+                        "Target 'affordability' keywords to close visibility gaps with competitors like Hyundai.",
+                        "Refine messaging around FSD capabilities to better compete with 'Level 3' narratives.",
+                        "Expand media outreach to general tech publications to broaden content footprint."
+                    ],
+                    "conclusion": "To defend its High Tier visibility, Tesla must expand its content strategy to capture mid-funnel, value-focused queries while reinforcing its technological narrative around autonomous driving to prevent erosion of its leadership position in AI-generated answers."
+                }
+            },
+            "created_at": "2025-12-05T04:47:22.227Z",
+            "updated_at": "2025-12-05T04:48:32.787Z"
+        }
+    ],
+    "count": 1,
+    "limit": 1,
+    "product_id": "ee19a7f2-7042-4ff5-9afc-66cdf50d3a62"
+}

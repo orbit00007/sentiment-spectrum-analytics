@@ -176,6 +176,10 @@ All colors MUST be HSL. Inspired by GeoRankers branding with blue gradients.
     --warning: 45 93% 58%;
     --warning-foreground: 0 0% 0%;
 
+    /* Medium/Neutral state for impact indicators */
+    --medium-neutral: 45 93% 58%;
+    --medium-neutral-foreground: 0 0% 100%;
+
     /* Design tokens */
     --radius: 0.75rem;
 
@@ -241,6 +245,10 @@ All colors MUST be HSL. Inspired by GeoRankers branding with blue gradients.
     --warning: 45 93% 62%;
     --warning-foreground: 0 0% 0%;
 
+    /* Medium/Neutral state for impact indicators */
+    --medium-neutral: 45 93% 62%;
+    --medium-neutral-foreground: 0 0% 100%;
+
     /* Dark gradients */
     --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
     --gradient-hero: linear-gradient(135deg, hsl(210 100% 68%) 0%, hsl(220 100% 73%) 50%, hsl(240 100% 78%) 100%);
@@ -270,8 +278,12 @@ All colors MUST be HSL. Inspired by GeoRankers branding with blue gradients.
   }
 
   body {
-    @apply bg-background text-foreground font-sans antialiased;
+    @apply bg-background text-foreground font-sans antialiased overflow-x-hidden;
     background: hsl(var(--gradient-bg));
+  }
+  
+  html {
+    overflow-x: hidden;
   }
 
   .executive-summary {
@@ -315,5 +327,322 @@ All colors MUST be HSL. Inspired by GeoRankers branding with blue gradients.
   
   .shadow-excutive-summary\/20 {
     box-shadow: 0 10px 15px -3px hsl(210 100% 68% / 0.2), 0 4px 6px -4px hsl(210 100% 68% / 0.1);
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@layer utilities {
+  /* Print styles for download/print functionality */
+  @media print {
+    /* Ensure all content is visible and not cut off */
+    * {
+      overflow: visible !important;
+    }
+
+    /* Hide sidebar and navigation during print */
+    [data-sidebar],
+    button,
+    .no-print {
+      display: none !important;
+    }
+
+    /* Ensure tables display fully without scrolling */
+    table {
+      width: 100% !important;
+      page-break-inside: avoid;
+    }
+
+    /* Ensure cards don't get cut off between pages */
+    .card,
+    [class*="Card"] {
+      page-break-inside: avoid;
+    }
+
+    /* Remove any scrollbars or overflow hidden */
+    .overflow-x-auto,
+    .overflow-hidden {
+      overflow: visible !important;
+    }
+
+    /* Ensure charts and graphs are visible */
+    svg,
+    canvas {
+      max-width: 100% !important;
+      height: auto !important;
+    }
+
+    /* Adjust page margins for better print */
+    @page {
+      margin: 1.5cm;
+      size: A4;
+    }
+
+    /* Ensure text is readable */
+    body {
+      font-size: 10pt;
+      line-height: 1.4;
+    }
+
+    /* Make headings stand out */
+    h1, h2, h3, h4 {
+      page-break-after: avoid;
+    }
+
+    /* Ensure full width tables */
+    .w-full {
+      width: 100% !important;
+    }
+  }
+}
+
+/* ============================= */
+/* PRINT STYLES FOR PDF EXPORT   */
+/* ============================= */
+@media print {
+  @page {
+    size: A4;
+    margin: 1.5cm;
+  }
+
+  /* Hide navigation and interactive elements */
+  .no-print,
+  nav,
+  button,
+  .sidebar,
+  [role="button"],
+  [data-sidebar] {
+    display: none !important;
+  }
+
+  /* Prevent page breaks inside content */
+  section,
+  .card,
+  [class*="card"],
+  [class*="Card"],
+  table,
+  tr,
+  .space-y-8 > div,
+  .space-y-6 > div {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* Keep headers with content */
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+
+  /* Ensure colors print correctly */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    box-shadow: none !important;
+  }
+
+  /* Clean background */
+  body,
+  .bg-gradient-bg {
+    background: white !important;
+  }
+
+  /* Remove sticky positioning */
+  .sticky {
+    position: static !important;
+  }
+
+  /* Print-only header styling */
+  .print-only-header {
+    display: block !important;
+    text-align: center;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #e5e7eb;
+    margin-bottom: 2rem;
+    page-break-after: avoid !important;
+  }
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 220 13% 13%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 13% 13%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 13% 13%;
+
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 220 13% 13%;
+
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
+
+    --accent: 220 14% 96%;
+    --accent-foreground: 220 13% 13%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 217 91% 60%;
+
+    --radius: 0.5rem;
+
+    /* Custom colors for Amplitude theme */
+    --amplitude-blue: 217 91% 60%;
+    --amplitude-dark: 225 25% 12%;
+    --amplitude-purple: 258 90% 66%;
+    --amplitude-gradient-start: 225 25% 12%;
+    --amplitude-gradient-end: 258 50% 25%;
+    --amplitude-yellow: 45 93% 47%;
+    --amplitude-green: 142 71% 45%;
+    --amplitude-red: 0 84% 60%;
+
+    /* Heat map colors */
+    --heat-0: 220 14% 96%;
+    --heat-10: 217 91% 95%;
+    --heat-20: 217 91% 88%;
+    --heat-30: 217 91% 80%;
+    --heat-40: 217 91% 72%;
+    --heat-50: 217 91% 64%;
+    --heat-60: 217 91% 56%;
+    --heat-70: 217 91% 48%;
+    --heat-80: 217 91% 40%;
+    --heat-90: 217 91% 32%;
+    --heat-100: 217 91% 24%;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 225 25% 12%;
+    --foreground: 0 0% 98%;
+
+    --card: 225 25% 15%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 225 25% 15%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 225 25% 20%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 225 25% 20%;
+    --muted-foreground: 220 9% 60%;
+
+    --accent: 225 25% 20%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 225 25% 25%;
+    --input: 225 25% 25%;
+    --ring: 217 91% 60%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', sans-serif;
+  }
+}
+
+@layer components {
+  .amplitude-gradient {
+    background: linear-gradient(135deg, hsl(var(--amplitude-dark)) 0%, hsl(var(--amplitude-gradient-end)) 100%);
+  }
+
+  .amplitude-gradient-light {
+    background: linear-gradient(135deg, hsl(225 25% 18%) 0%, hsl(258 50% 30%) 100%);
+  }
+
+  .nav-tab {
+    @apply px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors relative;
+  }
+
+  .nav-tab-active {
+    @apply text-foreground;
+  }
+
+  .nav-tab-active::after {
+    content: '';
+    @apply absolute bottom-0 left-0 right-0 h-0.5 bg-primary;
+  }
+
+  .stat-card {
+    @apply bg-card rounded-lg border border-border p-6;
+  }
+
+  .progress-bar {
+    @apply h-2 bg-muted rounded-full overflow-hidden;
+  }
+
+  .progress-bar-fill {
+    @apply h-full bg-primary rounded-full transition-all duration-500;
+  }
+
+  .heat-cell {
+    @apply p-3 text-center text-sm font-medium;
+  }
+
+  .table-header {
+    @apply text-xs font-medium text-muted-foreground uppercase tracking-wider;
+  }
+
+  .expandable-row {
+    @apply cursor-pointer hover:bg-muted/50 transition-colors;
+  }
+
+  .brand-chip {
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 bg-muted rounded-full text-sm font-medium;
+  }
+
+  .comparison-card {
+    @apply bg-card rounded-lg border border-border p-6;
+  }
+
+  .visibility-bar {
+    @apply h-3 rounded-full overflow-hidden;
+  }
+}
+
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
   }
 }
