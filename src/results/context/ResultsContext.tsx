@@ -55,12 +55,50 @@ export const ResultsProvider: React.FC<ResultsProviderProps> = ({ children }) =>
   const [previousAnalytics, setPreviousAnalytics] = useState<AnalyticsData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [dataReady, setDataReady] = useState<boolean>(false);
-  const [activeTab, setActiveTab] = useState<TabType>("overview");
+  const [activeTab, setActiveTabState] = useState<TabType>("overview");
 
   const { products } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Map URL paths to tab types
+  const pathToTab: Record<string, TabType> = {
+    "/newresults": "overview",
+    "/newresults/executive-summary": "executive-summary",
+    "/newresults/prompts": "prompts",
+    "/newresults/sources-all": "sources-all",
+    "/newresults/competitors-comparisons": "competitors-comparisons",
+    "/newresults/brand-sentiment": "brand-sentiment",
+    "/newresults/recommendations": "recommendations",
+  };
+
+  // Sync activeTab with URL path
+  useEffect(() => {
+    const currentPath = location.pathname;
+    const matchedTab = pathToTab[currentPath];
+    if (matchedTab && matchedTab !== activeTab) {
+      setActiveTabState(matchedTab);
+    }
+  }, [location.pathname]);
+
+  // Wrapper to also update URL when tab changes programmatically
+  const setActiveTab = (tab: TabType) => {
+    setActiveTabState(tab);
+    const tabToPath: Record<TabType, string> = {
+      "overview": "/newresults",
+      "executive-summary": "/newresults/executive-summary",
+      "prompts": "/newresults/prompts",
+      "sources-all": "/newresults/sources-all",
+      "competitors-comparisons": "/newresults/competitors-comparisons",
+      "brand-sentiment": "/newresults/brand-sentiment",
+      "recommendations": "/newresults/recommendations",
+    };
+    const targetPath = tabToPath[tab];
+    if (targetPath && location.pathname !== targetPath) {
+      navigate(targetPath, { replace: true });
+    }
+  };
 
   // Polling configuration
   const POLL_INITIAL_DELAY_MS = 2 * 60 * 1000;
