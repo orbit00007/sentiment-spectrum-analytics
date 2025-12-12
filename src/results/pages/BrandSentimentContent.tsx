@@ -19,7 +19,7 @@ const BrandSentimentContent = () => {
   });
 
   return (
-    <div className="p-4 md:p-6 space-y-6">
+    <div className="p-4 md:p-6 space-y-6 w-full max-w-full overflow-x-hidden">
       {/* Header */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-green-500/20 via-green-500/10 to-transparent border border-green-500/20 p-4 md:p-6">
         <div className="absolute top-0 right-0 w-48 h-48 bg-green-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />

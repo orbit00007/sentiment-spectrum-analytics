@@ -40,7 +40,7 @@ export const BrandMentionsRadar = () => {
   const maxScore = Math.max(...chartData.map(d => d.score), 1);
 
   return (
-    <div className="bg-card rounded-xl border border-border p-6">
+    <div className="bg-card rounded-xl border border-border p-4 md:p-6 overflow-hidden">
       <div className="flex items-center justify-between mb-1">
         <div className="flex items-center gap-2">
           <Target className="w-5 h-5 text-primary" />

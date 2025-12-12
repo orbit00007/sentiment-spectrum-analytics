@@ -91,7 +91,7 @@ export const CompetitorComparisonChart = () => {
   );
 
   return (
-    <div className="bg-card rounded-xl border border-border p-6">
+    <div className="bg-card rounded-xl border border-border p-4 md:p-6 overflow-hidden">
       <div className="flex items-center justify-between mb-1 flex-wrap gap-3">
         <div className="flex items-center gap-2">
           <TrendingUp className="w-5 h-5 text-primary" />

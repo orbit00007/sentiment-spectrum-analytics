@@ -68,7 +68,7 @@ export const Layout = ({ children }: LayoutProps) => {
 
   return (
     <SidebarProvider
-      defaultOpen={true}
+      defaultOpen={false}
       style={{ "--sidebar-width": "24rem" } as React.CSSProperties}
     >
       {/* Desktop Sidebar */}
@@ -78,13 +78,17 @@ export const Layout = ({ children }: LayoutProps) => {
         </SidebarContent>
       </Sidebar>
 
-      <SidebarInset className="w-full max-w-full overflow-x-hidden">
-        <div className="min-h-screen bg-background flex flex-col w-full">
+      <SidebarInset className="flex-1 min-w-0 overflow-x-hidden">
+        <div className="min-h-screen bg-background flex flex-col w-full overflow-x-hidden">
           {/* Sidebar trigger */}
           <SidebarTrigger className="fixed left-4 top-3 h-8 w-8 no-print hidden md:flex z-50" />
           <Header />
           <Navigation />
-          <main className="flex-1 overflow-auto">{children}</main>
+          <main className="flex-1 overflow-x-hidden overflow-y-auto">
+            <div className="w-full max-w-full">
+              {children}
+            </div>
+          </main>
         </div>
 
         {/* Chat Bubble */}
@@ -93,8 +97,7 @@ export const Layout = ({ children }: LayoutProps) => {
         {/* Mobile Chat Overlay */}
         {isMobileChatOpen && (
           <div 
-            className="fixed inset-0 z-50 bg-background md:hidden"
-            style={{ overflow: 'hidden' }}
+            className="fixed inset-0 z-50 bg-background md:hidden overflow-hidden"
           >
             <ChatSidebar
               productId={productId}
