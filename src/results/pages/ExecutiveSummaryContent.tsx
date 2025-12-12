@@ -13,7 +13,7 @@ const ExecutiveSummaryContent = () => {
   };
 
   return (
-    <div className="p-3 md:p-6 space-y-4 md:space-y-6 max-w-6xl mx-auto overflow-x-hidden">
+    <div className="p-3 md:p-6 space-y-4 md:space-y-6 max-w-6xl mx-auto w-full overflow-x-hidden">
       {/* Page Title with gradient header */}
       <div className="relative overflow-hidden rounded-xl md:rounded-2xl bg-gradient-to-r from-primary/20 via-primary/10 to-transparent border border-primary/20 p-4 md:p-8">
         <div className="absolute top-0 right-0 w-32 md:w-64 h-32 md:h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />

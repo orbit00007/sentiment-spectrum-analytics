@@ -16,7 +16,7 @@ export const SourceInsights = () => {
   }
 
   return (
-    <div className="bg-card rounded-xl border border-border p-6">
+    <div className="bg-card rounded-xl border border-border p-4 md:p-6 overflow-hidden">
       <div className="flex items-center gap-2 mb-1">
         <Lightbulb className="w-5 h-5 text-amber-500" />
         <h3 className="text-lg font-semibold text-foreground">Source Insights for {brandName}</h3>

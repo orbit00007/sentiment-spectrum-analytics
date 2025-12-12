@@ -111,7 +111,7 @@ export const SourceMentionsChart = () => {
   const allSources = ["All Sources", ...sources];
 
   return (
-    <div className="bg-card rounded-xl border border-border p-6">
+    <div className="bg-card rounded-xl border border-border p-4 md:p-6 overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between mb-1 flex-wrap gap-3">
         <div className="flex items-center gap-2">
