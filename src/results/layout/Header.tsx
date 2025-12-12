@@ -1,7 +1,7 @@
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { Menu, X, FileDown, User, LogOut, RefreshCw, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/auth-context";
 import { regenerateAnalysis } from "@/apiHelpers";
@@ -12,15 +12,18 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useResults, TabType } from "@/results/context/ResultsContext";
+import { createRoot } from "react-dom/client";
+import FullReportContent from "@/results/pages/FullReportContent";
 
 const mobileNavItems = [
-  { label: "Overview", path: "/newresults" },
-  { label: "Executive Summary", path: "/newresults/executive-summary" },
-  { label: "Prompts", path: "/newresults/prompts" },
-  { label: "Sources", path: "/newresults/sources-all" },
-  { label: "Competitors", path: "/newresults/competitors-comparisons" },
-  { label: "Brand Sentiment", path: "/newresults/brand-sentiment" },
-  { label: "Recommendations", path: "/newresults/recommendations" },
+  { label: "Overview", path: "/newresults", tab: "overview" as TabType },
+  { label: "Executive Summary", path: "/newresults/executive-summary", tab: "executive-summary" as TabType },
+  { label: "Prompts", path: "/newresults/prompts", tab: "prompts" as TabType },
+  { label: "Sources", path: "/newresults/sources-all", tab: "sources-all" as TabType },
+  { label: "Competitors", path: "/newresults/competitors-comparisons", tab: "competitors-comparisons" as TabType },
+  { label: "Brand Sentiment", path: "/newresults/brand-sentiment", tab: "brand-sentiment" as TabType },
+  { label: "Recommendations", path: "/newresults/recommendations", tab: "recommendations" as TabType },
 ];
 
 export const Header = () => {
@@ -32,6 +35,8 @@ export const Header = () => {
   const navigate = useNavigate();
   const { user, logout, products } = useAuth();
   const { toast } = useToast();
+  const { setActiveTab } = useResults();
+  const printContainerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const storedProductId = localStorage.getItem("product_id");
@@ -97,9 +102,27 @@ export const Header = () => {
     }
   };
 
+  const handleMobileNavClick = (tab: TabType) => {
+    setActiveTab(tab);
+    setMobileMenuOpen(false);
+  };
+
   const handleGenerateReport = useCallback(() => {
     setIsGeneratingReport(true);
     
+    // Create a hidden container for the full report
+    let printContainer = document.getElementById('print-report-container') as HTMLDivElement;
+    if (!printContainer) {
+      printContainer = document.createElement('div');
+      printContainer.id = 'print-report-container';
+      printContainer.className = 'print-only';
+      document.body.appendChild(printContainer);
+    }
+
+    // Mount the full report content
+    const root = createRoot(printContainer);
+    root.render(<FullReportContent />);
+
     // Add print styles dynamically
     const printStyleId = 'print-report-styles';
     let styleSheet = document.getElementById(printStyleId) as HTMLStyleElement;
@@ -114,13 +137,28 @@ export const Header = () => {
       @media print {
         @page {
           size: A4;
-          margin: 15mm;
+          margin: 10mm;
         }
         
         body {
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
-          font-size: 12px;
+          font-size: 11px;
+        }
+        
+        /* Hide everything except the print container */
+        body > *:not(#print-report-container) {
+          display: none !important;
+        }
+        
+        #print-report-container {
+          display: block !important;
+          position: static !important;
+          width: 100% !important;
+        }
+        
+        .print-only {
+          display: block !important;
         }
         
         .no-print, 
@@ -134,31 +172,50 @@ export const Header = () => {
           display: none !important;
         }
         
-        .print-only-header {
-          display: block !important;
-        }
-        
         * {
           box-shadow: none !important;
+        }
+        
+        .page-break-before {
+          page-break-before: always;
+        }
+        
+        .page-break-inside-avoid {
+          page-break-inside: avoid;
         }
         
         .bg-card {
           background: white !important;
           border: 1px solid #e5e7eb !important;
         }
+        
+        table {
+          font-size: 10px;
+        }
+      }
+      
+      @media screen {
+        #print-report-container {
+          display: none !important;
+        }
       }
     `;
 
     toast({
       title: "Generating Report",
-      description: "Preparing your report for download...",
+      description: "Preparing your comprehensive report...",
       duration: 2000,
     });
 
-    // Small delay to show the toast, then trigger print
+    // Small delay to render the component, then trigger print
     setTimeout(() => {
       window.print();
-      setIsGeneratingReport(false);
+      
+      // Cleanup after print
+      setTimeout(() => {
+        root.unmount();
+        setIsGeneratingReport(false);
+      }, 1000);
     }, 500);
   }, [toast]);
 
@@ -276,19 +333,18 @@ export const Header = () => {
       )}>
         <nav className="p-3 space-y-1">
           {mobileNavItems.map((item) => (
-            <Link
+            <button
               key={item.path}
-              to={item.path}
-              onClick={() => setMobileMenuOpen(false)}
+              onClick={() => handleMobileNavClick(item.tab)}
               className={cn(
-                "block px-3 py-2.5 rounded-lg text-sm font-medium transition-colors touch-manipulation",
+                "block w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition-colors touch-manipulation",
                 location.pathname === item.path
                   ? "bg-primary text-primary-foreground"
                   : "text-foreground hover:bg-muted active:bg-muted"
               )}
             >
               {item.label}
-            </Link>
+            </button>
           ))}
           <div className="px-3 py-2.5 text-sm text-muted-foreground">
             <span className="font-medium">Content Hub</span>
