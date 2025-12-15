@@ -22,7 +22,7 @@ const navItems: Array<{
     dropdown: [
       { label: "Prompts", tab: "prompts" },
       { label: "Sources", tab: "sources-all" },
-      { label: "Competitors", tab: "competitors-comparisons" },
+      { label: "Competitor Analysis", tab: "competitors-comparisons" },
       { label: "Brand Sentiment", tab: "brand-sentiment" },
       { label: "Recommendations", tab: "recommendations" },
     ],
