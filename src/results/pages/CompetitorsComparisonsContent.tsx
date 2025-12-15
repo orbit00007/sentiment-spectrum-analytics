@@ -1,7 +1,7 @@
-import { getAnalytics, getCompetitorData, getCompetitorSentiment, getCompetitorVisibility, getBrandName, getKeywords, getBrandLogo, getBrandInfoWithLogos } from "@/results/data/analyticsData";
+import { getAnalytics, getCompetitorData, getCompetitorSentiment, getCompetitorVisibility, getBrandName, getKeywords, getBrandLogo, getBrandInfoWithLogos, getSourcesData } from "@/results/data/analyticsData";
 import { TierBadge } from "@/results/ui/TierBadge";
 import { useState, useMemo, useEffect } from "react";
-import { Trophy, Users, TrendingUp, Info } from "lucide-react";
+import { Trophy, Users, TrendingUp, Info, BarChart3, MessageCircle, Layers } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -17,6 +17,7 @@ const CompetitorsComparisonsContent = () => {
   const brandInfo = getBrandInfoWithLogos();
   const competitorData = getCompetitorData();
   const competitorSentiment = getCompetitorSentiment();
+  const sourcesData = getSourcesData();
   
   const otherCompetitors = competitorData.filter(c => c.name !== brandName);
   const [selectedCompetitor, setSelectedCompetitor] = useState<string>('');
@@ -41,6 +42,11 @@ const CompetitorsComparisonsContent = () => {
     return [...competitorData].sort((a, b) => b.totalScore - a.totalScore);
   }, [competitorData]);
 
+  // Get all brand names for the source citations table
+  const allBrandNames = useMemo(() => {
+    return competitorData.map(c => c.name);
+  }, [competitorData]);
+
   return (
     <div className="p-4 md:p-6 space-y-6 w-full max-w-full overflow-x-hidden">
       {/* Header */}
@@ -52,13 +58,13 @@ const CompetitorsComparisonsContent = () => {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl md:text-2xl font-bold text-foreground">Competitor Comparisons</h1>
+              <h1 className="text-xl md:text-2xl font-bold text-foreground">Competitor Analysis</h1>
               <Tooltip>
                 <TooltipTrigger>
                   <Info className="w-4 h-4 text-muted-foreground cursor-help" />
                 </TooltipTrigger>
                 <TooltipContent className="max-w-xs bg-card border border-border">
-                  <p>Compare your brand's visibility metrics against competitors.</p>
+                  <p>Comprehensive analysis of your brand's visibility compared to competitors across AI platforms.</p>
                 </TooltipContent>
               </Tooltip>
             </div>
@@ -67,175 +73,22 @@ const CompetitorsComparisonsContent = () => {
         </div>
       </div>
 
-      {/* Competitor Selector */}
-      <div className="flex flex-col md:flex-row items-start md:items-center gap-3 md:gap-4 bg-card rounded-xl border border-border p-4">
-        <div className="flex items-center gap-2">
-          <Users className="w-5 h-5 text-primary" />
-          <span className="text-muted-foreground text-sm md:text-base">Compare {brandName} with:</span>
-        </div>
-        <select
-          value={selectedCompetitor}
-          onChange={(e) => setSelectedCompetitor(e.target.value)}
-          className="w-full md:w-auto bg-card border border-border rounded-lg px-4 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-        >
-          {otherCompetitors.map(c => (
-            <option key={c.name} value={c.name}>{c.name}</option>
-          ))}
-        </select>
-      </div>
-
-      {/* Side by Side Comparison */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-        {/* Primary Brand */}
-        <div className="bg-card rounded-xl border-2 border-primary p-4 md:p-6 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
-          <div className="relative">
-            <div className="flex items-center gap-3 mb-6">
-              {brandLogo ? (
-                <img 
-                  src={brandLogo} 
-                  alt={brandName} 
-                  className="w-12 h-12 md:w-14 md:h-14 rounded-full object-contain bg-white shadow-lg"
-                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                />
-              ) : (
-                <div className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold text-xl">
-                  {brandName[0]}
-                </div>
-              )}
-              <div>
-                <h3 className="text-xl md:text-2xl font-bold text-primary">{brandName}</h3>
-                <span className="text-xs text-muted-foreground bg-primary/10 px-2 py-0.5 rounded-full">Your Brand</span>
-              </div>
-            </div>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center p-4 bg-muted/30 rounded-xl">
-                <span className="text-muted-foreground text-sm">Total Score</span>
-                <span className="text-3xl font-bold text-foreground">{brand?.totalScore || 0}</span>
-              </div>
-              <div className="flex justify-between items-center p-4 bg-muted/30 rounded-xl">
-                <span className="text-muted-foreground text-sm">Visibility</span>
-                <span className="text-2xl font-bold text-primary">{brand?.visibility || 0}%</span>
-              </div>
-              <div className="h-3 bg-muted rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-gradient-to-r from-primary to-primary/70 rounded-full transition-all duration-500"
-                  style={{ width: `${brand?.visibility || 0}%` }}
-                />
-              </div>
-              <div className="pt-4 border-t border-border/50">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-sm text-muted-foreground">Sentiment:</span>
-                  <TierBadge tier={brandSentiment?.outlook || 'N/A'} />
-                </div>
-                <p className="text-sm text-muted-foreground line-clamp-2">{brandSentiment?.summary}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Selected Competitor */}
-        <div className="bg-card rounded-xl border border-border p-4 md:p-6">
-          <div className="flex items-center gap-3 mb-6">
-            {competitorLogo ? (
-              <img 
-                src={competitorLogo} 
-                alt={selectedCompetitor} 
-                className="w-12 h-12 md:w-14 md:h-14 rounded-full object-contain bg-white shadow-lg"
-                onError={(e) => { e.currentTarget.style.display = 'none'; }}
-              />
-            ) : (
-              <div className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-muted flex items-center justify-center text-foreground font-bold text-xl">
-                {selectedCompetitor[0]}
-              </div>
-            )}
-            <div>
-              <h3 className="text-xl md:text-2xl font-bold text-foreground">{selectedCompetitor}</h3>
-              <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">Competitor</span>
-            </div>
-          </div>
-          <div className="space-y-4">
-            <div className="flex justify-between items-center p-4 bg-muted/30 rounded-xl">
-              <span className="text-muted-foreground text-sm">Total Score</span>
-              <span className="text-3xl font-bold text-foreground">{competitor?.totalScore || 0}</span>
-            </div>
-            <div className="flex justify-between items-center p-4 bg-muted/30 rounded-xl">
-              <span className="text-muted-foreground text-sm">Visibility</span>
-              <span className="text-2xl font-bold text-foreground">{competitor?.visibility || 0}%</span>
-            </div>
-            <div className="h-3 bg-muted rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-muted-foreground/50 rounded-full transition-all duration-500"
-                style={{ width: `${competitor?.visibility || 0}%` }}
-              />
-            </div>
-            <div className="pt-4 border-t border-border/50">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-sm text-muted-foreground">Sentiment:</span>
-                <TierBadge tier={competitorSentimentData?.outlook || 'N/A'} />
-              </div>
-              <p className="text-sm text-muted-foreground line-clamp-2">{competitorSentimentData?.summary}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Keyword Breakdown */}
-      <div className="bg-card rounded-xl border border-border overflow-hidden">
-        <div className="p-4 md:p-6 border-b border-border flex items-center gap-2">
-          <TrendingUp className="w-5 h-5 text-primary" />
-          <h3 className="text-lg font-semibold text-foreground">Keyword-by-Keyword Breakdown</h3>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-border bg-muted/30">
-                <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Keyword</th>
-                <th className="text-center py-3 px-4 text-xs font-semibold text-primary uppercase tracking-wider">{brandName}</th>
-                <th className="text-center py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">{selectedCompetitor}</th>
-                <th className="text-center py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Diff</th>
-              </tr>
-            </thead>
-            <tbody>
-              {keywords.map((keyword, index) => {
-                const brandRow = visibilityTable?.rows?.find(r => r[0] === brandName);
-                const competitorRow = visibilityTable?.rows?.find(r => r[0] === selectedCompetitor);
-                
-                const bScore = brandRow ? brandRow[index + 1] as number : 0;
-                const cScore = competitorRow ? competitorRow[index + 1] as number : 0;
-                const diff = bScore - cScore;
-
-                return (
-                  <tr key={keyword} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
-                    <td className="py-3 px-4 text-foreground text-sm">{keyword}</td>
-                    <td className="py-3 px-4 text-center">
-                      <span className="px-3 py-1.5 bg-primary/20 text-primary rounded-lg font-semibold text-sm">{bScore}</span>
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      <span className="px-3 py-1.5 bg-muted text-foreground rounded-lg font-semibold text-sm">{cScore}</span>
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      <span className={`px-3 py-1.5 rounded-lg font-semibold text-sm ${
-                        diff > 0 ? 'bg-green-500 text-white' :
-                        diff < 0 ? 'bg-red-500 text-white' :
-                        'bg-muted text-foreground'
-                      }`}>
-                        {diff > 0 ? '+' : ''}{diff}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* All Competitors Table */}
+      {/* Card 1: AI Visibility Score Comparison */}
       <div className="bg-card rounded-xl border border-border overflow-hidden">
         <div className="p-4 md:p-6 border-b border-border">
-          <h3 className="text-lg font-semibold text-foreground">All Competitors Overview</h3>
-          <p className="text-sm text-muted-foreground">Sorted by total visibility score (highest first)</p>
+          <div className="flex items-center gap-2">
+            <BarChart3 className="w-5 h-5 text-primary" />
+            <h3 className="text-lg font-semibold text-foreground">AI Visibility Score Comparison</h3>
+            <Tooltip>
+              <TooltipTrigger>
+                <Info className="w-4 h-4 text-muted-foreground cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs bg-card border border-border">
+                <p>Compares how often each brand appears in AI-generated responses for each keyword. Higher scores indicate stronger visibility in AI search results.</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+          <p className="text-sm text-muted-foreground mt-1">Brand visibility scores across different search keywords</p>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -243,7 +96,7 @@ const CompetitorsComparisonsContent = () => {
               <tr className="border-b border-border bg-muted/30">
                 <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Brand</th>
                 {keywords.map(keyword => (
-                  <th key={keyword} className="text-center py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden md:table-cell">{keyword}</th>
+                  <th key={keyword} className="text-center py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">{keyword}</th>
                 ))}
                 <th className="text-center py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Total</th>
               </tr>
@@ -273,7 +126,7 @@ const CompetitorsComparisonsContent = () => {
                       </div>
                     </td>
                     {c.keywordScores.map((score, idx) => (
-                      <td key={idx} className="py-3 px-4 text-center text-foreground text-sm hidden md:table-cell">{score}</td>
+                      <td key={idx} className="py-3 px-4 text-center text-foreground text-sm">{score}</td>
                     ))}
                     <td className="py-3 px-4 text-center">
                       <span className={`px-3 py-1.5 rounded-lg font-semibold text-sm ${isPrimaryBrand ? 'bg-primary text-white' : 'bg-muted text-foreground'}`}>
@@ -283,6 +136,127 @@ const CompetitorsComparisonsContent = () => {
                   </tr>
                 );
               })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Card 2: Competitor Sentiment Analysis */}
+      <div className="bg-card rounded-xl border border-border overflow-hidden">
+        <div className="p-4 md:p-6 border-b border-border">
+          <div className="flex items-center gap-2">
+            <MessageCircle className="w-5 h-5 text-primary" />
+            <h3 className="text-lg font-semibold text-foreground">Competitor Sentiment Analysis</h3>
+            <Tooltip>
+              <TooltipTrigger>
+                <Info className="w-4 h-4 text-muted-foreground cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs bg-card border border-border">
+                <p>Analysis of how AI models portray each brand in their responses, including sentiment summary and overall outlook.</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+          <p className="text-sm text-muted-foreground mt-1">How AI models perceive and describe each competitor</p>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-border bg-muted/30">
+                <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Brand</th>
+                <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sentiment Summary</th>
+                <th className="text-center py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Overall Outlook</th>
+              </tr>
+            </thead>
+            <tbody>
+              {competitorSentiment.map(sentiment => {
+                const isPrimaryBrand = sentiment.brand === brandName;
+                return (
+                  <tr key={sentiment.brand} className={`border-b border-border/50 hover:bg-muted/20 transition-colors ${isPrimaryBrand ? 'bg-primary/5' : ''}`}>
+                    <td className={`py-3 px-4 font-medium ${isPrimaryBrand ? 'text-primary' : 'text-foreground'}`}>
+                      <div className="flex items-center gap-2">
+                        {sentiment.logo ? (
+                          <img 
+                            src={sentiment.logo} 
+                            alt={sentiment.brand} 
+                            className="w-6 h-6 rounded-full object-contain bg-white shadow-sm"
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                          />
+                        ) : (
+                          <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                            isPrimaryBrand ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                          }`}>
+                            {sentiment.brand[0]}
+                          </div>
+                        )}
+                        <span className="text-sm font-semibold">{sentiment.brand}</span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4 text-sm text-muted-foreground max-w-md">{sentiment.summary}</td>
+                    <td className="py-3 px-4 text-center">
+                      <TierBadge tier={sentiment.outlook} />
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Card 3: Number of Source Citations */}
+      <div className="bg-card rounded-xl border border-border overflow-hidden">
+        <div className="p-4 md:p-6 border-b border-border">
+          <div className="flex items-center gap-2">
+            <Layers className="w-5 h-5 text-primary" />
+            <h3 className="text-lg font-semibold text-foreground">Number of Source Citations</h3>
+            <Tooltip>
+              <TooltipTrigger>
+                <Info className="w-4 h-4 text-muted-foreground cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs bg-card border border-border">
+                <p>Visibility of each brand across different sources as referenced by AI models.</p>
+                <p className="mt-2 text-xs">
+                  <strong>Mention Score:</strong><br/>
+                  High ≥ 80 | Medium 40–79 | Low &lt; 40
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+          <p className="text-sm text-muted-foreground mt-1">Brand mentions count across different source categories</p>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-border bg-muted/30">
+                <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Source</th>
+                {allBrandNames.map(brand => (
+                  <th key={brand} className={`text-center py-3 px-4 text-xs font-semibold uppercase tracking-wider ${brand === brandName ? 'text-primary' : 'text-muted-foreground'}`}>
+                    {brand}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {sourcesData.map((source: any) => (
+                <tr key={source.name} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
+                  <td className="py-3 px-4 font-medium text-foreground text-sm">{source.name}</td>
+                  {allBrandNames.map(brand => {
+                    const mentions = source[`${brand}Mentions`] || 0;
+                    const isPrimaryBrand = brand === brandName;
+                    return (
+                      <td key={brand} className="py-3 px-4 text-center">
+                        <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${
+                          isPrimaryBrand 
+                            ? mentions > 0 ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
+                            : mentions > 0 ? 'bg-muted text-foreground' : 'bg-muted/50 text-muted-foreground'
+                        }`}>
+                          {mentions}
+                        </span>
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
