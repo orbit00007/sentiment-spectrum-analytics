@@ -1,7 +1,25 @@
-import { getSourcesData, getBrandName, getDepthNotes, getBrandInfoWithLogos } from "@/results/data/analyticsData";
+import {
+  getSourcesData,
+  getBrandName,
+  getDepthNotes,
+  getBrandInfoWithLogos,
+} from "@/results/data/analyticsData";
 import { TierBadge } from "@/results/ui/TierBadge";
-import { ChevronDown, ChevronRight, Globe, FileText, Layers, BookOpen } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  Globe,
+  FileText,
+  Layers,
+  BookOpen,
+  Link2,
+} from "lucide-react";
 import { useState, useMemo } from "react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 const SourcesAllContent = () => {
   const brandName = getBrandName();
@@ -9,13 +27,21 @@ const SourcesAllContent = () => {
   const depthNotes = getDepthNotes();
   const brandInfo = getBrandInfoWithLogos();
   const [expandedSource, setExpandedSource] = useState<string | null>(null);
+  const [allSourcesOpen, setAllSourcesOpen] = useState(false);
 
   const totalSources = sourcesData.length;
   const brandMentionsKey = `${brandName}Mentions`;
   const brandPresenceKey = `${brandName}Presence`;
-  const sourcesWithMentions = sourcesData.filter(s => (s[brandMentionsKey] || 0) > 0).length;
-  const totalMentions = sourcesData.reduce((acc, s) => acc + (s[brandMentionsKey] || 0), 0);
-  const presentSources = sourcesData.filter(s => s[brandPresenceKey] === 'Present').length;
+  const sourcesWithMentions = sourcesData.filter(
+    (s) => (s[brandMentionsKey] || 0) > 0
+  ).length;
+  const totalMentions = sourcesData.reduce(
+    (acc, s) => acc + (s[brandMentionsKey] || 0),
+    0
+  );
+  const presentSources = sourcesData.filter(
+    (s) => s[brandPresenceKey] === "Present"
+  ).length;
 
   const sortedSourcesData = useMemo(() => {
     return [...sourcesData].sort((a, b) => {
@@ -29,6 +55,41 @@ const SourcesAllContent = () => {
     return [...brandInfo].sort((a, b) => b.mention_count - a.mention_count);
   }, [brandInfo]);
 
+  // Collect all unique sources from sources_and_content_impact pages_used and depth_notes
+  const allCheckedSources = useMemo(() => {
+    const sourcesSet = new Set<string>();
+
+    // Get pages_used from sourcesData (from sources_and_content_impact rows)
+    sourcesData.forEach((source) => {
+      const pagesUsed = source.pagesUsed;
+      if (Array.isArray(pagesUsed)) {
+        pagesUsed.forEach((page: string) => {
+          if (page && page !== "Absent") {
+            sourcesSet.add(page);
+          }
+        });
+      }
+    });
+
+    // Get pages_used from depthNotes (for the current brand's depth notes)
+    if (depthNotes && typeof depthNotes === "object") {
+      Object.values(depthNotes).forEach((categoryData: any) => {
+        if (
+          categoryData?.pages_used &&
+          Array.isArray(categoryData.pages_used)
+        ) {
+          categoryData.pages_used.forEach((page: string) => {
+            if (page && page !== "Absent") {
+              sourcesSet.add(page);
+            }
+          });
+        }
+      });
+    }
+
+    return Array.from(sourcesSet).sort();
+  }, [sourcesData, depthNotes]);
+
   return (
     <div className="p-4 md:p-6 space-y-6 w-full max-w-full overflow-x-hidden">
       {/* Header with gradient */}
@@ -39,8 +100,12 @@ const SourcesAllContent = () => {
             <Layers className="w-6 h-6 text-primary" />
           </div>
           <div>
-            <h1 className="text-xl md:text-2xl font-bold text-foreground">Sources & Content Impact</h1>
-            <p className="text-sm text-muted-foreground">Where your brand is being cited by AI</p>
+            <h1 className="text-xl md:text-2xl font-bold text-foreground">
+              Sources & Content Impact
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Where your brand is being cited by AI
+            </p>
           </div>
         </div>
       </div>
@@ -52,20 +117,30 @@ const SourcesAllContent = () => {
             <div className="p-2 bg-primary/10 rounded-lg">
               <Globe className="w-4 h-4 md:w-5 md:h-5 text-primary" />
             </div>
-            <span className="text-xs md:text-sm text-muted-foreground">Source Categories</span>
+            <span className="text-xs md:text-sm text-muted-foreground">
+              Source Categories
+            </span>
           </div>
-          <span className="text-2xl md:text-3xl font-bold text-foreground">{totalSources}</span>
+          <span className="text-2xl md:text-3xl font-bold text-foreground">
+            {totalSources}
+          </span>
         </div>
-        
+
         <div className="bg-card rounded-xl border border-border p-4 md:p-5 hover:shadow-md transition-shadow">
           <div className="flex items-center gap-2 md:gap-3 mb-2 md:mb-3">
             <div className="p-2 bg-green-500/10 rounded-lg">
               <FileText className="w-4 h-4 md:w-5 md:h-5 text-green-500" />
             </div>
-            <span className="text-xs md:text-sm text-muted-foreground">Present In</span>
+            <span className="text-xs md:text-sm text-muted-foreground">
+              Present In
+            </span>
           </div>
-          <span className="text-2xl md:text-3xl font-bold text-green-500">{presentSources}</span>
-          <span className="text-xs md:text-sm text-muted-foreground ml-2">of {totalSources}</span>
+          <span className="text-2xl md:text-3xl font-bold text-green-500">
+            {presentSources}
+          </span>
+          <span className="text-xs md:text-sm text-muted-foreground ml-2">
+            of {totalSources}
+          </span>
         </div>
 
         <div className="bg-card rounded-xl border border-border p-4 md:p-5 hover:shadow-md transition-shadow">
@@ -73,9 +148,13 @@ const SourcesAllContent = () => {
             <div className="p-2 bg-amber-500/10 rounded-lg">
               <BookOpen className="w-4 h-4 md:w-5 md:h-5 text-amber-500" />
             </div>
-            <span className="text-xs md:text-sm text-muted-foreground">With Mentions</span>
+            <span className="text-xs md:text-sm text-muted-foreground">
+              With Mentions
+            </span>
           </div>
-          <span className="text-2xl md:text-3xl font-bold text-amber-500">{sourcesWithMentions}</span>
+          <span className="text-2xl md:text-3xl font-bold text-amber-500">
+            {sourcesWithMentions}
+          </span>
         </div>
 
         <div className="bg-card rounded-xl border border-border p-4 md:p-5 hover:shadow-md transition-shadow">
@@ -83,11 +162,70 @@ const SourcesAllContent = () => {
             <div className="p-2 bg-primary/10 rounded-lg">
               <FileText className="w-4 h-4 md:w-5 md:h-5 text-primary" />
             </div>
-            <span className="text-xs md:text-sm text-muted-foreground">Total Mentions</span>
+            <span className="text-xs md:text-sm text-muted-foreground">
+              Total Mentions
+            </span>
           </div>
-          <span className="text-2xl md:text-3xl font-bold text-primary">{totalMentions}</span>
+          <span className="text-2xl md:text-3xl font-bold text-primary">
+            {totalMentions}
+          </span>
         </div>
       </div>
+
+      {/* All Checked Sources - Collapsible Dropdown */}
+      <Collapsible open={allSourcesOpen} onOpenChange={setAllSourcesOpen}>
+        <div className="bg-card rounded-xl border border-border overflow-hidden shadow-sm">
+          <CollapsibleTrigger className="w-full flex items-center justify-between p-4 md:p-5 hover:bg-muted/30 transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <Link2 className="w-5 h-5 text-primary" />
+              </div>
+              <div className="text-left">
+                <h3 className="font-semibold text-foreground">
+                  All Checked Sources
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  {allCheckedSources.length} sources analyzed by AI
+                </p>
+              </div>
+            </div>
+            {allSourcesOpen ? (
+              <ChevronDown className="w-5 h-5 text-muted-foreground" />
+            ) : (
+              <ChevronRight className="w-5 h-5 text-muted-foreground" />
+            )}
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="border-t border-border p-4 md:p-5">
+              {allCheckedSources.length > 0 ? (
+                <ol className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-2 list-decimal list-inside">
+                  {allCheckedSources.map((source, idx) => (
+                    <li key={idx} className="text-sm">
+                      <a
+                        href={
+                          source.startsWith("http")
+                            ? source
+                            : `https://${source}`
+                        }
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-primary hover:underline"
+                      >
+                        <Globe className="w-3 h-3" />
+                        {source}
+                      </a>
+                    </li>
+                  ))}
+                </ol>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  No sources found
+                </p>
+              )}
+            </div>
+          </CollapsibleContent>
+        </div>
+      </Collapsible>
 
       {/* Sources Table */}
       <div className="bg-card rounded-xl border border-border overflow-hidden shadow-sm">
@@ -96,26 +234,38 @@ const SourcesAllContent = () => {
             <thead>
               <tr className="border-b border-border bg-muted/50">
                 <th className="text-left py-4 px-3 md:px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-8"></th>
-                <th className="text-left py-4 px-3 md:px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Source Category</th>
-                <th className="text-center py-4 px-3 md:px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Presence</th>
-                <th className="text-center py-4 px-3 md:px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Mentions</th>
-                <th className="text-center py-4 px-3 md:px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden md:table-cell">Score</th>
+                <th className="text-left py-4 px-3 md:px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Source Category
+                </th>
+                <th className="text-center py-4 px-3 md:px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Presence
+                </th>
+                <th className="text-center py-4 px-3 md:px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Mentions
+                </th>
+                <th className="text-center py-4 px-3 md:px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden md:table-cell">
+                  Score
+                </th>
               </tr>
             </thead>
             <tbody>
               {sortedSourcesData.map((source) => {
                 const isExpanded = expandedSource === source.name;
-                const notes = depthNotes[source.name as keyof typeof depthNotes];
+                const notes =
+                  depthNotes[source.name as keyof typeof depthNotes];
                 const presence = source[brandPresenceKey];
                 const mentions = source[brandMentionsKey] || 0;
                 const score = source[`${brandName}Score`];
+                const pagesUsed = source.pages_used;
 
                 return (
                   <>
-                    <tr 
+                    <tr
                       key={source.name}
                       className="border-b border-border/50 hover:bg-muted/30 cursor-pointer transition-colors"
-                      onClick={() => setExpandedSource(isExpanded ? null : source.name)}
+                      onClick={() =>
+                        setExpandedSource(isExpanded ? null : source.name)
+                      }
                     >
                       <td className="py-4 px-3 md:px-4">
                         {isExpanded ? (
@@ -125,73 +275,138 @@ const SourcesAllContent = () => {
                         )}
                       </td>
                       <td className="py-4 px-3 md:px-4">
-                        <span className="font-medium text-foreground text-sm md:text-base">{source.name}</span>
+                        <span className="font-medium text-foreground text-sm md:text-base">
+                          {source.name}
+                        </span>
                       </td>
                       <td className="py-4 px-3 md:px-4 text-center">
-                        <TierBadge tier={presence || 'Absent'} />
+                        <TierBadge tier={presence || "Absent"} />
                       </td>
                       <td className="py-4 px-3 md:px-4 text-center">
-                        <span className={`inline-flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full text-sm font-bold ${
-                          mentions > 0 ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
-                        }`}>
+                        <span
+                          className={`inline-flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full text-sm font-bold ${
+                            mentions > 0
+                              ? "bg-primary/10 text-primary"
+                              : "bg-muted text-muted-foreground"
+                          }`}
+                        >
                           {mentions}
                         </span>
                       </td>
                       <td className="py-4 px-3 md:px-4 text-center hidden md:table-cell">
-                        <TierBadge tier={score || 'Low'} />
+                        <TierBadge tier={score || "Low"} />
                       </td>
                     </tr>
                     {isExpanded && (
                       <tr className="bg-muted/20">
                         <td colSpan={5} className="py-4 md:py-6 px-4 md:px-8">
                           <div className="space-y-4 md:space-y-6">
-                            {notes && typeof notes === 'object' && 'insight' in notes && (
-                              <>
-                                <div className="bg-card p-4 rounded-xl border border-border">
-                                  <h4 className="font-semibold text-foreground mb-2 flex items-center gap-2 text-sm md:text-base">
-                                    <BookOpen className="w-4 h-4 text-primary" />
-                                    Insight
-                                  </h4>
-                                  <p className="text-muted-foreground leading-relaxed text-sm">{(notes as any).insight}</p>
-                                </div>
+                            {notes &&
+                              typeof notes === "object" &&
+                              "insight" in notes && (
+                                <>
+                                  <div className="bg-card p-4 rounded-xl border border-border">
+                                    <h4 className="font-semibold text-foreground mb-2 flex items-center gap-2 text-sm md:text-base">
+                                      <BookOpen className="w-4 h-4 text-primary" />
+                                      Insight
+                                    </h4>
+                                    <p className="text-muted-foreground leading-relaxed text-sm">
+                                      {(notes as any).insight}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <h4 className="font-semibold text-foreground mb-3 text-sm md:text-base">
+                                      Pages Used
+                                    </h4>
+                                    <div className="flex flex-wrap gap-2">
+                                      {((notes as any).pages_used || []).map(
+                                        (page: string, idx: number) => (
+                                          <span
+                                            key={idx}
+                                            className="px-3 py-1.5 md:px-4 md:py-2 bg-primary/10 text-primary rounded-full text-xs md:text-sm font-medium"
+                                          >
+                                            {page}
+                                          </span>
+                                        )
+                                      )}
+                                    </div>
+                                  </div>
+                                </>
+                              )}
+
+                            {/* Pages Used from sources_and_content_impact */}
+                            {Array.isArray(pagesUsed) &&
+                              pagesUsed.length > 0 && (
                                 <div>
-                                  <h4 className="font-semibold text-foreground mb-3 text-sm md:text-base">Pages Used</h4>
+                                  <h4 className="font-semibold text-foreground mb-3 text-sm md:text-base">
+                                    Sources Referenced
+                                  </h4>
                                   <div className="flex flex-wrap gap-2">
-                                    {((notes as any).pages_used || []).map((page: string, idx: number) => (
-                                      <span key={idx} className="px-3 py-1.5 md:px-4 md:py-2 bg-primary/10 text-primary rounded-full text-xs md:text-sm font-medium">
-                                        {page}
-                                      </span>
-                                    ))}
+                                    {pagesUsed.map(
+                                      (page: string, idx: number) => (
+                                        <a
+                                          key={idx}
+                                          href={
+                                            page.startsWith("http")
+                                              ? page
+                                              : `https://${page}`
+                                          }
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="inline-flex items-center gap-1.5 px-3 py-1.5 md:px-4 md:py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-full text-xs md:text-sm font-medium transition-colors"
+                                        >
+                                          <Globe className="w-3 h-3" />
+                                          {page}
+                                        </a>
+                                      )
+                                    )}
                                   </div>
                                 </div>
-                              </>
-                            )}
-                            
+                              )}
+
                             <div>
-                              <h4 className="font-semibold text-foreground mb-3 text-sm md:text-base">All Brands in this Source</h4>
+                              <h4 className="font-semibold text-foreground mb-3 text-sm md:text-base">
+                                All Brands in this Source
+                              </h4>
                               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 md:gap-3">
-                                {sortedBrandInfo.map(brand => {
-                                  const brandPresence = source[`${brand.brand}Presence`];
-                                  const brandMentions = source[`${brand.brand}Mentions`] || 0;
+                                {sortedBrandInfo.map((brand) => {
+                                  const brandPresence =
+                                    source[`${brand.brand}Presence`];
+                                  const brandMentions =
+                                    source[`${brand.brand}Mentions`] || 0;
                                   const isCurrent = brand.brand === brandName;
-                                  
+
                                   return (
-                                    <div 
+                                    <div
                                       key={brand.brand}
                                       className={`flex flex-col items-center p-3 md:p-4 rounded-xl border transition-all ${
-                                        isCurrent 
-                                          ? 'bg-primary/10 border-primary/30' 
-                                          : 'bg-card border-border'
+                                        isCurrent
+                                          ? "bg-primary/10 border-primary/30"
+                                          : "bg-card border-border"
                                       }`}
                                     >
                                       {brand.logo && (
-                                        <img src={brand.logo} alt="" className="w-8 h-8 md:w-10 md:h-10 rounded-full object-contain bg-white mb-2" />
+                                        <img
+                                          src={brand.logo}
+                                          alt=""
+                                          className="w-8 h-8 md:w-10 md:h-10 rounded-full object-contain bg-white mb-2"
+                                        />
                                       )}
-                                      <span className={`text-xs md:text-sm font-medium mb-2 text-center ${isCurrent ? 'text-primary' : 'text-foreground'}`}>
+                                      <span
+                                        className={`text-xs md:text-sm font-medium mb-2 text-center ${
+                                          isCurrent
+                                            ? "text-primary"
+                                            : "text-foreground"
+                                        }`}
+                                      >
                                         {brand.brand}
                                       </span>
-                                      <TierBadge tier={brandPresence || 'Absent'} />
-                                      <span className="text-xs text-muted-foreground mt-1">{brandMentions} mentions</span>
+                                      <TierBadge
+                                        tier={brandPresence || "Absent"}
+                                      />
+                                      <span className="text-xs text-muted-foreground mt-1">
+                                        {brandMentions} mentions
+                                      </span>
                                     </div>
                                   );
                                 })}

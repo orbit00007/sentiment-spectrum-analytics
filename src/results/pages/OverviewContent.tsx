@@ -1,11 +1,10 @@
 import { useResults } from "@/results/context/ResultsContext";
+import { useEffect, useState } from "react";
 import {
   getAIVisibilityMetrics,
   getMentionsPercentile,
+  getBrandMentionResponseRates,
   getSentiment,
-  getBrandName,
-  getAnalysisDate,
-  getModelName,
   hasAnalyticsData,
 } from "@/results/data/analyticsData";
 import { LLMVisibilityTable } from "@/results/overview/LLMVisibilityTable";
@@ -14,16 +13,20 @@ import { CompetitorComparisonChart } from "@/results/overview/CompetitorComparis
 import { SourceMentionsChart } from "@/results/overview/SourceMentionsChart";
 import { SourceInsights } from "@/results/overview/SourceInsights";
 import { BrandMentionsRadar } from "@/results/overview/BrandMentionsRadar";
-import { PercentileGauge } from "@/results/ui/PercentileGauge";
+import BrandInfoBar from "@/results/overview/BrandInfoBar";
 import { TierBadge } from "@/results/ui/TierBadge";
-import { LLMIcon } from "@/results/ui/LLMIcon";
 import {
   Info,
   TrendingUp,
   MessageSquare,
   ThumbsUp,
-  Calendar,
   Search,
+  ArrowUp,
+  ArrowRight,
+  ArrowDown,
+  Trophy,
+  Medal,
+  Award,
 } from "lucide-react";
 import {
   Tooltip,
@@ -32,9 +35,16 @@ import {
 } from "@/components/ui/tooltip";
 
 const OverviewContent = () => {
-  const { dataReady, isLoading, previousAnalytics, currentAnalytics } = useResults();
+  const { dataReady } = useResults();
+  const [animatedBars, setAnimatedBars] = useState(false);
 
-  // Show loader if data not ready
+  useEffect(() => {
+    if (dataReady) {
+      const timer = setTimeout(() => setAnimatedBars(true), 100);
+      return () => clearTimeout(timer);
+    }
+  }, [dataReady]);
+
   if (!dataReady || !hasAnalyticsData()) {
     return (
       <div className="container mx-auto px-4 py-20">
@@ -53,16 +63,23 @@ const OverviewContent = () => {
 
   const visibilityData = getAIVisibilityMetrics();
   const mentionsData = getMentionsPercentile();
+  const brandMentionRates = getBrandMentionResponseRates();
   const sentiment = getSentiment();
-  const brandName = getBrandName();
-  const analysisDate = getAnalysisDate();
-  const modelName = getModelName();
-  const models = modelName?.split(",").map((m) => m.trim()) || [];
+
+  const getMedalIcon = (index: number, isTestBrand: boolean) => {
+    if (index === 0) return <Trophy className="w-4 h-4 text-yellow-500" />;
+    if (index === 1) return <Medal className="w-4 h-4 text-gray-400" />;
+    if (isTestBrand) return <Award className="w-4 h-4 text-primary" />;
+    return <Award className="w-4 h-4 text-amber-600" />;
+  };
 
   return (
-    <div className="p-4 md:p-6 space-y-6 w-full max-w-full overflow-x-hidden">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="w-full max-w-full overflow-x-hidden p-4 md:p-6">
+      {/* Brand Info Bar - Only on Overview page */}
+      <BrandInfoBar />
+      
+      <div className="space-y-6">
+        {/* Header */}
         <div className="flex items-center gap-2">
           <h1 className="text-xl md:text-2xl font-bold text-foreground">
             Overall Insights
@@ -76,105 +93,189 @@ const OverviewContent = () => {
             </TooltipContent>
           </Tooltip>
         </div>
-        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-          {analysisDate && (
-            <div className="flex items-center gap-1.5">
-              <Calendar className="w-4 h-4" />
-              <span>{analysisDate}</span>
-            </div>
-          )}
-          {models.length > 0 && (
-            <div className="flex items-center gap-2">
-              {models.map((model) => (
-                <div key={model} className="flex items-center gap-1">
-                  <LLMIcon platform={model} size="sm" />
-                  <span className="hidden sm:inline capitalize">
-                    {model === "openai" ? "ChatGPT" : model}
-                  </span>
+
+        {/* Main metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+          {/* AI Visibility Card */}
+          <div className="bg-card rounded-xl border p-4 md:p-6 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <TrendingUp className="w-4 h-4 md:w-5 md:h-5 text-primary" />
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Main metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-        {/* AI Visibility */}
-        <div className="bg-card rounded-xl border p-4 md:p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <TrendingUp className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+                <span className="font-semibold text-foreground">AI Visibility</span>
               </div>
-              <span className="text-sm font-medium">AI Visibility</span>
+              <TierBadge tier={visibilityData.tier} />
             </div>
-            <TierBadge tier={visibilityData.tier} />
-          </div>
-          <PercentileGauge
-            percentile={visibilityData.percentile}
-            subtitle1={`GEO Score: ${visibilityData.score}`}
-            subtitle2={`Top ${100 - visibilityData.percentile}% of ${
-              visibilityData.totalBrands
-            } brands`}
-            label="percentile"
-          />
-        </div>
-
-        {/* Brand Mentions */}
-        <div className="bg-card rounded-xl border p-4 md:p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <div className="p-2 rounded-lg bg-amber-500/10">
-                <MessageSquare className="w-4 h-4 md:w-5 md:h-5 text-amber-500" />
+            
+            {/* Score Display */}
+            <div className="border-2 border-border rounded-lg p-3 mb-4">
+              <div className="text-center">
+                <span className="text-xl text-muted-foreground">AI Visibility Score: </span>
+                <span className="text-2xl font-bold text-foreground">{visibilityData.score}</span>
               </div>
-              <span className="text-sm font-medium">Brand Mentions</span>
             </div>
-            <TierBadge tier={mentionsData.tier} />
+            
+            {/* Position Breakdown */}
+            <div className="space-y-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center justify-between text-sm cursor-help hover:bg-muted/50 rounded-md px-2 py-1 -mx-2 transition-colors">
+                    <div className="flex items-center gap-2">
+                      <ArrowUp className="w-4 h-4 text-emerald-500" />
+                      <span className="text-foreground">Top Position</span>
+                    </div>
+                    <span className="font-semibold text-foreground">{visibilityData.positionBreakdown.topPosition}%</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="right" className="max-w-xs">
+                  <p className="text-sm">Percentage of queries where your brand ranked #1.</p>
+                </TooltipContent>
+              </Tooltip>
+              
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center justify-between text-sm cursor-help hover:bg-muted/50 rounded-md px-2 py-1 -mx-2 transition-colors">
+                    <div className="flex items-center gap-2">
+                      <ArrowRight className="w-4 h-4 text-amber-500" />
+                      <span className="text-foreground">Mid Position (2-4)</span>
+                    </div>
+                    <span className="font-semibold text-foreground">{visibilityData.positionBreakdown.midPosition}%</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="right" className="max-w-xs">
+                  <p className="text-sm">Percentage of queries where your brand ranked 2nd to 4th.</p>
+                </TooltipContent>
+              </Tooltip>
+              
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center justify-between text-sm cursor-help hover:bg-muted/50 rounded-md px-2 py-1 -mx-2 transition-colors">
+                    <div className="flex items-center gap-2">
+                      <ArrowDown className="w-4 h-4 text-red-500" />
+                      <span className="text-foreground">Low Position</span>
+                    </div>
+                    <span className="font-semibold text-foreground">{visibilityData.positionBreakdown.lowPosition}%</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="right" className="max-w-xs">
+                  <p className="text-sm">Percentage of queries where your brand ranked 5th or lower.</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+            
+            {visibilityData.percentile > 0 && (
+              <p className="text-sm text-foreground bold border-t pt-3 mt-4">
+                Your visibility score is higher than {visibilityData.percentile}% of brands tested for these queries.
+              </p>
+            )}
           </div>
-          <PercentileGauge
-            percentile={mentionsData.percentile}
-            subtitle1={`${mentionsData.brandMentions} total mentions`}
-            subtitle2={`Top brand: ${mentionsData.topBrandMentions}`}
-            label="percentile"
-          />
-        </div>
 
-        {/* Sentiment */}
-        <div className="bg-card rounded-xl border p-4 md:p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <div className="p-2 rounded-lg bg-green-500/10">
-                <ThumbsUp className="w-4 h-4 md:w-5 md:h-5 text-green-500" />
+          {/* Brand Mention Score Card */}
+          <div className="bg-card rounded-xl border border-border p-4 md:p-6 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-amber-500/10">
+                  <MessageSquare className="w-4 h-4 md:w-5 md:h-5 text-amber-500" />
+                </div>
+                <span className="font-semibold text-foreground">Brand Mention Score</span>
               </div>
-              <span className="text-sm font-medium">Sentiment</span>
+              <TierBadge tier={mentionsData.tier} />
             </div>
-            <TierBadge tier={sentiment.dominant_sentiment} />
+            
+            {/* Table Header */}
+            <div className="grid grid-cols-[auto_1fr_auto] gap-3 text-xs text-muted-foreground mb-3 pb-2 border-b border-border">
+              <span>Brand</span>
+              <span className="text-center"></span>
+              <span>% of AI responses</span>
+            </div>
+            
+            {/* Brand Rows with Progress Bars */}
+            <div className="space-y-3">
+              {brandMentionRates.map((item, index) => {
+                return (
+                  <div 
+                    key={item.brand} 
+                    className="grid grid-cols-[auto_1fr_auto] gap-3 items-center"
+                  >
+                    <div className="flex items-center gap-2 min-w-[100px]">
+                      {getMedalIcon(index, item.isTestBrand)}
+                      <span className={`text-sm truncate ${
+                        item.isTestBrand ? "font-semibold text-primary" : "text-foreground"
+                      }`}>
+                        {item.brand}
+                      </span>
+                    </div>
+                    
+                    <div className="relative h-6 bg-muted rounded overflow-hidden">
+                      <div 
+                        className={`absolute left-0 top-0 h-full rounded transition-all duration-700 ease-out ${
+                          item.isTestBrand 
+                            ? "bg-gradient-to-r from-primary/80 to-primary" 
+                            : index === 0 
+                              ? "bg-gradient-to-r from-amber-500 to-amber-400"
+                              : "bg-gradient-to-r from-amber-600/80 to-amber-500/80"
+                        }`}
+                        style={{ 
+                          width: animatedBars ? `${item.responseRate}%` : '0%',
+                          transitionDelay: `${index * 150}ms`
+                        }}
+                      />
+                    </div>
+                    
+                    <span className={`text-sm font-medium min-w-[50px] text-right ${
+                      item.isTestBrand ? "text-primary" : "text-foreground"
+                    }`}>
+                      {item.responseRate}%
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+            
+            {mentionsData.percentile > 0 && (
+              <p className="text-sm text-foreground bold border-t border-border pt-3 mt-4">
+                You are ahead of {mentionsData.percentile}% of the brands for these queries.
+              </p>
+            )}
           </div>
-          <div className="flex flex-col items-center justify-center py-4">
-            <p className="text-sm text-muted-foreground text-center">
-              {sentiment.summary}
-            </p>
+
+          {/* Sentiment Card */}
+          <div className="bg-card rounded-xl border p-4 md:p-6 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-green-500/10">
+                  <ThumbsUp className="w-4 h-4 md:w-5 md:h-5 text-green-500" />
+                </div>
+                <span className="font-semibold text-foreground">Sentiment</span>
+              </div>
+              <TierBadge tier={sentiment.dominant_sentiment} />
+            </div>
+            <div className="flex flex-col items-center justify-center py-2">
+              <p className="text-sm text-muted-foreground text-center leading-relaxed">
+                {sentiment.summary}
+              </p>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-        <CompetitorComparisonChart />
-        <BrandMentionsRadar />
-      </div>
+        {/* Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+          <CompetitorComparisonChart />
+          <BrandMentionsRadar />
+        </div>
 
-      {/* Tables */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-        <LLMVisibilityTable />
-        <PlatformPresence />
-      </div>
+        {/* Tables */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+          <LLMVisibilityTable />
+          <PlatformPresence />
+        </div>
 
-      {/* Sources */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-        <SourceMentionsChart />
-        <SourceInsights />
+        {/* Sources */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+          <SourceMentionsChart />
+          <SourceInsights />
+        </div>
       </div>
     </div>
   );

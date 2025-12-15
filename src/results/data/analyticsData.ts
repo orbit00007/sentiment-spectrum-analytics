@@ -1,17 +1,73 @@
 import { calculatePercentile, getTierFromPercentile } from './formulas';
 
+const ANALYTICS_STORAGE_KEY = 'new_results_analytics_data';
+
 // Global state to hold the API response data
 let currentAnalyticsData: any = null;
 
 /**
+ * Helper to format logo URL - handles both full URLs and domain-only formats
+ */
+const formatLogoUrl = (logo: string): string => {
+  if (!logo) return '';
+  // If it's already a full URL, return as-is
+  if (logo.startsWith('http://') || logo.startsWith('https://')) {
+    return logo;
+  }
+  // Otherwise, prepend clearbit URL
+  return `https://logo.clearbit.com/${logo}`;
+};
+
+/**
  * Set the analytics data from API response
  * Call this function whenever you receive new data from the API
+ * Also stores in localStorage for persistence
  */
 export const setAnalyticsData = (apiResponse: any) => {
   if (apiResponse && apiResponse.analytics && Array.isArray(apiResponse.analytics)) {
     currentAnalyticsData = apiResponse;
+    // Store in localStorage for persistence
+    try {
+      localStorage.setItem(ANALYTICS_STORAGE_KEY, JSON.stringify(apiResponse));
+      console.log('📦 [ANALYTICS] Data stored in localStorage');
+    } catch (e) {
+      console.error('Failed to store analytics data in localStorage:', e);
+    }
   } else {
     console.error('Invalid analytics data format');
+  }
+};
+
+/**
+ * Load analytics data from localStorage
+ * Call this on app initialization to restore previous data
+ */
+export const loadAnalyticsFromStorage = (): boolean => {
+  try {
+    const stored = localStorage.getItem(ANALYTICS_STORAGE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (parsed && parsed.analytics && Array.isArray(parsed.analytics)) {
+        currentAnalyticsData = parsed;
+        console.log('📦 [ANALYTICS] Data loaded from localStorage');
+        return true;
+      }
+    }
+  } catch (e) {
+    console.error('Failed to load analytics data from localStorage:', e);
+  }
+  return false;
+};
+
+/**
+ * Clear analytics data from memory and localStorage
+ */
+export const clearAnalyticsData = () => {
+  currentAnalyticsData = null;
+  try {
+    localStorage.removeItem(ANALYTICS_STORAGE_KEY);
+  } catch (e) {
+    console.error('Failed to clear analytics data from localStorage:', e);
   }
 };
 
@@ -48,6 +104,12 @@ export const getKeywords = (): string[] => {
   return analytics.competitor_visibility_table.header.slice(1);
 };
 
+// Get keywords from analysis_scope (for display purposes)
+export const getAnalysisKeywords = (): string[] => {
+  const analytics = getAnalytics();
+  return analytics?.analysis_scope?.search_keywords || [];
+};
+
 // Get brand info with logos from percentile_trace
 export const getBrandInfoWithLogos = (): Array<{
   brand: string;
@@ -59,13 +121,13 @@ export const getBrandInfoWithLogos = (): Array<{
   const analytics = getAnalytics();
   const sortedBrandInfo = analytics?.ai_visibility?.percentile_trace?.sorted_brand_info || [];
   
-  // Map the data to ensure consistent field names
+  // Map the data to ensure consistent field names and format logos
   return sortedBrandInfo.map((brand: any) => ({
     brand: brand.brand,
     geo_score: brand.geo_score,
     mention_score: brand.mention_score ?? brand.brand_mentionscore ?? 0,
     mention_count: brand.mention_count ?? 0,
-    logo: brand.logo || ''
+    logo: formatLogoUrl(brand.logo || '')
   }));
 };
 
@@ -133,6 +195,11 @@ export const getAIVisibilityMetrics = (): {
   totalBrands: number;
   explanation: string;
   calculation: string;
+  positionBreakdown: {
+    topPosition: number;
+    midPosition: number;
+    lowPosition: number;
+  };
 } => {
   const analytics = getAnalytics();
   const aiVisibility = analytics?.ai_visibility;
@@ -142,13 +209,53 @@ export const getAIVisibilityMetrics = (): {
   const percentile = aiVisibility?.percentile_visibility || 0;
   const totalBrands = aiVisibility?.percentile_trace?.total_brands || getCompetitorData().length;
   
+  // Calculate position breakdown from llm_wise_data
+  // % calculation for Position = # of queries where the brand is at top/total number of queries where brand appeared
+  const llmData = analytics?.llm_wise_data || {};
+  const brandMentions = analytics?.brand_mentions || {};
+  
+  let totalQueriesWithBrand = 0;
+  let topPositionCount = 0;
+  let midPositionCount = 0;
+  let lowPositionCount = 0;
+  
+  // Count from each LLM
+  Object.values(llmData).forEach((data: any) => {
+    if (data?.queries_with_brand) {
+      totalQueriesWithBrand += data.queries_with_brand;
+      const avgRank = data.average_brand_rank || 0;
+      if (avgRank > 0) {
+        if (avgRank <= 1) {
+          topPositionCount += data.queries_with_brand;
+        } else if (avgRank <= 4) {
+          midPositionCount += data.queries_with_brand;
+        } else {
+          lowPositionCount += data.queries_with_brand;
+        }
+      }
+    }
+  });
+  
+  // Use queries_with_mentions from brand_mentions if available
+  const queriesWithMentions = brandMentions?.queries_with_mentions || totalQueriesWithBrand;
+  
+  // Calculate percentages
+  const topPosition = queriesWithMentions > 0 ? Math.round((topPositionCount / queriesWithMentions) * 100) : 0;
+  const midPosition = queriesWithMentions > 0 ? Math.round((midPositionCount / queriesWithMentions) * 100) : 0;
+  const lowPosition = queriesWithMentions > 0 ? Math.round((lowPositionCount / queriesWithMentions) * 100) : 0;
+  
   return {
     score,
     tier: getTierFromPercentile(percentile),
     percentile,
     totalBrands,
     explanation: aiVisibility?.explanation || '',
-    calculation: aiVisibility?.percentile_trace?.calculation || ''
+    calculation: aiVisibility?.percentile_trace?.calculation || '',
+    positionBreakdown: {
+      topPosition,
+      midPosition,
+      lowPosition
+    }
   };
 };
 
@@ -192,7 +299,7 @@ export const getBrandMentionCounts = (): Record<string, number> => {
   return mentionCounts;
 };
 
-// Calculate Brand's mentions percentile from sources_and_content_impact
+// Calculate Brand's mentions percentile using mention_score from percentile_trace
 export const getMentionsPercentile = (): { 
   percentile: number; 
   tier: string; 
@@ -201,21 +308,73 @@ export const getMentionsPercentile = (): {
   brandMentions: number;
   allBrandMentions: Record<string, number>;
 } => {
-  const mentionCounts = getBrandMentionCounts();
   const brandName = getBrandName();
-  const allMentions = Object.values(mentionCounts);
-  const brandMentions = mentionCounts[brandName] || 0;
-  const topBrandMentions = allMentions.length > 0 ? Math.max(...allMentions) : 0;
-  const percentile = allMentions.length > 0 ? calculatePercentile(brandMentions, allMentions) : 0;
+  const brandInfoWithLogos = getBrandInfoWithLogos();
+  
+  // Get all mention_scores from sorted_brand_info
+  const allMentionScores = brandInfoWithLogos.map(b => b.mention_score);
+  const allMentionCounts: Record<string, number> = {};
+  
+  brandInfoWithLogos.forEach(b => {
+    allMentionCounts[b.brand] = b.mention_score;
+  });
+  
+  // Find the brand's mention_score
+  const brandInfo = brandInfoWithLogos.find(b => b.brand === brandName);
+  const brandMentionScore = brandInfo?.mention_score || 0;
+  const topMentionScore = allMentionScores.length > 0 ? Math.max(...allMentionScores) : 0;
+  
+  // Calculate percentile based on mention_score
+  const percentile = allMentionScores.length > 0 ? calculatePercentile(brandMentionScore, allMentionScores) : 0;
   
   return {
     percentile,
     tier: getTierFromPercentile(percentile),
-    totalBrands: Object.keys(mentionCounts).length,
-    topBrandMentions,
-    brandMentions,
-    allBrandMentions: mentionCounts
+    totalBrands: brandInfoWithLogos.length,
+    topBrandMentions: topMentionScore,
+    brandMentions: brandMentionScore,
+    allBrandMentions: allMentionCounts
   };
+};
+
+// Get brand mention response rates for table display
+// Shows top 2 brands + test brand with % of AI responses where brand appeared
+// % = (queries where brand appeared / total queries) * 100, capped at 100%
+// Total queries = number of keywords × number of LLMs (e.g., 2 keywords × 2 LLMs = 4 total AI prompts)
+export const getBrandMentionResponseRates = (): Array<{
+  brand: string;
+  responseRate: number;
+  logo: string;
+  isTestBrand: boolean;
+}> => {
+  const brandName = getBrandName();
+  const brandInfoWithLogos = getBrandInfoWithLogos();
+  
+  // Use mention_score from sorted_brand_info which is pre-calculated as percentage
+  // The mention_score is already the % of AI responses where brand appeared, capped at 100
+  const brandsWithRates = brandInfoWithLogos.map(b => {
+    // mention_score from data is already a percentage value
+    // Cap at 100% to ensure no values exceed maximum
+    const responseRate = Math.min(b.mention_score, 100);
+    
+    return {
+      brand: b.brand,
+      responseRate,
+      logo: b.logo,
+      isTestBrand: b.brand === brandName
+    };
+  }).sort((a, b) => b.responseRate - a.responseRate);
+  
+  // Get top 2 brands (excluding test brand) + test brand
+  const topTwoBrands = brandsWithRates.filter(b => !b.isTestBrand).slice(0, 2);
+  const testBrand = brandsWithRates.find(b => b.isTestBrand);
+  
+  const result = [...topTwoBrands];
+  if (testBrand) {
+    result.push(testBrand);
+  }
+  
+  return result;
 };
 
 // Get all brands with their mention counts and calculated tiers

@@ -1,10 +1,29 @@
 import { getPlatformPresence } from "@/results/data/analyticsData";
 import { Globe, CheckCircle2, AlertTriangle, XCircle, ExternalLink } from "lucide-react";
 
+// Fix common URL issues
+const cleanUrl = (url: string): string => {
+  if (!url || typeof url !== 'string') return "";
+  
+  let cleaned = url.trim();
+  
+  // Fix double domain issues (e.g., wikipedia.orgorg → wikipedia.org)
+  cleaned = cleaned.replace(/\.([a-z]+)\1(?=\/)/gi, '.$1');
+  
+  // Ensure proper protocol
+  if (!cleaned.startsWith('http://') && !cleaned.startsWith('https://')) {
+    cleaned = 'https://' + cleaned;
+  }
+  
+  return cleaned;
+};
+
 // Extract base domain from full URL
 const extractDomain = (url: string): string => {
   try {
-    return new URL(url).origin; // example: https://reddit.com
+    const cleaned = cleanUrl(url);
+    if (!cleaned) return "";
+    return new URL(cleaned).origin; // example: https://reddit.com
   } catch {
     return ""; // invalid or empty
   }
@@ -28,13 +47,16 @@ export const PlatformPresence = () => {
   const platformPresence = getPlatformPresence();
 
   // Build dynamic platform entries
-  const platforms = Object.entries(platformPresence).map(([key, url]) => ({
-    key,
-    label: autoLabel(key),
-    icon: faviconFromUrl(url as string),
-    url: url as string,
-    status: url ? "present" : "missing"
-  }));
+  const platforms = Object.entries(platformPresence).map(([key, url]) => {
+    const cleanedUrl = cleanUrl(url as string);
+    return {
+      key,
+      label: autoLabel(key),
+      icon: faviconFromUrl(cleanedUrl),
+      url: cleanedUrl,
+      status: cleanedUrl ? "present" : "missing"
+    };
+  });
 
   const presentCount = platforms.filter(p => p.status === "present").length;
   const totalCount = platforms.length;

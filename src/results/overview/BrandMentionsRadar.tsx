@@ -1,7 +1,7 @@
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer, Tooltip } from 'recharts';
-import { getKeywords, getBrandName, competitorData } from "@/results/data/analyticsData";
+import { getKeywords, getBrandName, getCompetitorData } from "@/results/data/analyticsData";
 import { Target, ChevronDown } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 
 const COLORS = [
   'hsl(217, 91%, 60%)', // primary blue
@@ -15,27 +15,30 @@ const COLORS = [
 export const BrandMentionsRadar = () => {
   const keywords = getKeywords();
   const brandName = getBrandName();
+  const competitorData = getCompetitorData();
   const [selectedKeyword, setSelectedKeyword] = useState<string>('all');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   
   // Get all brands dynamically
-  const allBrands = competitorData.map(c => c.name);
+  const allBrands = useMemo(() => competitorData.map(c => c.name), [competitorData]);
   
   // Chart data: brands on the edges
-  const chartData = allBrands.map((brand, brandIdx) => {
-    const competitor = competitorData.find(c => c.name === brand);
-    if (!competitor) return { brand, score: 0 };
-    
-    if (selectedKeyword === 'all') {
-      // Sum all keyword scores for this brand
-      const totalScore = competitor.keywordScores.reduce((sum, score) => sum + score, 0);
-      return { brand, score: totalScore };
-    } else {
-      // Get score for specific keyword
-      const keywordIdx = keywords.indexOf(selectedKeyword);
-      return { brand, score: keywordIdx >= 0 ? competitor.keywordScores[keywordIdx] || 0 : 0 };
-    }
-  });
+  const chartData = useMemo(() => {
+    return allBrands.map((brand) => {
+      const competitor = competitorData.find(c => c.name === brand);
+      if (!competitor) return { brand, score: 0 };
+      
+      if (selectedKeyword === 'all') {
+        // Sum all keyword scores for this brand
+        const totalScore = competitor.keywordScores.reduce((sum, score) => sum + score, 0);
+        return { brand, score: totalScore };
+      } else {
+        // Get score for specific keyword
+        const keywordIdx = keywords.indexOf(selectedKeyword);
+        return { brand, score: keywordIdx >= 0 ? competitor.keywordScores[keywordIdx] || 0 : 0 };
+      }
+    });
+  }, [allBrands, competitorData, selectedKeyword, keywords]);
 
   const maxScore = Math.max(...chartData.map(d => d.score), 1);
 
@@ -139,10 +142,6 @@ export const BrandMentionsRadar = () => {
       
       {/* Brand indicator */}
       <div className="flex items-center justify-center gap-6 mt-2 pt-2 border-t border-border">
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-primary" />
-          <span className="text-xs text-muted-foreground">Visibility Score</span>
-        </div>
         <span className="text-xs text-primary font-medium">{brandName} highlighted</span>
       </div>
     </div>

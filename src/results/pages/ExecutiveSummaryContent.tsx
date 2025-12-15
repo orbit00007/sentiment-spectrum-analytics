@@ -1,10 +1,11 @@
 import { TierBadge } from "@/results/ui/TierBadge";
-import { executiveSummary, getAnalysisDate, getBrandName, getAIVisibilityMetrics, getBrandInfoWithLogos } from "@/results/data/analyticsData";
+import { getExecutiveSummary, getAnalysisDate, getBrandName, getAIVisibilityMetrics, getBrandInfoWithLogos } from "@/results/data/analyticsData";
 import { CheckCircle2, XCircle, Target, TrendingUp, AlertTriangle, Trophy, Users, ArrowDown, Sparkles } from "lucide-react";
 
 const ExecutiveSummaryContent = () => {
   const visibilityData = getAIVisibilityMetrics();
   const brandInfo = getBrandInfoWithLogos();
+  const executiveSummary = getExecutiveSummary();
 
   const getBrandLogo = (brandName: string) => {
     const cleanName = brandName.replace(/\s*\(GEO \d+\)/, '');

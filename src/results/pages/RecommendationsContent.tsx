@@ -1,8 +1,9 @@
-import { recommendations, getBrandName } from "@/results/data/analyticsData";
+import { getRecommendations, getBrandName } from "@/results/data/analyticsData";
 import { Lightbulb, Target, TrendingUp, Zap, ArrowRight, CheckCircle } from "lucide-react";
 
 const RecommendationsContent = () => {
   const brandName = getBrandName();
+  const recommendations = getRecommendations();
 
   const getEffortConfig = (effort: string) => {
     switch (effort) {

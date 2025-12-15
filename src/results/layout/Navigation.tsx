@@ -27,14 +27,14 @@ const navItems: Array<{
       { label: "Recommendations", tab: "recommendations" },
     ],
   },
-  {
-    label: "Content Hub",
-    tab: "overview",
-    comingSoon: true,
-    dropdown: [
-      { label: "Content Hub", tab: "overview", disabled: true },
-    ],
-  },
+  // {
+  //   label: "Content Hub",
+  //   tab: "",
+  //   comingSoon: true,
+  //   dropdown: [
+  //     { label: "Content Hub", tab: "overview", disabled: true },
+  //   ],
+  // },
 ];
 
 export const Navigation = () => {

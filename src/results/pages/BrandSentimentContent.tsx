@@ -1,6 +1,7 @@
 import { TierBadge } from "@/results/ui/TierBadge";
-import { competitorSentiment, getBrandName, getSentiment, getBrandLogo } from "@/results/data/analyticsData";
+import { getCompetitorSentiment, getBrandName, getSentiment, getBrandLogo } from "@/results/data/analyticsData";
 import { Info, ThumbsUp, ThumbsDown, Minus } from "lucide-react";
+import { useMemo } from "react";
 import {
   Tooltip,
   TooltipContent,
@@ -11,12 +12,15 @@ const BrandSentimentContent = () => {
   const brandName = getBrandName();
   const sentiment = getSentiment();
   const brandLogo = getBrandLogo(brandName);
+  const competitorSentiment = getCompetitorSentiment();
 
   const outlookOrder = { 'Positive': 0, 'Neutral': 1, 'Negative': 2 };
-  const sortedSentiment = [...competitorSentiment].sort((a, b) => {
-    return (outlookOrder[a.outlook as keyof typeof outlookOrder] || 2) - 
-           (outlookOrder[b.outlook as keyof typeof outlookOrder] || 2);
-  });
+  const sortedSentiment = useMemo(() => {
+    return [...competitorSentiment].sort((a, b) => {
+      return (outlookOrder[a.outlook as keyof typeof outlookOrder] || 2) - 
+             (outlookOrder[b.outlook as keyof typeof outlookOrder] || 2);
+    });
+  }, [competitorSentiment]);
 
   return (
     <div className="p-4 md:p-6 space-y-6 w-full max-w-full overflow-x-hidden">

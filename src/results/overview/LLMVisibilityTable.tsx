@@ -1,9 +1,10 @@
-import { llmData, getSearchKeywords } from "@/results/data/analyticsData";
+import { getLlmData, getSearchKeywords } from "@/results/data/analyticsData";
 import { LLMIcon } from "@/results/ui/LLMIcon";
 import { Bot } from "lucide-react";
 
 export const LLMVisibilityTable = () => {
   const keywords = getSearchKeywords();
+  const llmData = getLlmData(); // Call the function to get current data
   
   const platformData = Object.entries(llmData).map(([platform, data]: [string, any]) => ({
     platform: platform,

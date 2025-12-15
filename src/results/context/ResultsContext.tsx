@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useRef, useCallb
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/auth-context";
 import { getProductAnalytics } from "@/apiHelpers";
-import { setAnalyticsData } from "@/results/data/analyticsData";
+import { setAnalyticsData, loadAnalyticsFromStorage } from "@/results/data/analyticsData";
 import { useToast } from "@/hooks/use-toast";
 import { handleUnauthorized, isUnauthorizedError } from "@/lib/authGuard";
 
@@ -133,6 +133,15 @@ export const ResultsProvider: React.FC<ResultsProviderProps> = ({ children }) =>
 
   useEffect(() => {
     accessTokenRef.current = localStorage.getItem("access_token") || "";
+  }, []);
+
+  // Try to load analytics from localStorage on mount
+  useEffect(() => {
+    const loaded = loadAnalyticsFromStorage();
+    if (loaded) {
+      console.log('📦 [CONTEXT] Loaded analytics from localStorage');
+      setDataReady(true);
+    }
   }, []);
 
   // Update analyticsData whenever currentAnalytics changes

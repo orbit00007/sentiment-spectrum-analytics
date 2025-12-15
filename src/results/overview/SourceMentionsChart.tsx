@@ -55,13 +55,21 @@ export const SourceMentionsChart = () => {
   const [selectedSource, setSelectedSource] = useState("All Sources");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  // Build chart data (sum or per source)
+  // Build chart data with brand at top, maintaining original order
   const chartData = useMemo(() => {
     if (!sourcesData?.rows || !sourcesData?.header) return [];
     const header = sourcesData.header;
 
     const getMentionIndex = (brand: string) =>
       header.indexOf(`${brand} Mentions`);
+
+    let allBrands: Array<{
+      brand: string;
+      mentions: number;
+      logo: string;
+      isBrand: boolean;
+      color: string;
+    }> = [];
 
     // ALL SOURCES → sum
     if (selectedSource === "All Sources") {
@@ -76,29 +84,35 @@ export const SourceMentionsChart = () => {
         });
       });      
 
-      return competitorNames.map((brand) => ({
+      allBrands = competitorNames.map((brand) => ({
         brand,
         mentions: totals[brand],
         logo: brandInfo.find((b) => b.brand === brand)?.logo || "",
         isBrand: brand === brandName,
         color: brandColors[brand],
       }));
+    } else {
+      // SPECIFIC SOURCE → single row
+      const row = sourcesData.rows.find((r) => r[0] === selectedSource);
+      if (!row) return [];
+
+      allBrands = competitorNames.map((brand) => {
+        const idx = getMentionIndex(brand);
+        return {
+          brand,
+          mentions: idx !== -1 ? row[idx] ?? 0 : 0,
+          logo: brandInfo.find((b) => b.brand === brand)?.logo || "",
+          isBrand: brand === brandName,
+          color: brandColors[brand],
+        };
+      });
     }
 
-    // SPECIFIC SOURCE → single row
-    const row = sourcesData.rows.find((r) => r[0] === selectedSource);
-    if (!row) return [];
-
-    return competitorNames.map((brand) => {
-      const idx = getMentionIndex(brand);
-      return {
-        brand,
-        mentions: idx !== -1 ? row[idx] ?? 0 : 0,
-        logo: brandInfo.find((b) => b.brand === brand)?.logo || "",
-        isBrand: brand === brandName,
-        color: brandColors[brand],
-      };
-    });
+    // Keep brand at top, maintain original order for others
+    const myBrand = allBrands.find((b) => b.brand === brandName);
+    const competitors = allBrands.filter((b) => b.brand !== brandName);
+    
+    return myBrand ? [myBrand, ...competitors] : competitors;
   }, [
     selectedSource,
     sourcesData,

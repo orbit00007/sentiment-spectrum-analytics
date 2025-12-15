@@ -54,14 +54,13 @@ export const CompetitorComparisonChart = () => {
     });
   }, [brandInfo]);
 
-  // Sort brands by view mode
+  // Keep brand at top, maintain original order for others
   const sortedBrands = useMemo(() => {
-    return [...brandsWithPercentile].sort((a, b) => {
-      if (viewMode === "geo_score") return b.geo_score - a.geo_score;
-      if (viewMode === "percentile") return b.percentile - a.percentile;
-      return b.mention_count - a.mention_count;
-    });
-  }, [brandsWithPercentile, viewMode]);
+    const myBrand = brandsWithPercentile.find(b => b.brand === brandName);
+    const competitors = brandsWithPercentile.filter(b => b.brand !== brandName);
+    
+    return myBrand ? [myBrand, ...competitors] : competitors;
+  }, [brandsWithPercentile, brandName]);
 
   const chartData = useMemo(() => {
     return sortedBrands.map((brand) => ({
@@ -132,7 +131,7 @@ export const CompetitorComparisonChart = () => {
           <BarChart
             data={chartData}
             layout="vertical"
-            margin={{ top: 5, right: 10, left: 10, bottom: 5 }} // Increased left for long names
+            margin={{ top: 5, right: 10, left: 10, bottom: 5 }}
           >
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
             <XAxis
@@ -153,7 +152,7 @@ export const CompetitorComparisonChart = () => {
               tickLine={false}
               stroke="hsl(var(--muted-foreground))"
               fontSize={12}
-              width={150} // wide enough for full names
+              width={150}
               tick={({ x, y, payload }) => {
                 const brand = chartData.find((b) => b.name === payload.value);
                 return (

@@ -1,6 +1,6 @@
-import { getAnalytics, competitorData, competitorSentiment, getCompetitorVisibility, getBrandName, getKeywords, getBrandLogo, getBrandInfoWithLogos } from "@/results/data/analyticsData";
+import { getAnalytics, getCompetitorData, getCompetitorSentiment, getCompetitorVisibility, getBrandName, getKeywords, getBrandLogo, getBrandInfoWithLogos } from "@/results/data/analyticsData";
 import { TierBadge } from "@/results/ui/TierBadge";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Trophy, Users, TrendingUp, Info } from "lucide-react";
 import {
   Tooltip,
@@ -15,9 +15,18 @@ const CompetitorsComparisonsContent = () => {
   const keywords = getKeywords();
   const competitorVisibility = getCompetitorVisibility();
   const brandInfo = getBrandInfoWithLogos();
+  const competitorData = getCompetitorData();
+  const competitorSentiment = getCompetitorSentiment();
   
   const otherCompetitors = competitorData.filter(c => c.name !== brandName);
-  const [selectedCompetitor, setSelectedCompetitor] = useState<string>(otherCompetitors[0]?.name || '');
+  const [selectedCompetitor, setSelectedCompetitor] = useState<string>('');
+
+  // Set initial selected competitor when data loads
+  useEffect(() => {
+    if (otherCompetitors.length > 0 && !selectedCompetitor) {
+      setSelectedCompetitor(otherCompetitors[0]?.name || '');
+    }
+  }, [otherCompetitors, selectedCompetitor]);
 
   const brand = competitorVisibility.find(c => c.name === brandName);
   const competitor = competitorVisibility.find(c => c.name === selectedCompetitor);
@@ -30,7 +39,7 @@ const CompetitorsComparisonsContent = () => {
 
   const sortedCompetitorData = useMemo(() => {
     return [...competitorData].sort((a, b) => b.totalScore - a.totalScore);
-  }, []);
+  }, [competitorData]);
 
   return (
     <div className="p-4 md:p-6 space-y-6 w-full max-w-full overflow-x-hidden">
