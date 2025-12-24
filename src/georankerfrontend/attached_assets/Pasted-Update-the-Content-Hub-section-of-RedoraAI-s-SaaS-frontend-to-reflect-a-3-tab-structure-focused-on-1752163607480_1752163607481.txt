@@ -1,0 +1,110 @@
+Update the "Content Hub" section of RedoraAI's SaaS frontend to reflect a 3-tab structure focused on the full content lifecycle: planning, creation, and optimization.
+
+🛠 Tech Stack:
+- React
+- TailwindCSS
+- Recharts or Chart.js (for other parts of app, not needed here)
+- Lucide-react or Heroicons for icons
+
+---
+
+🔹 OVERALL LAYOUT
+
+- The Content Hub should now have 3 main tabs:
+  1. **Plan**
+  2. **Create**
+  3. **Optimize**
+
+Keep all views clean, modular, and responsive.
+
+---
+
+🔹 TAB 1: Plan
+
+> This is the strategy and campaign planner — not just a brief list.
+
+**Sections to include:**
+
+1. 📆 **Content Calendar**
+   - 4-week roadmap view of scheduled/planned content
+   - Each item shows:
+     - Topic/Keyword
+     - Suggested format (e.g. blog, carousel, LinkedIn post)
+     - Goal tag (rank, engage, convert)
+
+2. 🧠 **Brief Generator**
+   - For each tracked topic or keyword:
+     - Headline suggestions
+     - Ideal content format
+     - Suggested length, tone
+     - CTA suggestions
+     - Output should be editable
+
+3. 🔁 **Repurpose Suggestions**
+   - Scan from static dummy content (website/blog/video list)
+   - Detect relevant case studies, blogs, YouTube videos that haven’t been reused
+   - Suggest: “Turn this case study into LinkedIn post”, “Extract video clip for blog quote”
+   - Show preview of matched assets + suggested new format
+   - Optional: “Add to plan” button
+
+---
+
+🔹 TAB 2: Create
+
+> The actual writing and generation section, powered by AI
+
+**Sections to include:**
+
+1. ✍️ **AI Draft Generator**
+   - Content type selector: Blog, LinkedIn Post, Reddit Comment
+   - Option to choose tone & platform
+   - “Structure-first” toggle → lets user generate H1/H2 + outline first, before full content
+
+2. 📝 **Draft Manager**
+   - List of all generated drafts
+   - Columns: Title, Type, Status (drafted / reviewed / published), Last updated
+   - Ability to filter and search
+
+3. 🔗 **Integrations**
+   - Buttons to “Send to WordPress” or “Open in Canva”
+   - Static buttons only — no integration logic needed
+   - Optional: Notion, Markdown export
+
+---
+
+🔹 TAB 3: Optimize
+
+> Help users improve and maintain their existing content
+
+**Sections to include:**
+
+1. 📌 **SEO & Content Optimization Tips**
+   - List of published content items with suggestions:
+     - “Add internal links”
+     - “Include keyword cluster X”
+     - “Republish with updated data”
+   - Action: “Update Brief” → lets user auto-regenerate structure in Plan tab
+
+2. 🧩 **Missing Content Alerts**
+   - Show keywords or topics with no content in the last 60 days
+   - Callout blocks like: “You haven’t published anything on ‘AI workflow automation’ recently”
+
+3. 🧠 **Content Refresh Ideas**
+   - Identify stale content (older than 90 days)
+   - Suggest: “Convert into a listicle”, “Add recent stats”, “Include client quote”
+
+> This tab should not show traffic or engagement metrics — move all such analytics to the main Dashboard.
+
+---
+
+📌 Additional Notes:
+- Remove the “Business Outcome” section that includes leads or attribution — not needed in this scope.
+- Use clean, enterprise SaaS visual style with light theme, subtle shadows, clean white/gray backgrounds.
+- Use dummy data for all assets, briefs, and suggestions.
+- Add hover effects for previewing content (e.g., when hovering on repurpose suggestions).
+- Ensure the tab system works responsively (mobile/tablet fallback).
+
+---
+
+🎯 Goal:
+Deliver a **fully navigable frontend prototype** for the updated Content Hub with three clear tabs — Plan, Create, and Optimize — each focused on specific parts of the B2B content workflow. Keep each view purposeful, action-oriented, and minimal.

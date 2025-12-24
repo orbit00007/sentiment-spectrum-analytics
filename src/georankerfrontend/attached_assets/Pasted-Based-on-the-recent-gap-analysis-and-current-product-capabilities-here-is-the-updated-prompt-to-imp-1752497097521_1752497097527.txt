@@ -1,0 +1,78 @@
+Based on the recent gap analysis and current product capabilities, here is the updated prompt to implement refined UI and feature enhancements for your GEO dashboard, ensuring enterprise-grade clarity, efficiency, and depth:
+
+Analytics Screen:
+
+Clearly separate sections for AI Visibility and Community Analytics with bold, intuitive headings.
+
+Add interactive filtering (by LLM, time period, competitor).
+
+Introduce a content opportunity section that identifies missing visibility for tracked keywords, with a one-click action to create a content brief.
+
+Visualize performance trends with graphs and include top-performing vs. underperforming keyword callouts.
+
+Content Hub Screen:
+
+Split into three tabs: Plan, Create, and Optimize to reduce visual clutter.
+
+Integrate a feedback loop: show underperforming content → recommend updates or repurposing → generate new briefs.
+
+Add LLM-specific optimization fields (e.g., LLM Readiness Score, Prompt Friendliness, Citation Density).
+
+Include repurpose automation for old case studies, blog content, and underutilized assets.
+
+Simplify brief cards by default (only title, format, performance); expand to show tone, CTA, headlines, etc.
+
+Dashboard Overview Screen:
+
+Highlight a "Visibility Gap Tracker": show the difference between current and target visibility scores, with contributor content insights.
+
+Prioritize 2–3 key recommended actions on load (e.g., "Missing content on Gemini," "No case study ranking on ChatGPT").
+
+Collapse secondary metrics and sentiment breakdowns into expandable sections to reduce visual noise.
+
+Integrations Screen:
+
+Clarify integration status visually (Connected / Not Connected with color states).
+
+Recommend integrations based on missing content types (e.g., “Integrate Product Hunt for case study mentions”).
+
+Add a guided setup wizard for new users with pre-populated demo content to simulate value quickly.
+
+Profile Settings Screen:
+
+Use a checklist-style interface to show completion status: profile, topics tracked, integrations, wiki/G2/Product Hunt presence.
+
+Surface alerts when important visibility channels (e.g., Wikipedia or G2) are missing.
+
+Reports Screen:
+
+Consolidate multiple report types (e.g., AI Search Report, Content Action Plan, Community Summary) into 2 main types:
+
+Visibility Report
+
+Content Strategy Report
+with toggles to include/exclude sections.
+
+Add a "Quick Insights" preview for each report card showing metrics change, urgent actions, and top keyword trends.
+
+Let users configure which reports should be sent weekly, bi-weekly, or monthly with smart scheduling.
+
+New Functional Additions:
+
+Mention Mining Tool: Upload or enter public URLs (blogs, videos, case studies) and scan for keyword mentions and content gaps.
+
+LLM Optimization Panel: Show a real-time score for each content piece and improvement suggestions based on LLM visibility best practices.
+
+Collaboration Layer: Let users assign briefs or optimization tasks to team members, add comments, and mark stages (Draft, Review, Approved).
+
+General Cleanup & Reductions:
+
+Reduce scattered "Take Action" buttons; instead embed one-click actions inline within content cards.
+
+Avoid overloading report and dashboard screens with too many minor metrics. Prioritize top-level insights with expandable detail.
+
+Merge or simplify redundant modules across reporting and community visibility.
+
+Ensure modular React components and Tailwind-based styling are used throughout, keeping each view responsive, minimal, and suitable for scale.
+
+No backend needed for now — all sections can use placeholder states, mocked content, and simple state toggling for interaction simulation.

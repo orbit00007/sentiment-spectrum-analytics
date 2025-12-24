@@ -1,0 +1,62 @@
+Please update the RedoraAI frontend prototype to reflect the following changes for more realistic, trackable business metrics:
+
+1. Dashboard - Replace "Content Performance" Section
+✔ Remove the existing "Content Performance" progress bars showing vague contribution percentages.
+
+✔ Replace with a new section titled "Content Visibility & Mentions Snapshot", showing:
+
+A breakdown by content format:
+
+Blogs
+
+Reddit Posts/Comments
+
+LinkedIn Posts
+
+For each content type, show two tangible, trackable metrics:
+✅ AI Search Appearances — Estimated count of times that content or related brand mentions appeared in AI search results (ChatGPT, Perplexity, Gemini)
+✅ Community Mentions — Total times that content or tracked keywords were mentioned in monitored community platforms (Reddit, Product Hunt, Hacker News, Quora, Discord)
+
+✔ Use a simple, clean table or grid layout for this section.
+
+✔ For the prototype, hardcode dummy data, for example:
+
+pgsql
+Copy
+Edit
+Content Type   | AI Search Appearances | Community Mentions  
+-------------------------------------------------------------  
+Blogs          |           3           |         12  
+Reddit Posts   |           1           |         22  
+LinkedIn Posts |           0           |          5  
+2. Analytics Section - Ensure Realistic Metrics
+AI Search Visibility Tab:
+
+Show total count of brand mentions in AI Search tools, broken down by:
+
+Platform (ChatGPT, Perplexity, Gemini)
+
+Tracked Keyword or Topic
+
+Community Analytics Tab:
+
+Show total tracked conversations by platform
+
+Show total keyword or brand mentions in those conversations
+
+Trending conversations surfaced by the system
+
+Sentiment analysis can be shown, but keep it simple and based on keyword-level logic (no complex AI sentiment guesses)
+
+Competitor Benchmarking Tab:
+
+Show counts of competitor brand mentions in AI search tools and communities
+
+Share of Voice based on raw mention counts, not abstract percentages
+
+3. General Notes:
+Remove or avoid vague "contribution" metrics
+
+Keep all visibility, mentions, and appearance metrics directly linked to data that can realistically be tracked
+
+Static dummy data for now — no backend connection required

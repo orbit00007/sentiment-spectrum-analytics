@@ -1,0 +1,62 @@
+Update my RedoraAI SaaS frontend prototype to include the following expanded functionality for a B2B AI visibility platform.
+
+Target Audience: Growth and content marketing teams at B2B SaaS companies  
+Tech Stack: React + TailwindCSS + Recharts or Chart.js + Lucide/Heroicons  
+
+🔹 Global UX Additions:
+- Add a new tab under "Content Hub" → **Content Strategy Planner**
+- Add a new section under "Analytics" → **Content SEO Gaps**
+- Add a new section under "Reports" → **Profile Audit (Otterly-style)**
+
+🔹 1. Content Strategy Planner
+- Instead of generating single blog posts, allow users to:
+  - Build a **multi-week content plan** tied to tracked topics (calendar or roadmap view)
+  - Auto-suggest **content types** (case study, opinion, SEO blog, carousel) based on goal (rank, engage, convert)
+  - Generate **brief/structure before writing**, including:
+    - Headline suggestions
+    - Ideal length
+    - Format breakdown (H1, H2s)
+    - CTA suggestion
+    - LLM-specific prompt optimization (i.e., write for ChatGPT/Perplexity)
+
+🔹 2. Case Study Discovery
+- In "Content Hub", create a **Research Assistant** module:
+  - Allow users to enter a keyword or product
+  - Scan public websites/blogs using embedded browser scroll simulation
+  - Identify relevant case studies, videos, PDFs, or press mentions
+  - Show source, highlight usage context, extract quotes/data
+
+🔹 3. SEO Gap & Opportunity Panel (like Surfer SEO)
+- In "Analytics" > "Content SEO Gaps", show:
+  - Gaps in existing content coverage based on keyword clusters
+  - Opportunities: top keywords that competitors rank for but you don’t
+  - Auto-suggest update briefs for underperforming posts
+  - Visual indicators for low-performing content with improvement tips
+
+🔹 4. Profile Audit (Otterly-style)
+- New report under "Reports" → **Brand Visibility Audit**
+  - Show current online presence across:
+    - Wikipedia
+    - LinkedIn engagement
+    - GitHub stars
+    - Product Hunt pages
+    - Forum mentions (Reddit, Discord)
+  - Report card format with “Present / Missing” indicators
+  - Include CTA: “Add Wiki Page”, “Submit to Product Hunt”, etc.
+
+🔹 5. Integrations Panel Expansion
+- Add plugin connection buttons for:
+  - **Canva** (content asset design)
+  - **WordPress** (direct publish blog posts)
+  - **Notion** (publish content plans or audit reports)
+
+🔹 6. Close the Loop: Outcome Insights
+- In Dashboard:
+  - Compare current visibility (Search Appearances, Community Mentions) to last 30 days
+  - Show progress from “Initial state” to “Target state”
+  - Tie content created to visibility delta
+
+Use subtle shadows, minimalist UX, and keep all new cards responsive.
+
+Deliverable:
+A complete, responsive frontend mockup incorporating the above modules with placeholder data and mock interactions. No backend logic is required.
