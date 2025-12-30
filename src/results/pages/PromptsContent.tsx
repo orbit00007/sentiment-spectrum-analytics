@@ -1,36 +1,106 @@
-import { getAnalytics, getBrandName, getBrandInfoWithLogos } from "@/results/data/analyticsData";
-import { ChevronDown, ChevronRight, Search, BarChart3, Zap } from "lucide-react";
+import {
+  getAnalytics,
+  getBrandName,
+  getBrandInfoWithLogos,
+  getSearchKeywordsWithPrompts,
+} from "@/results/data/analyticsData";
+import {
+  ChevronDown,
+  ChevronRight,
+  Search,
+  Zap,
+  MessageSquare,
+} from "lucide-react";
 import { useState } from "react";
-import { TierBadge } from "@/results/ui/TierBadge";
+
+// Default empty data constants
+const DEFAULT_BRAND_MENTION = 0;
 
 const PromptsContent = () => {
-  const analytics = getAnalytics();
   const brandName = getBrandName();
   const brandInfo = getBrandInfoWithLogos();
-  const keywords = analytics?.analysis_scope?.search_keywords || [];
-  const visibilityTable = analytics?.competitor_visibility_table;
+  const keywordsWithPrompts = getSearchKeywordsWithPrompts();
   const [expandedKeyword, setExpandedKeyword] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const filteredKeywords = keywords.filter(k => 
-    k.toLowerCase().includes(searchQuery.toLowerCase())
+  // Filter keywords based on search
+  const filteredKeywords = keywordsWithPrompts.filter(
+    (k) =>
+      k.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      k.prompts.some((p) => p.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  const brandRow = visibilityTable?.rows?.find(row => row[0] === brandName);
-
-  const getScoreTier = (score: number, maxScore: number) => {
-    const ratio = score / maxScore;
-    if (ratio >= 0.7) return 'High';
-    if (ratio >= 0.4) return 'Medium';
-    return 'Low';
-  };
-
   const getBrandLogo = (name: string) => {
-    const brand = brandInfo.find(b => b.brand === name);
+    const brand = brandInfo.find((b) => b.brand === name);
     return brand?.logo;
   };
 
-  const totalBrandScore = brandRow ? brandRow.slice(1).reduce((sum: number, s) => sum + (s as number), 0) : 0;
+  // Get brand's mention breakdown for a keyword
+  const getBrandScoreForKeyword = (keywordId: string) => {
+    const brand = brandInfo.find((b) => b.brand === brandName);
+    return brand?.mention_breakdown?.[keywordId] || DEFAULT_BRAND_MENTION;
+  };
+
+  // Get top competitor for a keyword
+  const getTopCompetitorForKeyword = (keywordId: string) => {
+    let topBrand = "";
+    let topScore = 0;
+    let topLogo = "";
+
+    brandInfo.forEach((b) => {
+      const score = b.mention_breakdown?.[keywordId] || 0;
+      if (score > topScore) {
+        topScore = score;
+        topBrand = b.brand;
+        topLogo = b.logo;
+      }
+    });
+
+    return { brand: topBrand, score: topScore, logo: topLogo };
+  };
+
+  // Calculate total prompts
+  const totalPrompts = keywordsWithPrompts.reduce(
+    (acc, k) => acc + k.prompts.length,
+    0
+  );
+
+  // Get brands to display for a keyword - includes our brand even if score is 0, placed at the end
+  const getBrandsForKeyword = (keywordId: string) => {
+    // Get all brands with mentions > 0
+    const brandsWithMentions = brandInfo.filter(
+      (b) => (b.mention_breakdown?.[keywordId] || 0) > 0
+    );
+
+    // Check if our brand is in the list
+    const ourBrandIndex = brandsWithMentions.findIndex(
+      (b) => b.brand === brandName
+    );
+
+    let ourBrand = null;
+    
+    // If our brand is in the list, remove it to add at the end
+    if (ourBrandIndex !== -1) {
+      ourBrand = brandsWithMentions.splice(ourBrandIndex, 1)[0];
+    } else {
+      // If our brand is not in the list, find it and prepare to add with 0 mentions
+      ourBrand = brandInfo.find((b) => b.brand === brandName);
+    }
+
+    // Sort by mentions (highest first)
+    brandsWithMentions.sort(
+      (a, b) =>
+        (b.mention_breakdown?.[keywordId] || 0) -
+        (a.mention_breakdown?.[keywordId] || 0)
+    );
+
+    // Add our brand at the end
+    if (ourBrand) {
+      brandsWithMentions.push(ourBrand);
+    }
+
+    return brandsWithMentions;
+  };
 
   return (
     <div className="p-3 md:p-6 space-y-4 md:space-y-6 w-full max-w-full overflow-x-hidden">
@@ -43,13 +113,31 @@ const PromptsContent = () => {
               <Zap className="w-5 h-5 md:w-6 md:h-6 text-primary" />
             </div>
             <div>
-              <h1 className="text-lg md:text-2xl font-bold text-foreground">Prompts & Keywords</h1>
-              <p className="text-xs md:text-sm text-muted-foreground">{keywords.length} keywords analyzed</p>
+              <h1 className="text-xl md:text-2xl font-bold text-foreground">
+                AI Prompts & Query Analysis
+              </h1>
+              <p className="text-xs md:text-sm text-muted-foreground">
+                Exact questions AI is answering about your brand & industry
+              </p>
             </div>
           </div>
-          <div className="text-left sm:text-right">
-            <div className="text-2xl md:text-3xl font-bold text-primary">{totalBrandScore}</div>
-            <div className="text-[10px] md:text-xs text-muted-foreground">Total Visibility Score</div>
+          <div className="flex gap-10 justify-center">
+            <div className="text-center sm:text-center">
+              <div className="text-2xl md:text-3xl font-bold text-primary">
+                {keywordsWithPrompts.length}
+              </div>
+              <div className="text-[10px] md:text-xs text-muted-foreground">
+                keywords
+              </div>
+            </div>
+            <div className="text-center sm:text-center">
+              <div className="text-2xl md:text-3xl font-bold text-primary">
+                {totalPrompts}
+              </div>
+              <div className="text-[10px] md:text-xs text-muted-foreground">
+                prompts analyzed
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -59,117 +147,166 @@ const PromptsContent = () => {
         <Search className="absolute left-3 md:left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-muted-foreground" />
         <input
           type="text"
-          placeholder="Search prompts..."
+          placeholder="Search keywords or prompts..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="w-full pl-10 md:pl-12 pr-3 md:pr-4 py-2.5 md:py-3 bg-card border border-border rounded-lg md:rounded-xl text-sm md:text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
         />
       </div>
 
-      {/* Mobile-friendly Keywords Cards (visible on mobile) */}
-      <div className="md:hidden space-y-3">
-        {filteredKeywords.map((keyword, index) => {
-          const keywordIndex = index + 1;
-          const brandScore = brandRow ? brandRow[keywordIndex] as number : 0;
-          
-          let topCompetitor = '';
-          let topScore = 0;
-          let topCompetitorLogo = '';
-          visibilityTable?.rows?.forEach(row => {
-            const score = row[keywordIndex] as number;
-            if (score > topScore) {
-              topScore = score;
-              topCompetitor = row[0] as string;
-              topCompetitorLogo = getBrandLogo(topCompetitor) || '';
-            }
-          });
-
-          const isExpanded = expandedKeyword === keyword;
-          const isLeading = brandScore === topScore && brandScore > 0;
-          const tier = getScoreTier(brandScore, topScore || 1);
+      {/* Keywords with Prompts */}
+      <div className="space-y-4">
+        {filteredKeywords.map((keyword) => {
+          const isExpanded = expandedKeyword === keyword.id;
+          const brandScore = getBrandScoreForKeyword(keyword.id);
+          const topCompetitor = getTopCompetitorForKeyword(keyword.id);
+          const promptCount = keyword.prompts.length;
+          const brandsToDisplay = getBrandsForKeyword(keyword.id);
 
           return (
-            <div key={keyword} className="bg-card rounded-xl border border-border overflow-hidden">
-              <div 
-                className="p-3 flex items-center justify-between gap-2 touch-manipulation"
-                onClick={() => setExpandedKeyword(isExpanded ? null : keyword)}
+            <div
+              key={keyword.id}
+              className="bg-card rounded-xl border border-border overflow-hidden"
+            >
+              {/* Keyword Header */}
+              <div
+                className="p-4 md:p-5 flex items-center justify-between gap-3 cursor-pointer hover:bg-muted/30 transition-colors"
+                onClick={() =>
+                  setExpandedKeyword(isExpanded ? null : keyword.id)
+                }
               >
-                <div className="flex items-center gap-2 flex-1 min-w-0">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
                   {isExpanded ? (
-                    <ChevronDown className="w-4 h-4 text-primary flex-shrink-0" />
+                    <ChevronDown className="w-5 h-5 text-primary flex-shrink-0" />
                   ) : (
-                    <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                    <ChevronRight className="w-5 h-5 text-muted-foreground flex-shrink-0" />
                   )}
-                  <span className="font-medium text-foreground text-sm truncate">{keyword}</span>
-                </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold ${
-                    brandScore >= 7 ? 'bg-green-500/20 text-green-500' :
-                    brandScore >= 4 ? 'bg-amber-500/20 text-amber-500' :
-                    brandScore > 0 ? 'bg-red-500/20 text-red-500' :
-                    'bg-muted text-muted-foreground'
-                  }`}>
-                    {brandScore}
-                  </span>
-                  {isLeading ? (
-                    <span className="px-2 py-0.5 rounded-full bg-green-500/20 text-green-500 text-[10px] font-medium">
-                      Leading
+                  <div className="min-w-0">
+                    <span className="font-semibold text-foreground text-sm md:text-base block truncate">
+                      {keyword.name}
                     </span>
-                  ) : (
-                    <TierBadge tier={tier} />
+                    <span className="text-xs text-muted-foreground">
+                      {promptCount} prompts
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 flex-shrink-0">
+                  {/* Brand Score Badge */}
+                  <div className="flex flex-col items-center">
+                    <span
+                      className={`inline-flex items-center justify-center w-10 h-10 rounded-full text-sm font-bold ${
+                        brandScore >= 3
+                          ? "bg-green-500/20 text-green-500"
+                          : brandScore >= 1
+                          ? "bg-amber-500/20 text-amber-500"
+                          : "bg-red-500/20 text-red-500"
+                      }`}
+                    >
+                      {brandScore}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground mt-1">
+                      Your brand's mention
+                    </span>
+                  </div>
+
+                  {/* Top Competitor */}
+                  {topCompetitor.brand && (
+                    <div className="hidden md:flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-lg">
+                      {topCompetitor.logo && (
+                        <img
+                          src={topCompetitor.logo}
+                          alt=""
+                          className="w-5 h-5 rounded-full object-contain bg-white"
+                        />
+                      )}
+                      <span className="text-xs text-muted-foreground">
+                        Top:
+                      </span>
+                      <span className="text-xs font-medium">
+                        {topCompetitor.brand}
+                      </span>
+                      <span className="text-xs font-bold text-primary">
+                        {topCompetitor.score}
+                      </span>
+                    </div>
                   )}
                 </div>
               </div>
-              
+
+              {/* Expanded Prompts List */}
               {isExpanded && (
-                <div className="px-3 pb-3 border-t border-border/50 pt-3 space-y-3">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground">Top Competitor:</span>
-                    <div className="flex items-center gap-1.5">
-                      {topCompetitorLogo && (
-                        <img src={topCompetitorLogo} alt="" className="w-5 h-5 rounded-full object-contain bg-white" />
-                      )}
-                      <span className="font-medium">{topCompetitor}</span>
-                      <span className="px-1.5 py-0.5 bg-primary/10 text-primary rounded text-[10px] font-semibold">{topScore}</span>
+                <div className="border-t border-border/50 bg-muted/20">
+                  <div className="p-4 md:p-5 space-y-3">
+                    <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                      <MessageSquare className="w-4 h-4 text-primary" />
+                      AI Prompts Used
+                    </h4>
+                    <div className="space-y-2">
+                      {keyword.prompts.map((prompt, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-start gap-3 p-3 bg-card rounded-lg border border-border/50"
+                        >
+                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-semibold flex-shrink-0">
+                            {idx + 1}
+                          </span>
+                          <p className="text-sm text-foreground leading-relaxed">
+                            {prompt}
+                          </p>
+                        </div>
+                      ))}
                     </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-3 gap-2">
-                    {visibilityTable?.rows
-                      ?.slice()
-                      .sort((a, b) => (b[keywordIndex] as number) - (a[keywordIndex] as number))
-                      .slice(0, 6)
-                      .map(row => {
-                        const name = row[0] as string;
-                        const score = row[keywordIndex] as number;
-                        const isBrand = name === brandName;
-                        const logo = getBrandLogo(name);
-                        return (
-                          <div 
-                            key={name} 
-                            className={`flex flex-col items-center p-2 rounded-lg border ${
-                              isBrand 
-                                ? 'bg-primary/10 border-primary/30' 
-                                : 'bg-muted/50 border-border'
-                            }`}
-                          >
-                            {logo && (
-                              <img src={logo} alt="" className="w-6 h-6 rounded-full object-contain bg-white mb-1" />
-                            )}
-                            <span className={`text-[10px] font-medium text-center truncate w-full ${isBrand ? 'text-primary' : 'text-foreground'}`}>
-                              {name}
-                            </span>
-                            <span className={`text-sm font-bold ${
-                              score >= 7 ? 'text-green-500' :
-                              score >= 4 ? 'text-amber-500' :
-                              score > 0 ? 'text-red-500' :
-                              'text-muted-foreground'
-                            }`}>
-                              {score}
-                            </span>
-                          </div>
-                        );
-                      })}
+
+                    {/* Competitor Breakdown */}
+                    <div className="mt-4 pt-4 border-t border-border/50">
+                      <h4 className="text-sm font-semibold text-foreground mb-3">
+                        Brand Mentions for &quot;{keyword.name}&quot;
+                      </h4>
+                      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                        {brandsToDisplay.map((brand) => {
+                          const score =
+                            brand.mention_breakdown?.[keyword.id] ||
+                            DEFAULT_BRAND_MENTION;
+                          const isBrand = brand.brand === brandName;
+                          return (
+                            <div
+                              key={brand.brand}
+                              className={`flex flex-col items-center p-3 rounded-lg border transition-all ${
+                                isBrand
+                                  ? "bg-primary/10 border-primary/30"
+                                  : "bg-muted/50 border-border"
+                              }`}
+                            >
+                              {brand.logo && (
+                                <img
+                                  src={brand.logo}
+                                  alt=""
+                                  className="w-8 h-8 rounded-full object-contain bg-white mb-1"
+                                />
+                              )}
+                              <span
+                                className={`text-[10px] font-medium text-center truncate w-full ${
+                                  isBrand ? "text-primary" : "text-foreground"
+                                }`}
+                              >
+                                {brand.brand}
+                              </span>
+                              <span
+                                className={`text-lg font-bold ${
+                                  score >= 3
+                                    ? "text-green-500"
+                                    : score >= 1
+                                    ? "text-amber-500"
+                                    : "text-red-500"
+                                }`}
+                              >
+                                {score}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
@@ -178,148 +315,9 @@ const PromptsContent = () => {
         })}
       </div>
 
-      {/* Desktop Keywords Table (hidden on mobile) */}
-      <div className="hidden md:block bg-card rounded-xl border border-border overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-border bg-muted/50">
-                <th className="text-left py-4 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-8"></th>
-                <th className="text-left py-4 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Keyword / Prompt</th>
-                <th className="text-center py-4 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">{brandName} Score</th>
-                <th className="text-left py-4 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Top Competitor</th>
-                <th className="text-center py-4 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Top Score</th>
-                <th className="text-center py-4 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredKeywords.map((keyword, index) => {
-                const keywordIndex = index + 1;
-                const brandScore = brandRow ? brandRow[keywordIndex] as number : 0;
-                
-                let topCompetitor = '';
-                let topScore = 0;
-                let topCompetitorLogo = '';
-                visibilityTable?.rows?.forEach(row => {
-                  const score = row[keywordIndex] as number;
-                  if (score > topScore) {
-                    topScore = score;
-                    topCompetitor = row[0] as string;
-                    topCompetitorLogo = getBrandLogo(topCompetitor) || '';
-                  }
-                });
-
-                const isExpanded = expandedKeyword === keyword;
-                const isLeading = brandScore === topScore && brandScore > 0;
-                const tier = getScoreTier(brandScore, topScore || 1);
-
-                return (
-                  <>
-                    <tr 
-                      key={keyword}
-                      className="border-b border-border/50 hover:bg-muted/30 cursor-pointer transition-colors"
-                      onClick={() => setExpandedKeyword(isExpanded ? null : keyword)}
-                    >
-                      <td className="py-4 px-4">
-                        {isExpanded ? (
-                          <ChevronDown className="w-4 h-4 text-primary" />
-                        ) : (
-                          <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                        )}
-                      </td>
-                      <td className="py-4 px-4">
-                        <span className="font-medium text-foreground">{keyword}</span>
-                      </td>
-                      <td className="py-4 px-4 text-center">
-                        <span className={`inline-flex items-center justify-center w-10 h-10 rounded-full text-sm font-bold ${
-                          brandScore >= 7 ? 'bg-green-500/20 text-green-500' :
-                          brandScore >= 4 ? 'bg-amber-500/20 text-amber-500' :
-                          brandScore > 0 ? 'bg-red-500/20 text-red-500' :
-                          'bg-muted text-muted-foreground'
-                        }`}>
-                          {brandScore}
-                        </span>
-                      </td>
-                      <td className="py-4 px-4">
-                        <div className="flex items-center gap-2">
-                          {topCompetitorLogo && (
-                            <img src={topCompetitorLogo} alt="" className="w-6 h-6 rounded-full object-contain bg-white" />
-                          )}
-                          <span className="text-foreground">{topCompetitor}</span>
-                        </div>
-                      </td>
-                      <td className="py-4 px-4 text-center">
-                        <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 text-primary text-sm font-bold">
-                          {topScore}
-                        </span>
-                      </td>
-                      <td className="py-4 px-4 text-center">
-                        {isLeading ? (
-                          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-green-500/20 text-green-500 text-xs font-medium">
-                            <BarChart3 className="w-3 h-3" />
-                            Leading
-                          </span>
-                        ) : (
-                          <TierBadge tier={tier} />
-                        )}
-                      </td>
-                    </tr>
-                    {isExpanded && (
-                      <tr className="bg-muted/20">
-                        <td colSpan={6} className="py-6 px-8">
-                          <div className="space-y-4">
-                            <h4 className="font-semibold text-foreground">All Competitors for "{keyword}"</h4>
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-                              {visibilityTable?.rows
-                                ?.slice()
-                                .sort((a, b) => (b[keywordIndex] as number) - (a[keywordIndex] as number))
-                                .map(row => {
-                                  const name = row[0] as string;
-                                  const score = row[keywordIndex] as number;
-                                  const isBrand = name === brandName;
-                                  const logo = getBrandLogo(name);
-                                  return (
-                                    <div 
-                                      key={name} 
-                                      className={`flex flex-col items-center p-4 rounded-xl border transition-all ${
-                                        isBrand 
-                                          ? 'bg-primary/10 border-primary/30' 
-                                          : 'bg-card border-border hover:border-primary/20'
-                                      }`}
-                                    >
-                                      {logo && (
-                                        <img src={logo} alt="" className="w-10 h-10 rounded-full object-contain bg-white mb-2" />
-                                      )}
-                                      <span className={`text-sm font-medium mb-1 ${isBrand ? 'text-primary' : 'text-foreground'}`}>
-                                        {name}
-                                      </span>
-                                      <span className={`text-2xl font-bold ${
-                                        score >= 7 ? 'text-green-500' :
-                                        score >= 4 ? 'text-amber-500' :
-                                        score > 0 ? 'text-red-500' :
-                                        'text-muted-foreground'
-                                      }`}>
-                                        {score}
-                                      </span>
-                                    </div>
-                                  );
-                                })}
-                            </div>
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                  </>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
       {filteredKeywords.length === 0 && (
         <div className="text-center py-8 md:py-12 text-muted-foreground bg-card rounded-xl border border-border text-sm md:text-base">
-          No prompts found matching "{searchQuery}"
+          No keywords or prompts found matching &quot;{searchQuery}&quot;
         </div>
       )}
     </div>

@@ -21,6 +21,16 @@ export const TOOLTIP_CONTENT = {
       low: "< 40 percentile"
     }
   },
+  brandMentionScore: {
+    description: "Percentage of AI responses where the brand appeared out of total AI prompts.",
+    formula: "Brand Mention Score % = (sum of mention_breakdown values / total prompts) × 100",
+    explanation: "For example, if there are 10 AI prompts and the brand appeared in 5 of them, the score is 50%.",
+    calculation: {
+      step1: "Count total prompts from search_keywords (sum of all prompts arrays)",
+      step2: "Sum mention_breakdown values for the brand (shows prompts where brand appeared per keyword)",
+      step3: "Calculate: (total_mentions / total_prompts) × 100, capped at 100%"
+    }
+  },
   sentimentAnalysis: {
     description: "Overall sentiment tone of your brand mentions across AI platforms.",
     explanation: "Analyzes the context and tone in which your brand is mentioned."
@@ -51,24 +61,27 @@ export const getTierFromPercentile = (percentile: number): string => {
 };
 
 /**
- * Get tier color classes for solid badges
+ * Get tier color CSS variable only
  */
-export const getTierBadgeClasses = (tier: string): string => {
+export const getTierColorVar = (tier: string): string => {
   switch (tier?.toLowerCase()) {
     case 'high':
     case 'positive':
     case 'yes':
-      return 'bg-green-500 text-white';
+      return '[--tier-color:theme(colors.green.500)]';
+
     case 'medium':
     case 'neutral':
-      return 'bg-amber-500 text-white';
+      return '[--tier-color:theme(colors.amber.500)]';
+
     case 'low':
     case 'negative':
     case 'no':
     case 'absent':
-      return 'bg-red-500 text-white';
+      return '[--tier-color:theme(colors.red.500)]';
+
     default:
-      return 'bg-muted text-muted-foreground';
+      return '[--tier-color:theme(colors.blue.500)]';
   }
 };
 
@@ -89,3 +102,24 @@ export const getGaugeGradientId = (percentile: number): string => {
   if (percentile >= 40) return 'gaugeAmber';
   return 'gaugeRed';
 };
+
+export function toOrdinal(n) {
+  if (typeof n !== "number") return n;
+
+  const mod100 = n % 100;
+
+  if (mod100 >= 11 && mod100 <= 13) {
+    return `${n}th`;
+  }
+
+  switch (n % 10) {
+    case 1:
+      return `${n}st`;
+    case 2:
+      return `${n}nd`;
+    case 3:
+      return `${n}rd`;
+    default:
+      return `${n}th`;
+  }
+}

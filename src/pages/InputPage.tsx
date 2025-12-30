@@ -25,6 +25,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { fetchProductsWithKeywords } from "@/apiHelpers";
+import { useAnalysisState } from "@/hooks/useAnalysisState";
 
 /* =====================
    HELPERS
@@ -85,6 +86,7 @@ export default function InputPage() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
+  const { startAnalysis } = useAnalysisState();
 
   useEffect(() => {
     if (!user) navigate("/login");
@@ -204,9 +206,13 @@ export default function InputPage() {
 
     try {
       const trimmedBrand = brand.trim();
+      const analysisTriggeredAt = Date.now();
       
       // Check if this is a new analysis or initial product creation
       if (isNewAnalysis && productId) {
+        // Start analysis state tracking
+        startAnalysis(productId);
+        
         // Use the new generate/with-keywords endpoint
         const { generateWithKeywords } = await import("@/apiHelpers");
         const data = await generateWithKeywords(productId, keywords);
@@ -232,6 +238,8 @@ export default function InputPage() {
               website: trimmedBrand,
               keywords,
               productId: productId,
+              analysisTriggeredAt: analysisTriggeredAt,
+              isNew: true,
             },
           });
 
@@ -252,12 +260,14 @@ export default function InputPage() {
         const data = await fetchProductsWithKeywords(payload);
         console.log("Brand analysis created");
 
-        // Save keywords once
-        saveKeywordsOnce(data);
-
+        // Start analysis state tracking after we have product ID
         if (data.product?.id) {
+          startAnalysis(data.product.id);
           localStorage.setItem("product_id", data.product.id);
         }
+
+        // Save keywords once
+        saveKeywordsOnce(data);
 
         setTimeout(() => {
           toast({
@@ -271,6 +281,8 @@ export default function InputPage() {
               website: trimmedBrand,
               keywords,
               productId: data.product?.id,
+              analysisTriggeredAt: analysisTriggeredAt,
+              isNew: true,
             },
           });
 

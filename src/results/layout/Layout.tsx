@@ -10,13 +10,18 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { PanelLeft } from "lucide-react";
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
 // Chat bubble component - simplified
-const ChatBubbleButton = ({ onMobileChatOpen }: { onMobileChatOpen: () => void }) => {
+const ChatBubbleButton = ({
+  onMobileChatOpen,
+}: {
+  onMobileChatOpen: () => void;
+}) => {
   const { toggleSidebar } = useSidebar();
 
   const handleChatClick = useCallback(() => {
@@ -37,15 +42,23 @@ const ChatBubbleButton = ({ onMobileChatOpen }: { onMobileChatOpen: () => void }
         <div className="relative bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl md:rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 overflow-hidden">
           <div className="absolute inset-0 bg-white/10"></div>
           <div className="relative px-3 py-2 sm:px-4 sm:py-3 md:px-5 md:py-4 flex items-center gap-2 sm:gap-3">
-            <svg className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+            <svg
+              className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-white"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+            >
               <path d="M12 2C6.48 2 2 6.48 2 12c0 1.54.36 3 .97 4.29L2 22l5.71-.97C9 21.64 10.46 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm0 18c-1.38 0-2.68-.29-3.86-.79l-.29-.15-2.99.51.51-2.99-.15-.29C4.79 14.68 4.5 13.38 4.5 12 4.5 7.86 7.86 4.5 12 4.5S19.5 7.86 19.5 12 16.14 19.5 12 19.5z" />
               <circle cx="8" cy="12" r="1.5" />
               <circle cx="12" cy="12" r="1.5" />
               <circle cx="16" cy="12" r="1.5" />
             </svg>
             <div className="flex flex-col">
-              <span className="text-white font-bold text-sm sm:text-base lg:text-xl tracking-wide whitespace-nowrap">Geo AI</span>
-              <span className="hidden sm:block text-white/90 text-[10px] lg:text-xs font-medium tracking-wide whitespace-nowrap">Your AI SEO Companion</span>
+              <span className="text-white font-bold text-sm sm:text-base lg:text-xl tracking-wide whitespace-nowrap">
+                Geo AI
+              </span>
+              <span className="hidden sm:block text-white/90 text-[10px] lg:text-xs font-medium tracking-wide whitespace-nowrap">
+                Your AI SEO Companion
+              </span>
             </div>
           </div>
         </div>
@@ -72,22 +85,22 @@ export const Layout = ({ children }: LayoutProps) => {
       style={{ "--sidebar-width": "24rem" } as React.CSSProperties}
     >
       {/* Desktop Sidebar */}
-      <Sidebar side="left" collapsible="offcanvas" className="no-print hidden md:flex">
+      <Sidebar
+        side="left"
+        collapsible="offcanvas"
+        className="no-print hidden md:flex"
+      >
         <SidebarContent>
           <ChatSidebar productId={productId} />
         </SidebarContent>
       </Sidebar>
 
       <SidebarInset className="flex-1 min-w-0 overflow-x-hidden">
-        <div className="min-h-screen bg-background flex flex-col w-full overflow-x-hidden">
-          {/* Sidebar trigger */}
-          <SidebarTrigger className="fixed left-4 top-3 h-8 w-8 no-print hidden md:flex z-50" />
+        <div className="min-h-screen bg-background flex flex-col w-full overflow-x-hidden pt-[56px]">
           <Header />
           <Navigation />
           <main className="flex-1 overflow-x-hidden overflow-y-auto">
-            <div className="w-full max-w-full">
-              {children}
-            </div>
+            {children}
           </main>
         </div>
 
@@ -96,9 +109,7 @@ export const Layout = ({ children }: LayoutProps) => {
 
         {/* Mobile Chat Overlay */}
         {isMobileChatOpen && (
-          <div 
-            className="fixed inset-0 z-50 bg-background md:hidden overflow-hidden"
-          >
+          <div className="fixed inset-0 z-50 bg-background md:hidden overflow-hidden">
             <ChatSidebar
               productId={productId}
               isMobile={true}

@@ -17,7 +17,6 @@ import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import { ScrollToTop } from "./ScrollToTop";
 import NewResultsContainer from "./results/pages/NewResultsContainer";
-import NewestResultsContainer from "./newestresults/pages/NewestResultsContainer";
 
 const queryClient = new QueryClient();
 
@@ -36,15 +35,11 @@ const App = () => (
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
-            <Route
-              path="/email-verification-pending"
-              element={<EmailVerificationPending />}
-            />
+            <Route path="/email-verification-pending" element={<EmailVerificationPending />} />
             <Route path="/input" element={<InputPage />} />
-            <Route path="/results" element={<Results />} />
+            {/* <Route path="/results" element={<Results />} /> */}
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/newresults/*" element={<NewResultsContainer />} />
-            <Route path="/newestresult/*" element={<NewestResultsContainer />} />
+            <Route path="/results/*" element={<NewResultsContainer />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

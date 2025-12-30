@@ -1,428 +1,528 @@
 import {
-  getSourcesData,
   getBrandName,
-  getDepthNotes,
   getBrandInfoWithLogos,
+  getAnalytics,
 } from "@/results/data/analyticsData";
-import { TierBadge } from "@/results/ui/TierBadge";
 import {
   ChevronDown,
   ChevronRight,
   Globe,
   FileText,
   Layers,
-  BookOpen,
+  Search,
+  Lightbulb,
   Link2,
+  FolderOpen,
 } from "lucide-react";
 import { useState, useMemo } from "react";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+
+// Default empty data constants
+const DEFAULT_BRAND_DATA = {
+  count: 0,
+  score: 0,
+  insight: "No insights were found",
+};
 
 const SourcesAllContent = () => {
   const brandName = getBrandName();
-  const sourcesData = getSourcesData();
-  const depthNotes = getDepthNotes();
+  const analytics = getAnalytics();
+  const sourcesAndContentImpact = analytics?.sources_and_content_impact || {};
   const brandInfo = getBrandInfoWithLogos();
-  const [expandedSource, setExpandedSource] = useState<string | null>(null);
-  const [allSourcesOpen, setAllSourcesOpen] = useState(false);
 
+  const [expandedSource, setExpandedSource] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showAllSources, setShowAllSources] = useState(false);
+
+  // Transform the new data structure
+  const sourcesData = useMemo(() => {
+    if (!sourcesAndContentImpact || typeof sourcesAndContentImpact !== "object")
+      return [];
+
+    return Object.entries(sourcesAndContentImpact).map(
+      ([sourceName, sourceData]: [string, any]) => {
+        const mentions = sourceData.mentions || {};
+        const pagesUsed = sourceData.pages_used || [];
+
+        // Calculate totals across all brands for this source
+        let totalMentions = 0;
+        Object.values(mentions).forEach((m: any) => {
+          totalMentions += m.count || 0;
+        });
+
+        return {
+          name: sourceName,
+          pagesUsed,
+          mentions,
+          totalMentions,
+          brandMentions: mentions[brandName]?.count || 0,
+          brandScore: Math.round((mentions[brandName]?.score || 0) * 100),
+          brandInsight: mentions[brandName]?.insight || "",
+        };
+      }
+    );
+  }, [sourcesAndContentImpact, brandName]);
+
+  // Get sources organized by category
+  const allSourcesData = useMemo(() => {
+    return sourcesData
+      .map((category) => ({
+        categoryName: category.name,
+        urls: category.pagesUsed,
+      }))
+      .filter((cat) => cat.urls.length > 0);
+  }, [sourcesData]);
+
+  // Filter sources based on search
+  const filteredSources = sourcesData.filter((s) =>
+    s.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredAllSources = allSourcesData.filter(
+    (cat) =>
+      cat.categoryName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      cat.urls.some((url) =>
+        url.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+  );
+
+  // Total stats
   const totalSources = sourcesData.length;
-  const brandMentionsKey = `${brandName}Mentions`;
-  const brandPresenceKey = `${brandName}Presence`;
-  const sourcesWithMentions = sourcesData.filter(
-    (s) => (s[brandMentionsKey] || 0) > 0
-  ).length;
-  const totalMentions = sourcesData.reduce(
-    (acc, s) => acc + (s[brandMentionsKey] || 0),
+  const totalMentionsAll = sourcesData.reduce(
+    (acc, s) => acc + s.brandMentions,
     0
   );
-  const presentSources = sourcesData.filter(
-    (s) => s[brandPresenceKey] === "Present"
-  ).length;
+  const totalUniqueSources = sourcesData.reduce(
+    (acc, s) => acc + s.pagesUsed.length,
+    0
+  );
 
-  const sortedSourcesData = useMemo(() => {
-    return [...sourcesData].sort((a, b) => {
-      const aMentions = a[brandMentionsKey] || 0;
-      const bMentions = b[brandMentionsKey] || 0;
-      return bMentions - aMentions;
-    });
-  }, [sourcesData, brandMentionsKey]);
+  const getBrandLogo = (name: string) => {
+    const brand = brandInfo.find((b) => b.brand === name);
+    return brand?.logo;
+  };
 
-  const sortedBrandInfo = useMemo(() => {
-    return [...brandInfo].sort((a, b) => b.mention_count - a.mention_count);
-  }, [brandInfo]);
+  // Get top competitor for a source
+  const getTopCompetitorForSource = (mentions: Record<string, any>) => {
+    let topBrand = "";
+    let topScore = 0;
+    let topLogo = "";
 
-  // Collect all unique sources from sources_and_content_impact pages_used and depth_notes
-  const allCheckedSources = useMemo(() => {
-    const sourcesSet = new Set<string>();
-
-    // Get pages_used from sourcesData (from sources_and_content_impact rows)
-    sourcesData.forEach((source) => {
-      const pagesUsed = source.pagesUsed;
-      if (Array.isArray(pagesUsed)) {
-        pagesUsed.forEach((page: string) => {
-          if (page && page !== "Absent") {
-            sourcesSet.add(page);
-          }
-        });
+    Object.entries(mentions).forEach(([brand, data]: [string, any]) => {
+      if (data.count > topScore) {
+        topScore = data.count;
+        topBrand = brand;
+        topLogo = getBrandLogo(brand) || "";
       }
     });
 
-    // Get pages_used from depthNotes (for the current brand's depth notes)
-    if (depthNotes && typeof depthNotes === "object") {
-      Object.values(depthNotes).forEach((categoryData: any) => {
-        if (
-          categoryData?.pages_used &&
-          Array.isArray(categoryData.pages_used)
-        ) {
-          categoryData.pages_used.forEach((page: string) => {
-            if (page && page !== "Absent") {
-              sourcesSet.add(page);
-            }
-          });
-        }
-      });
-    }
-
-    return Array.from(sourcesSet).sort();
-  }, [sourcesData, depthNotes]);
+    return { brand: topBrand, count: topScore, logo: topLogo };
+  };
 
   return (
-    <div className="p-4 md:p-6 space-y-6 w-full max-w-full overflow-x-hidden">
+    <div className="p-3 md:p-6 space-y-4 md:space-y-6 w-full max-w-full overflow-x-hidden">
       {/* Header with gradient */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary/20 via-primary/10 to-transparent border border-primary/20 p-4 md:p-6">
-        <div className="absolute top-0 right-0 w-48 h-48 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-        <div className="relative flex items-center gap-3">
-          <div className="p-3 bg-primary/10 rounded-xl">
-            <Layers className="w-6 h-6 text-primary" />
+      <div className="relative overflow-hidden rounded-xl md:rounded-2xl bg-gradient-to-r from-primary/20 via-primary/10 to-transparent border border-primary/20 p-4 md:p-6">
+        <div className="absolute top-0 right-0 w-32 md:w-48 h-32 md:h-48 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex items-center gap-2 md:gap-3">
+            <div className="p-2 md:p-3 bg-primary/10 rounded-lg md:rounded-xl">
+              <Layers className="w-5 h-5 md:w-6 md:h-6 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-xl md:text-2xl font-bold text-foreground">
+                Sources
+              </h1>
+              <p className="text-xs md:text-sm text-muted-foreground">
+                Where AI finds & cites your brand
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-xl md:text-2xl font-bold text-foreground">
-              Sources & Content Impact
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Where your brand is being cited by AI
-            </p>
+          <div className="flex gap-10 justify-center">
+            <div className="text-center sm:text-center">
+              <div className="text-2xl md:text-3xl font-bold text-primary">
+                {totalSources}
+              </div>
+              <div className="text-[10px] md:text-xs text-muted-foreground">
+                source categories
+              </div>
+            </div>
+            <div className="text-center sm:text-center">
+              <div className="text-2xl md:text-3xl font-bold text-primary">
+                {totalMentionsAll}
+              </div>
+              <div className="text-[10px] md:text-xs text-muted-foreground">
+                mentions in total for {brandName}
+              </div>
+            </div>
+            <div className="text-center sm:text-center">
+              <div className="text-2xl md:text-3xl font-bold text-primary">
+                {totalUniqueSources}
+              </div>
+              <div className="text-[10px] md:text-xs text-muted-foreground">
+                unique sources
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-        <div className="bg-card rounded-xl border border-border p-4 md:p-5 hover:shadow-md transition-shadow">
-          <div className="flex items-center gap-2 md:gap-3 mb-2 md:mb-3">
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <Globe className="w-4 h-4 md:w-5 md:h-5 text-primary" />
-            </div>
-            <span className="text-xs md:text-sm text-muted-foreground">
-              Source Categories
-            </span>
-          </div>
-          <span className="text-2xl md:text-3xl font-bold text-foreground">
-            {totalSources}
-          </span>
-        </div>
-
-        <div className="bg-card rounded-xl border border-border p-4 md:p-5 hover:shadow-md transition-shadow">
-          <div className="flex items-center gap-2 md:gap-3 mb-2 md:mb-3">
-            <div className="p-2 bg-green-500/10 rounded-lg">
-              <FileText className="w-4 h-4 md:w-5 md:h-5 text-green-500" />
-            </div>
-            <span className="text-xs md:text-sm text-muted-foreground">
-              Present In
-            </span>
-          </div>
-          <span className="text-2xl md:text-3xl font-bold text-green-500">
-            {presentSources}
-          </span>
-          <span className="text-xs md:text-sm text-muted-foreground ml-2">
-            of {totalSources}
-          </span>
-        </div>
-
-        <div className="bg-card rounded-xl border border-border p-4 md:p-5 hover:shadow-md transition-shadow">
-          <div className="flex items-center gap-2 md:gap-3 mb-2 md:mb-3">
-            <div className="p-2 bg-amber-500/10 rounded-lg">
-              <BookOpen className="w-4 h-4 md:w-5 md:h-5 text-amber-500" />
-            </div>
-            <span className="text-xs md:text-sm text-muted-foreground">
-              With Mentions
-            </span>
-          </div>
-          <span className="text-2xl md:text-3xl font-bold text-amber-500">
-            {sourcesWithMentions}
-          </span>
-        </div>
-
-        <div className="bg-card rounded-xl border border-border p-4 md:p-5 hover:shadow-md transition-shadow">
-          <div className="flex items-center gap-2 md:gap-3 mb-2 md:mb-3">
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <FileText className="w-4 h-4 md:w-5 md:h-5 text-primary" />
-            </div>
-            <span className="text-xs md:text-sm text-muted-foreground">
-              Total Mentions
-            </span>
-          </div>
-          <span className="text-2xl md:text-3xl font-bold text-primary">
-            {totalMentions}
-          </span>
-        </div>
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 md:left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-muted-foreground" />
+        <input
+          type="text"
+          placeholder="Search source categories or URLs..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full pl-10 md:pl-12 pr-3 md:pr-4 py-2.5 md:py-3 bg-card border border-border rounded-lg md:rounded-xl text-sm md:text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+        />
       </div>
 
-      {/* All Checked Sources - Collapsible Dropdown */}
-      <Collapsible open={allSourcesOpen} onOpenChange={setAllSourcesOpen}>
-        <div className="bg-card rounded-xl border border-border overflow-hidden shadow-sm">
-          <CollapsibleTrigger className="w-full flex items-center justify-between p-4 md:p-5 hover:bg-muted/30 transition-colors">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <Link2 className="w-5 h-5 text-primary" />
-              </div>
-              <div className="text-left">
-                <h3 className="font-semibold text-foreground">
-                  All Checked Sources
-                </h3>
-                <p className="text-xs text-muted-foreground">
-                  {allCheckedSources.length} sources analyzed by AI
-                </p>
-              </div>
-            </div>
-            {allSourcesOpen ? (
-              <ChevronDown className="w-5 h-5 text-muted-foreground" />
+      {/* All Sources Dropdown */}
+      <div className="bg-card rounded-xl border border-border overflow-hidden shadow-sm">
+        <div
+          className="p-4 md:p-5 flex items-center justify-between gap-3 cursor-pointer hover:bg-muted/30 transition-colors"
+          onClick={() => setShowAllSources(!showAllSources)}
+        >
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            {showAllSources ? (
+              <ChevronDown className="w-5 h-5 text-primary flex-shrink-0" />
             ) : (
-              <ChevronRight className="w-5 h-5 text-muted-foreground" />
+              <ChevronRight className="w-5 h-5 text-muted-foreground flex-shrink-0" />
             )}
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <div className="border-t border-border p-4 md:p-5">
-              {allCheckedSources.length > 0 ? (
-                <ol className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-2 list-decimal list-inside">
-                  {allCheckedSources.map((source, idx) => (
-                    <li key={idx} className="text-sm">
-                      <a
-                        href={
-                          source.startsWith("http")
-                            ? source
-                            : `https://${source}`
-                        }
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 text-primary hover:underline"
-                      >
-                        <Globe className="w-3 h-3" />
-                        {source}
-                      </a>
-                    </li>
-                  ))}
-                </ol>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  No sources found
-                </p>
+            <FolderOpen className="w-5 h-5 text-primary flex-shrink-0" />
+            <div className="min-w-0">
+              <span className="font-semibold text-foreground text-sm md:text-base block">
+                All Sources
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {totalUniqueSources} total sources across all categories
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <span className="inline-flex items-center justify-center px-3 py-1.5 rounded-full text-xs font-bold bg-primary/20 text-primary">
+              {totalUniqueSources}
+            </span>
+          </div>
+        </div>
+
+        {/* All Sources Content */}
+        {showAllSources && (
+          <div className="border-t border-border/50 bg-muted/20">
+            <div className="p-4 md:p-5 space-y-6">
+              {filteredAllSources.map((category, idx) => (
+                <div key={idx}>
+                  <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                    <Layers className="w-4 h-4 text-primary" />
+                    {category.categoryName}
+                  </h4>
+                  <div className="space-y-2 pl-6">
+                    {category.urls.map((url, urlIdx) => (
+                      <div key={urlIdx} className="flex items-start gap-2">
+                        <span className="text-xs text-muted-foreground mt-0.5 flex-shrink-0">
+                          {urlIdx + 1}.
+                        </span>
+                        <a
+                          href={url.startsWith("http") ? url : `https://${url}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-primary hover:underline break-all"
+                        >
+                          {url}
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+
+              {filteredAllSources.length === 0 && (
+                <div className="text-center py-6 text-muted-foreground text-sm">
+                  No sources found matching &quot;{searchQuery}&quot;
+                </div>
               )}
             </div>
-          </CollapsibleContent>
-        </div>
-      </Collapsible>
+          </div>
+        )}
+      </div>
 
-      {/* Sources Table */}
-      <div className="bg-card rounded-xl border border-border overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-border bg-muted/50">
-                <th className="text-left py-4 px-3 md:px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-8"></th>
-                <th className="text-left py-4 px-3 md:px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Source Category
-                </th>
-                <th className="text-center py-4 px-3 md:px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Presence
-                </th>
-                <th className="text-center py-4 px-3 md:px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Mentions
-                </th>
-                <th className="text-center py-4 px-3 md:px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden md:table-cell">
-                  Score
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedSourcesData.map((source) => {
-                const isExpanded = expandedSource === source.name;
-                const notes =
-                  depthNotes[source.name as keyof typeof depthNotes];
-                const presence = source[brandPresenceKey];
-                const mentions = source[brandMentionsKey] || 0;
-                const score = source[`${brandName}Score`];
-                const pagesUsed = source.pages_used;
+      <div className="border-t" />
 
-                return (
-                  <>
-                    <tr
-                      key={source.name}
-                      className="border-b border-border/50 hover:bg-muted/30 cursor-pointer transition-colors"
-                      onClick={() =>
-                        setExpandedSource(isExpanded ? null : source.name)
-                      }
+      {/* Sources with Dropdown */}
+      <div className="space-y-4">
+        {filteredSources.map((source) => {
+          const isExpanded = expandedSource === source.name;
+          const topCompetitor = getTopCompetitorForSource(source.mentions);
+          
+          // Use brand data if exists, otherwise use default
+          const brandData = source.mentions[brandName] || DEFAULT_BRAND_DATA;
+          const hasBrandData = !!source.mentions[brandName];
+
+          return (
+            <div
+              key={source.name}
+              className="bg-card rounded-xl border border-border overflow-hidden shadow-sm"
+            >
+              {/* Source Header */}
+              <div
+                className="p-4 md:p-5 flex items-center justify-between gap-3 cursor-pointer hover:bg-muted/30 transition-colors"
+                onClick={() =>
+                  setExpandedSource(isExpanded ? null : source.name)
+                }
+              >
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  {isExpanded ? (
+                    <ChevronDown className="w-5 h-5 text-primary flex-shrink-0" />
+                  ) : (
+                    <ChevronRight className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                  )}
+                  <div className="min-w-0">
+                    <span className="font-semibold text-foreground text-sm md:text-base block truncate">
+                      {source.name}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {source.pagesUsed.length} sources referenced
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 flex-shrink-0">
+                  {/* Brand Score Badge */}
+                  <div className="flex flex-col items-center">
+                    <span
+                      className={`inline-flex items-center justify-center w-10 h-10 rounded-full text-sm font-bold ${
+                        brandData.count >= 3
+                          ? "bg-green-500/20 text-green-500"
+                          : brandData.count >= 1
+                          ? "bg-amber-500/20 text-amber-500"
+                          : "bg-red-500/20 text-red-500"
+                      }`}
                     >
-                      <td className="py-4 px-3 md:px-4">
-                        {isExpanded ? (
-                          <ChevronDown className="w-4 h-4 text-primary" />
-                        ) : (
-                          <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                        )}
-                      </td>
-                      <td className="py-4 px-3 md:px-4">
-                        <span className="font-medium text-foreground text-sm md:text-base">
-                          {source.name}
-                        </span>
-                      </td>
-                      <td className="py-4 px-3 md:px-4 text-center">
-                        <TierBadge tier={presence || "Absent"} />
-                      </td>
-                      <td className="py-4 px-3 md:px-4 text-center">
-                        <span
-                          className={`inline-flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full text-sm font-bold ${
-                            mentions > 0
-                              ? "bg-primary/10 text-primary"
-                              : "bg-muted text-muted-foreground"
-                          }`}
-                        >
-                          {mentions}
-                        </span>
-                      </td>
-                      <td className="py-4 px-3 md:px-4 text-center hidden md:table-cell">
-                        <TierBadge tier={score || "Low"} />
-                      </td>
-                    </tr>
-                    {isExpanded && (
-                      <tr className="bg-muted/20">
-                        <td colSpan={5} className="py-4 md:py-6 px-4 md:px-8">
-                          <div className="space-y-4 md:space-y-6">
-                            {notes &&
-                              typeof notes === "object" &&
-                              "insight" in notes && (
-                                <>
-                                  <div className="bg-card p-4 rounded-xl border border-border">
-                                    <h4 className="font-semibold text-foreground mb-2 flex items-center gap-2 text-sm md:text-base">
-                                      <BookOpen className="w-4 h-4 text-primary" />
-                                      Insight
-                                    </h4>
-                                    <p className="text-muted-foreground leading-relaxed text-sm">
-                                      {(notes as any).insight}
-                                    </p>
-                                  </div>
-                                  <div>
-                                    <h4 className="font-semibold text-foreground mb-3 text-sm md:text-base">
-                                      Pages Used
-                                    </h4>
-                                    <div className="flex flex-wrap gap-2">
-                                      {((notes as any).pages_used || []).map(
-                                        (page: string, idx: number) => (
-                                          <span
-                                            key={idx}
-                                            className="px-3 py-1.5 md:px-4 md:py-2 bg-primary/10 text-primary rounded-full text-xs md:text-sm font-medium"
-                                          >
-                                            {page}
-                                          </span>
-                                        )
-                                      )}
-                                    </div>
-                                  </div>
-                                </>
+                      {brandData.count}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground mt-1">
+                      Your brand's mentions
+                    </span>
+                  </div>
+
+                  {/* Top Competitor */}
+                  {topCompetitor.brand && (
+                    <div className="hidden md:flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-lg">
+                      <span className="text-xs text-muted-foreground">
+                        Top:
+                      </span>
+                      {topCompetitor.logo && (
+                        <img
+                          src={topCompetitor.logo}
+                          alt=""
+                          className="w-5 h-5 rounded-full object-contain bg-white"
+                        />
+                      )}
+                      <span className="text-xs font-medium">
+                        {topCompetitor.brand}
+                      </span>
+                      <span className="text-xs font-bold text-primary">
+                        Mentions: {topCompetitor.count}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Expanded Content */}
+              {isExpanded && (
+                <div className="border-t border-border/50 bg-muted/20">
+                  <div className="p-4 md:p-5 space-y-4">
+                    {/* Brand Insight */}
+                    {hasBrandData && source.brandInsight && (
+                      <div className="flex items-start gap-3 p-3 bg-card rounded-lg border border-border/50">
+                        <Lightbulb className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <span className="text-xs font-semibold text-foreground">
+                            Insight for {brandName}:
+                          </span>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {source.brandInsight}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Pages Used */}
+                    {source.pagesUsed.length > 0 && (
+                      <div className="pt-2">
+                        <h4 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-3">
+                          <Link2 className="w-4 h-4 text-primary" />
+                          Sources Referenced ({source.pagesUsed.length})
+                        </h4>
+                        <div className="flex flex-wrap gap-2">
+                          {source.pagesUsed.map((p: string, i: number) => (
+                            <a
+                              key={i}
+                              href={p.startsWith("http") ? p : `https://${p}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-full text-xs hover:bg-primary/20 transition-colors"
+                            >
+                              <Globe className="w-3 h-3" />
+                              <span className="max-w-[300px] truncate">
+                                {p}
+                              </span>
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Brand Mentions Table */}
+                    <div className="pt-4 border-t border-border/50">
+                      <h4 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-3">
+                        <FileText className="w-4 h-4 text-primary" />
+                        Brand Mentions in &quot;{source.name}&quot;
+                      </h4>
+
+                      {/* Desktop Table */}
+                      <div className="hidden md:block bg-card rounded-lg border border-border overflow-hidden">
+                        {/* Table Header */}
+                        <div className="bg-muted/50 px-4 py-3 border-b border-border">
+                          <div className="grid grid-cols-12 gap-4 text-xs font-semibold text-muted-foreground uppercase">
+                            <span className="col-span-3">Brand</span>
+                            <span className="col-span-2 text-center">
+                              Mentions
+                            </span>
+                            <span className="col-span-2 text-center">
+                              Score
+                            </span>
+                            <span className="col-span-5">Insight</span>
+                          </div>
+                        </div>
+
+                        {/* Brand Row */}
+                        <div className="px-4 py-3 bg-primary/5">
+                          <div className="grid grid-cols-12 gap-4 items-center">
+                            {/* Brand */}
+                            <div className="col-span-3 flex items-center gap-2">
+                              {getBrandLogo(brandName) && (
+                                <img
+                                  src={getBrandLogo(brandName)}
+                                  alt=""
+                                  className="w-6 h-6 rounded-full bg-white border"
+                                />
                               )}
+                              <span className="text-primary font-semibold">
+                                {brandName}
+                              </span>
+                            </div>
 
-                            {/* Pages Used from sources_and_content_impact */}
-                            {Array.isArray(pagesUsed) &&
-                              pagesUsed.length > 0 && (
-                                <div>
-                                  <h4 className="font-semibold text-foreground mb-3 text-sm md:text-base">
-                                    Sources Referenced
-                                  </h4>
-                                  <div className="flex flex-wrap gap-2">
-                                    {pagesUsed.map(
-                                      (page: string, idx: number) => (
-                                        <a
-                                          key={idx}
-                                          href={
-                                            page.startsWith("http")
-                                              ? page
-                                              : `https://${page}`
-                                          }
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="inline-flex items-center gap-1.5 px-3 py-1.5 md:px-4 md:py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-full text-xs md:text-sm font-medium transition-colors"
-                                        >
-                                          <Globe className="w-3 h-3" />
-                                          {page}
-                                        </a>
-                                      )
-                                    )}
-                                  </div>
-                                </div>
-                              )}
+                            {/* Mentions */}
+                            <div className="col-span-2 flex justify-center">
+                              <span
+                                className={`inline-flex items-center justify-center min-w-[2.5rem] h-10 px-3 rounded-full text-sm font-bold ${
+                                  brandData.count >= 3
+                                    ? "bg-green-500/20 text-green-500"
+                                    : brandData.count >= 1
+                                    ? "bg-amber-500/20 text-amber-500"
+                                    : "bg-red-500/20 text-red-500"
+                                }`}
+                              >
+                                {brandData.count}
+                              </span>
+                            </div>
 
-                            <div>
-                              <h4 className="font-semibold text-foreground mb-3 text-sm md:text-base">
-                                All Brands in this Source
-                              </h4>
-                              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 md:gap-3">
-                                {sortedBrandInfo.map((brand) => {
-                                  const brandPresence =
-                                    source[`${brand.brand}Presence`];
-                                  const brandMentions =
-                                    source[`${brand.brand}Mentions`] || 0;
-                                  const isCurrent = brand.brand === brandName;
+                            {/* Score */}
+                            <div className="col-span-2 flex justify-center">
+                              <span
+                                className={`text-sm font-bold ${
+                                  brandData.count >= 3
+                                    ? "text-green-500"
+                                    : brandData.count >= 1
+                                    ? "text-amber-500"
+                                    : "text-red-500"
+                                }`}
+                              >
+                                {Math.round(brandData.score * 100)}%
+                              </span>
+                            </div>
 
-                                  return (
-                                    <div
-                                      key={brand.brand}
-                                      className={`flex flex-col items-center p-3 md:p-4 rounded-xl border transition-all ${
-                                        isCurrent
-                                          ? "bg-primary/10 border-primary/30"
-                                          : "bg-card border-border"
-                                      }`}
-                                    >
-                                      {brand.logo && (
-                                        <img
-                                          src={brand.logo}
-                                          alt=""
-                                          className="w-8 h-8 md:w-10 md:h-10 rounded-full object-contain bg-white mb-2"
-                                        />
-                                      )}
-                                      <span
-                                        className={`text-xs md:text-sm font-medium mb-2 text-center ${
-                                          isCurrent
-                                            ? "text-primary"
-                                            : "text-foreground"
-                                        }`}
-                                      >
-                                        {brand.brand}
-                                      </span>
-                                      <TierBadge
-                                        tier={brandPresence || "Absent"}
-                                      />
-                                      <span className="text-xs text-muted-foreground mt-1">
-                                        {brandMentions} mentions
-                                      </span>
-                                    </div>
-                                  );
-                                })}
-                              </div>
+                            {/* Insight */}
+                            <div className="col-span-5">
+                              <p className="text-xs text-muted-foreground">
+                                {brandData.insight}
+                              </p>
                             </div>
                           </div>
-                        </td>
-                      </tr>
-                    )}
-                  </>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                        </div>
+                      </div>
+
+                      {/* Mobile Card */}
+                      <div className="md:hidden p-4 rounded-lg bg-primary/5 border border-primary/20">
+                        <div className="flex items-center gap-2 mb-3">
+                          {getBrandLogo(brandName) && (
+                            <img
+                              src={getBrandLogo(brandName)}
+                              alt=""
+                              className="w-6 h-6 rounded-full bg-white"
+                            />
+                          )}
+                          <span className="text-primary font-semibold">
+                            {brandName}
+                          </span>
+                        </div>
+
+                        <div className="ml-10 flex gap-20">
+                          <div className="text-center">
+                            <p
+                              className={`text-lg font-bold ${
+                                brandData.count >= 3
+                                  ? "text-green-500"
+                                  : brandData.count >= 1
+                                  ? "text-amber-500"
+                                  : "text-red-500"
+                              }`}
+                            >
+                              {brandData.count}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Mentions
+                            </p>
+                          </div>
+                          <div className="text-center">
+                            <p
+                              className={`text-lg font-bold ${
+                                brandData.count >= 3
+                                  ? "text-green-500"
+                                  : brandData.count >= 1
+                                  ? "text-amber-500"
+                                  : "text-red-500"
+                              }`}
+                            >
+                              {Math.round(brandData.score * 100)}%
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              AI Visibility Score
+                            </p>
+                          </div>
+                        </div>
+
+                        <p className="text-xs text-muted-foreground mt-3">
+                          {brandData.insight}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
+
+      {filteredSources.length === 0 && (
+        <div className="text-center py-8 md:py-12 text-muted-foreground bg-card rounded-xl border border-border text-sm md:text-base">
+          No source categories found matching &quot;{searchQuery}&quot;
+        </div>
+      )}
     </div>
   );
 };

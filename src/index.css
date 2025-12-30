@@ -2,132 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
-
-@layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 220 14% 20%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 220 14% 20%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 220 14% 20%;
-
-    --primary: 213 93% 50%;
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 220 14% 20%;
-
-    --muted: 210 40% 95%;
-    --muted-foreground: 215 16% 47%;
-
-    --accent: 213 93% 50%;
-    --accent-foreground: 0 0% 100%;
-
-    --positive: 142 71% 45%;
-    --positive-foreground: 0 0% 100%;
-
-    --negative: 0 84% 60%;
-    --negative-foreground: 0 0% 100%;
-
-    --warning: 45 93% 47%;
-    --warning-foreground: 0 0% 100%;
-
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-
-    --radius: 0.5rem;
-
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-
-  .dark {
-    --background: 220 27% 8%;
-    --foreground: 210 40% 95%;
-
-    --card: 220 27% 10%;
-    --card-foreground: 210 40% 95%;
-
-    --popover: 220 27% 10%;
-    --popover-foreground: 210 40% 95%;
-
-    --primary: 213 93% 60%;
-    --primary-foreground: 220 27% 8%;
-
-    --secondary: 220 27% 15%;
-    --secondary-foreground: 210 40% 95%;
-
-    --muted: 220 27% 15%;
-    --muted-foreground: 215 20% 65%;
-
-    --accent: 213 93% 60%;
-    --accent-foreground: 220 27% 8%;
-
-    --positive: 142 71% 45%;
-    --positive-foreground: 0 0% 100%;
-
-    --negative: 0 84% 60%;
-    --negative-foreground: 0 0% 100%;
-
-    --warning: 45 93% 47%;
-    --warning-foreground: 0 0% 100%;
-
-    --destructive: 0 62% 31%;
-    --destructive-foreground: 210 40% 95%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-}
-
-@layer base {
-  * {
-    @apply border-border;
-  }
-
-  body {
-    @apply bg-background text-foreground;
-  }
-}
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
 /* GeoRankers AI Search Visibility Tool Design System
-All colors MUST be HSL. Inspired by GeoRankers branding with blue gradients.
+All colors MUST be HSL. Complete color scheme with all themes.
 */
 
 @layer base {
@@ -164,8 +40,12 @@ All colors MUST be HSL. Inspired by GeoRankers branding with blue gradients.
     /* Success and error states */
     --success: 142 76% 36%;
     --success-foreground: 0 0% 100%;
+    --positive: 142 71% 45%;
+    --positive-foreground: 0 0% 100%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
+    --negative: 0 84% 60%;
+    --negative-foreground: 0 0% 100%;
 
     /* Border and input system */
     --border: 210 20% 90%;
@@ -207,6 +87,29 @@ All colors MUST be HSL. Inspired by GeoRankers branding with blue gradients.
     --sidebar-accent-foreground: 210 100% 45%;
     --sidebar-border: 210 20% 90%;
     --sidebar-ring: 210 100% 63%;
+
+    /* Custom colors for Amplitude theme */
+    --amplitude-blue: 217 91% 60%;
+    --amplitude-dark: 225 25% 12%;
+    --amplitude-purple: 258 90% 66%;
+    --amplitude-gradient-start: 225 25% 12%;
+    --amplitude-gradient-end: 258 50% 25%;
+    --amplitude-yellow: 45 93% 47%;
+    --amplitude-green: 142 71% 45%;
+    --amplitude-red: 0 84% 60%;
+
+    /* Heat map colors */
+    --heat-0: 220 14% 96%;
+    --heat-10: 217 91% 95%;
+    --heat-20: 217 91% 88%;
+    --heat-30: 217 91% 80%;
+    --heat-40: 217 91% 72%;
+    --heat-50: 217 91% 64%;
+    --heat-60: 217 91% 56%;
+    --heat-70: 217 91% 48%;
+    --heat-80: 217 91% 40%;
+    --heat-90: 217 91% 32%;
+    --heat-100: 217 91% 24%;
   }
 
   .dark {
@@ -235,8 +138,12 @@ All colors MUST be HSL. Inspired by GeoRankers branding with blue gradients.
 
     --success: 142 76% 40%;
     --success-foreground: 0 0% 100%;
+    --positive: 142 71% 45%;
+    --positive-foreground: 0 0% 100%;
     --destructive: 0 84% 65%;
     --destructive-foreground: 0 0% 100%;
+    --negative: 0 84% 60%;
+    --negative-foreground: 0 0% 100%;
 
     --border: 224 20% 18%;
     --input: 224 20% 18%;
@@ -280,6 +187,7 @@ All colors MUST be HSL. Inspired by GeoRankers branding with blue gradients.
   body {
     @apply bg-background text-foreground font-sans antialiased overflow-x-hidden;
     background: hsl(var(--gradient-bg));
+    font-family: 'Inter', sans-serif;
   }
   
   html {
@@ -315,265 +223,6 @@ All colors MUST be HSL. Inspired by GeoRankers branding with blue gradients.
 
   .transition-bounce {
     transition: var(--transition-bounce);
-  }
-}
-
-@layer utilities {
-  .border-excutive-summary {
-    border: 2px solid transparent;
-    background: linear-gradient(hsl(var(--background)), hsl(var(--background))) padding-box,
-                var(--gradient-hero) border-box;
-  }
-  
-  .shadow-excutive-summary\/20 {
-    box-shadow: 0 10px 15px -3px hsl(210 100% 68% / 0.2), 0 4px 6px -4px hsl(210 100% 68% / 0.1);
-  }
-
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-  
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
-}
-
-@layer utilities {
-  /* Print styles for download/print functionality */
-  @media print {
-    /* Ensure all content is visible and not cut off */
-    * {
-      overflow: visible !important;
-    }
-
-    /* Hide sidebar and navigation during print */
-    [data-sidebar],
-    button,
-    .no-print {
-      display: none !important;
-    }
-
-    /* Ensure tables display fully without scrolling */
-    table {
-      width: 100% !important;
-      page-break-inside: avoid;
-    }
-
-    /* Ensure cards don't get cut off between pages */
-    .card,
-    [class*="Card"] {
-      page-break-inside: avoid;
-    }
-
-    /* Remove any scrollbars or overflow hidden */
-    .overflow-x-auto,
-    .overflow-hidden {
-      overflow: visible !important;
-    }
-
-    /* Ensure charts and graphs are visible */
-    svg,
-    canvas {
-      max-width: 100% !important;
-      height: auto !important;
-    }
-
-    /* Adjust page margins for better print */
-    @page {
-      margin: 1.5cm;
-      size: A4;
-    }
-
-    /* Ensure text is readable */
-    body {
-      font-size: 10pt;
-      line-height: 1.4;
-    }
-
-    /* Make headings stand out */
-    h1, h2, h3, h4 {
-      page-break-after: avoid;
-    }
-
-    /* Ensure full width tables */
-    .w-full {
-      width: 100% !important;
-    }
-  }
-}
-
-/* ============================= */
-/* PRINT STYLES FOR PDF EXPORT   */
-/* ============================= */
-@media print {
-  @page {
-    size: A4;
-    margin: 1.5cm;
-  }
-
-  /* Hide navigation and interactive elements */
-  .no-print,
-  nav,
-  button,
-  .sidebar,
-  [role="button"],
-  [data-sidebar] {
-    display: none !important;
-  }
-
-  /* Prevent page breaks inside content */
-  section,
-  .card,
-  [class*="card"],
-  [class*="Card"],
-  table,
-  tr,
-  .space-y-8 > div,
-  .space-y-6 > div {
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
-  }
-
-  /* Keep headers with content */
-  h1, h2, h3, h4, h5, h6 {
-    page-break-after: avoid !important;
-    break-after: avoid !important;
-  }
-
-  /* Ensure colors print correctly */
-  * {
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-    box-shadow: none !important;
-  }
-
-  /* Clean background */
-  body,
-  .bg-gradient-bg {
-    background: white !important;
-  }
-
-  /* Remove sticky positioning */
-  .sticky {
-    position: static !important;
-  }
-
-  /* Print-only header styling */
-  .print-only-header {
-    display: block !important;
-    text-align: center;
-    padding-bottom: 1rem;
-    border-bottom: 2px solid #e5e7eb;
-    margin-bottom: 2rem;
-    page-break-after: avoid !important;
-  }
-}
-
-@layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 220 13% 13%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 220 13% 13%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 220 13% 13%;
-
-    --primary: 217 91% 60%;
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 220 13% 13%;
-
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 9% 46%;
-
-    --accent: 220 14% 96%;
-    --accent-foreground: 220 13% 13%;
-
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 217 91% 60%;
-
-    --radius: 0.5rem;
-
-    /* Custom colors for Amplitude theme */
-    --amplitude-blue: 217 91% 60%;
-    --amplitude-dark: 225 25% 12%;
-    --amplitude-purple: 258 90% 66%;
-    --amplitude-gradient-start: 225 25% 12%;
-    --amplitude-gradient-end: 258 50% 25%;
-    --amplitude-yellow: 45 93% 47%;
-    --amplitude-green: 142 71% 45%;
-    --amplitude-red: 0 84% 60%;
-
-    /* Heat map colors */
-    --heat-0: 220 14% 96%;
-    --heat-10: 217 91% 95%;
-    --heat-20: 217 91% 88%;
-    --heat-30: 217 91% 80%;
-    --heat-40: 217 91% 72%;
-    --heat-50: 217 91% 64%;
-    --heat-60: 217 91% 56%;
-    --heat-70: 217 91% 48%;
-    --heat-80: 217 91% 40%;
-    --heat-90: 217 91% 32%;
-    --heat-100: 217 91% 24%;
-
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-
-  .dark {
-    --background: 225 25% 12%;
-    --foreground: 0 0% 98%;
-
-    --card: 225 25% 15%;
-    --card-foreground: 0 0% 98%;
-
-    --popover: 225 25% 15%;
-    --popover-foreground: 0 0% 98%;
-
-    --primary: 217 91% 60%;
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 225 25% 20%;
-    --secondary-foreground: 0 0% 98%;
-
-    --muted: 225 25% 20%;
-    --muted-foreground: 220 9% 60%;
-
-    --accent: 225 25% 20%;
-    --accent-foreground: 0 0% 98%;
-
-    --destructive: 0 62% 30%;
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 225 25% 25%;
-    --input: 225 25% 25%;
-    --ring: 217 91% 60%;
-  }
-}
-
-@layer base {
-  * {
-    @apply border-border;
-  }
-
-  body {
-    @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'Inter', sans-serif;
   }
 }
 
@@ -637,6 +286,16 @@ All colors MUST be HSL. Inspired by GeoRankers branding with blue gradients.
 }
 
 @layer utilities {
+  .border-excutive-summary {
+    border: 2px solid transparent;
+    background: linear-gradient(hsl(var(--background)), hsl(var(--background))) padding-box,
+                var(--gradient-hero) border-box;
+  }
+  
+  .shadow-excutive-summary\/20 {
+    box-shadow: 0 10px 15px -3px hsl(210 100% 68% / 0.2), 0 4px 6px -4px hsl(210 100% 68% / 0.1);
+  }
+
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
@@ -644,5 +303,107 @@ All colors MUST be HSL. Inspired by GeoRankers branding with blue gradients.
   
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
+  }
+}
+
+/* ============================= */
+/* PRINT STYLES FOR PDF EXPORT   */
+/* ============================= */
+@media print {
+  @page {
+    size: A4;
+    margin: 1.5cm;
+  }
+
+  /* Hide navigation and interactive elements */
+  .no-print,
+  nav,
+  button,
+  .sidebar,
+  [role="button"],
+  [data-sidebar] {
+    display: none !important;
+  }
+
+  /* Prevent page breaks inside content */
+  section,
+  .card,
+  [class*="card"],
+  [class*="Card"],
+  table,
+  tr,
+  .space-y-8 > div,
+  .space-y-6 > div {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* Keep headers with content */
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+
+  /* Ensure colors print correctly */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    box-shadow: none !important;
+  }
+
+  /* Clean background */
+  body,
+  .bg-gradient-bg {
+    background: white !important;
+  }
+
+  /* Remove sticky positioning */
+  .sticky {
+    position: static !important;
+  }
+
+  /* Ensure all content is visible and not cut off */
+  * {
+    overflow: visible !important;
+  }
+
+  /* Ensure tables display fully without scrolling */
+  table {
+    width: 100% !important;
+    page-break-inside: avoid;
+  }
+
+  /* Remove any scrollbars or overflow hidden */
+  .overflow-x-auto,
+  .overflow-hidden {
+    overflow: visible !important;
+  }
+
+  /* Ensure charts and graphs are visible */
+  svg,
+  canvas {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+  /* Ensure text is readable */
+  body {
+    font-size: 10pt;
+    line-height: 1.4;
+  }
+
+  /* Ensure full width tables */
+  .w-full {
+    width: 100% !important;
+  }
+
+  /* Print-only header styling */
+  .print-only-header {
+    display: block !important;
+    text-align: center;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #e5e7eb;
+    margin-bottom: 2rem;
+    page-break-after: avoid !important;
   }
 }

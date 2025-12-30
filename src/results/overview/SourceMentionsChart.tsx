@@ -17,12 +17,14 @@ import {
 import { Layers, ChevronDown } from "lucide-react";
 import { useState, useMemo } from "react";
 
+type ViewMode = "count" | "score";
+
 const competitorColors = [
-  "hsl(142, 40%, 60%)",  // soft green
-  "hsl(45, 70%, 65%)",   // soft yellow
-  "hsl(258, 55%, 70%)",  // soft purple
-  "hsl(0, 65%, 70%)",    // soft red
-  "hsl(28, 65%, 65%)"    // soft amber
+  "hsl(142, 40%, 60%)", // soft green
+  "hsl(45, 70%, 65%)", // soft yellow
+  "hsl(258, 55%, 70%)", // soft purple
+  "hsl(0, 65%, 70%)", // soft red
+  "hsl(28, 65%, 65%)", // soft amber
 ];
 
 export const SourceMentionsChart = () => {
@@ -30,6 +32,8 @@ export const SourceMentionsChart = () => {
   const brandName = getBrandName();
   const competitorNames = getCompetitorNames();
   const brandInfo = getBrandInfoWithLogos();
+
+  const [viewMode, setViewMode] = useState<ViewMode>("count");
 
   // Assign color to each brand
   const brandColors = useMemo(() => {
@@ -44,74 +48,84 @@ export const SourceMentionsChart = () => {
     return map;
   }, [competitorNames, brandName]);
 
-  // Extract source names
+  // Extract sources data from the new object structure
   const sourcesData = analytics?.sources_and_content_impact;
 
   const sources = useMemo(() => {
-    if (!sourcesData?.rows) return [];
-    return sourcesData.rows.map((row: any[]) => row[0] as string);
+    if (!sourcesData || typeof sourcesData !== "object") return [];
+    return Object.keys(sourcesData);
   }, [sourcesData]);
 
   const [selectedSource, setSelectedSource] = useState("All Sources");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  // Build chart data with brand at top, maintaining original order
+  // Build chart data from new object structure
   const chartData = useMemo(() => {
-    if (!sourcesData?.rows || !sourcesData?.header) return [];
-    const header = sourcesData.header;
-
-    const getMentionIndex = (brand: string) =>
-      header.indexOf(`${brand} Mentions`);
+    if (!sourcesData || typeof sourcesData !== "object") return [];
 
     let allBrands: Array<{
       brand: string;
-      mentions: number;
+      count: number;
+      score: number;
       logo: string;
       isBrand: boolean;
       color: string;
     }> = [];
 
-    // ALL SOURCES → sum
+    // ALL SOURCES → sum mentions across all sources
     if (selectedSource === "All Sources") {
-      const totals: Record<string, number> = {};
-      competitorNames.forEach((brand) => (totals[brand] = 0));
+      const countTotals: Record<string, number> = {};
+      const scoreTotals: Record<string, number> = {};
+      const sourceCount: Record<string, number> = {};
 
-      sourcesData.rows.forEach((row) => {
+      competitorNames.forEach((brand) => {
+        countTotals[brand] = 0;
+        scoreTotals[brand] = 0;
+        sourceCount[brand] = 0;
+      });
+
+      Object.values(sourcesData).forEach((sourceData: any) => {
+        const mentions = sourceData.mentions || {};
         competitorNames.forEach((brand) => {
-          const idx = getMentionIndex(brand);
-          const value = idx !== -1 ? Number(row[idx] ?? 0) : 0;
-          totals[brand] += value;
+          if (mentions[brand]) {
+            countTotals[brand] += mentions[brand].count || 0;
+            scoreTotals[brand] += mentions[brand].score || 0;
+            sourceCount[brand] += 1;
+          }
         });
-      });      
+      });
 
       allBrands = competitorNames.map((brand) => ({
         brand,
-        mentions: totals[brand],
+        count: countTotals[brand],
+        score: Math.round(
+          (scoreTotals[brand] / Math.max(sourceCount[brand], 1)) * 100
+        ),
         logo: brandInfo.find((b) => b.brand === brand)?.logo || "",
         isBrand: brand === brandName,
         color: brandColors[brand],
       }));
     } else {
-      // SPECIFIC SOURCE → single row
-      const row = sourcesData.rows.find((r) => r[0] === selectedSource);
-      if (!row) return [];
+      // SPECIFIC SOURCE → get mentions from that source
+      const sourceData = sourcesData[selectedSource];
+      if (!sourceData) return [];
 
-      allBrands = competitorNames.map((brand) => {
-        const idx = getMentionIndex(brand);
-        return {
-          brand,
-          mentions: idx !== -1 ? row[idx] ?? 0 : 0,
-          logo: brandInfo.find((b) => b.brand === brand)?.logo || "",
-          isBrand: brand === brandName,
-          color: brandColors[brand],
-        };
-      });
+      const mentions = sourceData.mentions || {};
+
+      allBrands = competitorNames.map((brand) => ({
+        brand,
+        count: mentions[brand]?.count || 0,
+        score: Math.round((mentions[brand]?.score || 0) * 100),
+        logo: brandInfo.find((b) => b.brand === brand)?.logo || "",
+        isBrand: brand === brandName,
+        color: brandColors[brand],
+      }));
     }
 
     // Keep brand at top, maintain original order for others
     const myBrand = allBrands.find((b) => b.brand === brandName);
     const competitors = allBrands.filter((b) => b.brand !== brandName);
-    
+
     return myBrand ? [myBrand, ...competitors] : competitors;
   }, [
     selectedSource,
@@ -124,10 +138,20 @@ export const SourceMentionsChart = () => {
 
   const allSources = ["All Sources", ...sources];
 
+  const getValue = (item: (typeof chartData)[0]) => {
+    return viewMode === "count" ? item.count : item.score;
+  };
+
+  const maxValue = useMemo(() => {
+    if (viewMode === "score") return 100;
+    return Math.max(...chartData.map((d) => d.count), 1);
+  }, [chartData, viewMode]);
+
   return (
     <div className="bg-card rounded-xl border border-border p-4 md:p-6 overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between mb-1 flex-wrap gap-3">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-1 gap-3">
+        {/* Left: Title */}
         <div className="flex items-center gap-2">
           <Layers className="w-5 h-5 text-primary" />
           <h3 className="text-lg font-semibold text-foreground">
@@ -135,52 +159,74 @@ export const SourceMentionsChart = () => {
           </h3>
         </div>
 
-        {/* Source Dropdown */}
-        <div className="relative w-full max-w-xs">
-          <button
-            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="flex items-center justify-between gap-2 px-3 py-2 bg-muted/50 hover:bg-muted rounded-lg text-sm font-medium text-foreground transition-colors w-full"
-          >
-            <span className="truncate">{selectedSource}</span>
-            <ChevronDown
-              className={`w-4 h-4 shrink-0 transition-transform ${
-                isDropdownOpen ? "rotate-180" : ""
-              }`}
-            />
-          </button>
+        {/* Right: Controls */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto">
+          {/* Count / Score Toggle */}
+          <div className="flex items-center gap-1 bg-muted rounded-lg p-1 self-start">
+            {(["count", "score"] as ViewMode[]).map((mode) => (
+              <button
+                key={mode}
+                onClick={() => setViewMode(mode)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                  viewMode === mode
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {mode === "count" ? "Count" : "Score %"}
+              </button>
+            ))}
+          </div>
 
-          {isDropdownOpen && (
-            <>
-              <div
-                className="fixed inset-0 z-40"
-                onClick={() => setIsDropdownOpen(false)}
+          {/* Source Dropdown */}
+          <div className="relative w-full sm:w-[220px]">
+            <button
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              className="flex items-center justify-between gap-2 px-3 py-2 bg-muted/50 hover:bg-muted rounded-lg text-sm font-medium text-foreground transition-colors w-full"
+            >
+              <span className="truncate">{selectedSource}</span>
+              <ChevronDown
+                className={`w-4 h-4 shrink-0 transition-transform ${
+                  isDropdownOpen ? "rotate-180" : ""
+                }`}
               />
+            </button>
 
-              <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-lg shadow-lg z-50 w-full min-w-[200px] max-h-[280px] overflow-y-auto py-1">
-                {allSources.map((source) => (
-                  <button
-                    key={source}
-                    onClick={() => {
-                      setSelectedSource(source);
-                      setIsDropdownOpen(false);
-                    }}
-                    className={`w-full text-left px-4 py-2 text-sm whitespace-normal hover:bg-muted transition-colors ${
-                      selectedSource === source
-                        ? "bg-primary/10 text-primary font-medium"
-                        : "text-foreground"
-                    }`}
-                  >
-                    {source}
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
+            {isDropdownOpen && (
+              <>
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setIsDropdownOpen(false)}
+                />
+
+                <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-lg shadow-lg z-50 w-full max-h-[280px] overflow-y-auto py-1">
+                  {allSources.map((source) => (
+                    <button
+                      key={source}
+                      onClick={() => {
+                        setSelectedSource(source);
+                        setIsDropdownOpen(false);
+                      }}
+                      className={`w-full text-left px-4 py-2 text-sm hover:bg-muted transition-colors ${
+                        selectedSource === source
+                          ? "bg-primary/10 text-primary font-medium"
+                          : "text-foreground"
+                      }`}
+                    >
+                      {source}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
       <p className="text-xs text-muted-foreground mb-6">
-        Brand mentions by source category
+        {viewMode === "count"
+          ? "Total mention count by source category"
+          : "Mention score percentage by source category"}
       </p>
 
       {/* Chart */}
@@ -204,6 +250,10 @@ export const SourceMentionsChart = () => {
               tickLine={false}
               axisLine={false}
               fontSize={12}
+              domain={[0, maxValue]}
+              tickFormatter={(val) =>
+                viewMode === "score" ? `${val}%` : String(val)
+              }
             />
 
             <YAxis
@@ -249,13 +299,30 @@ export const SourceMentionsChart = () => {
                 border: "1px solid hsl(var(--border))",
                 borderRadius: 8,
               }}
-              formatter={(v) => [`${v} mentions`, ""]}
+              formatter={(value, name, props) => {
+                const data = props.payload;
+                return [
+                  <div className="space-y-1 text-sm">
+                    <div>
+                      Count: <strong>{data.count}</strong>
+                    </div>
+                    <div>
+                      Score: <strong>{data.score}%</strong>
+                    </div>
+                  </div>,
+                  null,
+                ];
+              }}
               labelFormatter={(label) => (
                 <span className="font-semibold">{label}</span>
               )}
             />
 
-            <Bar dataKey="mentions" barSize={28} radius={[0, 6, 6, 0]}>
+            <Bar
+              dataKey={viewMode === "count" ? "count" : "score"}
+              barSize={28}
+              radius={[0, 6, 6, 0]}
+            >
               {chartData.map((entry, i) => (
                 <Cell key={i} fill={entry.color} />
               ))}

@@ -267,26 +267,15 @@ const Index = () => {
                       <Zap className="w-6 h-6 mr-2" />
                       New Analysis
                     </Button>
-                    <div className="flex flex-col sm:flex-row gap-4">
-                      <Button
-                        variant="outline"
-                        size="lg"
-                        className="text-lg px-8 w-full sm:w-auto"
-                        onClick={handlePreviousAnalysis}
-                      >
-                        Previous Analysis
-                        <ArrowRight className="w-5 h-5 ml-2" />
-                      </Button>
-                      <Button
-                        variant="secondary"
-                        size="lg"
-                        className="text-lg px-8 w-full sm:w-auto"
-                        onClick={() => navigate("/newresults")}
-                      >
-                        New Results View
-                        <ArrowRight className="w-5 h-5 ml-2" />
-                      </Button>
-                    </div>
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className="text-lg px-8 w-full sm:w-auto"
+                      onClick={handlePreviousAnalysis}
+                    >
+                      Previous Analysis
+                      <ArrowRight className="w-5 h-5 ml-2" />
+                    </Button>
                   </>
                 ) : (
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">

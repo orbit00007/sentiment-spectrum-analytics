@@ -12,7 +12,7 @@ import { getBrandInfoWithLogos, getBrandName } from "@/results/data/analyticsDat
 import { TrendingUp } from "lucide-react";
 import { useState, useMemo } from "react";
 
-type ViewMode = "geo_score" | "percentile" | "mentions";
+type ViewMode = "geo_score" | "mentions";
 
 // Unique competitor colors
 const competitorColors = [
@@ -41,26 +41,14 @@ export const CompetitorComparisonChart = () => {
     return map;
   }, [brandInfo, brandName]);
 
-  // Percentile calculation
-  const brandsWithPercentile = useMemo(() => {
-    return brandInfo.map((brand, _, arr) => {
-      const lowerScores = arr.filter(
-        (b) => b.geo_score < brand.geo_score
-      ).length;
-      return {
-        ...brand,
-        percentile: Math.round((lowerScores / arr.length) * 100),
-      };
-    });
-  }, [brandInfo]);
-
-  // Keep brand at top, maintain original order for others
+  // Keep brand at top, REVERSE competitors to show them in ascending order (lowest first)
   const sortedBrands = useMemo(() => {
-    const myBrand = brandsWithPercentile.find(b => b.brand === brandName);
-    const competitors = brandsWithPercentile.filter(b => b.brand !== brandName);
+    const myBrand = brandInfo.find(b => b.brand === brandName);
+    const competitors = brandInfo.filter(b => b.brand !== brandName);
     
-    return myBrand ? [myBrand, ...competitors] : competitors;
-  }, [brandsWithPercentile, brandName]);
+    // FIXED: Reverse competitors so lowest scores appear at bottom
+    return myBrand ? [myBrand, ...competitors.reverse()] : competitors.reverse();
+  }, [brandInfo, brandName]);
 
   const chartData = useMemo(() => {
     return sortedBrands.map((brand) => ({
@@ -68,11 +56,8 @@ export const CompetitorComparisonChart = () => {
       value:
         viewMode === "geo_score"
           ? brand.geo_score
-          : viewMode === "percentile"
-          ? brand.percentile
           : brand.mention_count,
       geoScore: brand.geo_score,
-      percentile: brand.percentile,
       mentionCount: brand.mention_count,
       mentionScore: brand.mention_score,
       logo: brand.logo,
@@ -82,11 +67,8 @@ export const CompetitorComparisonChart = () => {
   }, [sortedBrands, viewMode, brandName, brandColors]);
 
   const maxValue = useMemo(
-    () =>
-      viewMode === "percentile"
-        ? 100
-        : Math.max(...chartData.map((d) => d.value), 1),
-    [chartData, viewMode]
+    () => Math.max(...chartData.map((d) => d.value), 1),
+    [chartData]
   );
 
   return (
@@ -95,35 +77,29 @@ export const CompetitorComparisonChart = () => {
         <div className="flex items-center gap-2">
           <TrendingUp className="w-5 h-5 text-primary" />
           <h3 className="text-lg font-semibold text-foreground">
-            Brand Comparison
+            Competitive Landscape
           </h3>
         </div>
         <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
-          {["geo_score", "percentile", "mentions"].map((mode) => (
+          {(["geo_score", "mentions"] as ViewMode[]).map((mode) => (
             <button
               key={mode}
-              onClick={() => setViewMode(mode as ViewMode)}
+              onClick={() => setViewMode(mode)}
               className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
                 viewMode === mode
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              {mode === "geo_score"
-                ? "GEO Score"
-                : mode === "percentile"
-                ? "Percentile"
-                : "Mentions"}
+              {mode === "geo_score" ? "AI Visibility Score" : "Mentions"}
             </button>
           ))}
         </div>
       </div>
       <p className="text-xs text-muted-foreground mb-6">
         {viewMode === "geo_score"
-          ? "Raw visibility score across all competitors"
-          : viewMode === "percentile"
-          ? "Percentile rank compared to competitors"
-          : "Total brand mentions across all sources"}
+          ? "How you stack up against competitors in AI search results"
+          : "Who gets mentioned most across AI platforms"}
       </p>
 
       <div className="h-[300px]">
@@ -140,9 +116,6 @@ export const CompetitorComparisonChart = () => {
               axisLine={false}
               tickLine={false}
               domain={[0, maxValue]}
-              tickFormatter={(val) =>
-                viewMode === "percentile" ? `${val}%` : String(val)
-              }
               fontSize={12}
             />
             <YAxis
@@ -192,16 +165,13 @@ export const CompetitorComparisonChart = () => {
                 return [
                   <div className="space-y-1 text-sm">
                     <div>
-                      GEO Score: <strong>{data.geoScore}</strong>
-                    </div>
-                    <div>
-                      Percentile: <strong>{data.percentile}%</strong>
+                      AI Visibility Score: <strong>{data.geoScore}</strong>
                     </div>
                     <div>
                       Mentions: <strong>{data.mentionCount}</strong>
                     </div>
                   </div>,
-                  "",
+                  null,
                 ];
               }}
               labelFormatter={(label) => (

@@ -2,9 +2,12 @@ import React, { createContext, useContext, useState, useEffect, useRef, useCallb
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/auth-context";
 import { getProductAnalytics } from "@/apiHelpers";
-import { setAnalyticsData, loadAnalyticsFromStorage } from "@/results/data/analyticsData";
+import { setAnalyticsData, clearCurrentAnalyticsData } from "@/results/data/analyticsData";
+import { clearAnalyticsDataForCurrentUser } from "@/lib/storageKeys";
 import { useToast } from "@/hooks/use-toast";
 import { handleUnauthorized, isUnauthorizedError } from "@/lib/authGuard";
+import { useAnalysisState } from "@/hooks/useAnalysisState";
+import { getEmailScopedKey, STORAGE_KEYS } from "@/lib/storageKeys";
 
 interface AnalyticsData {
   id?: string;
@@ -21,8 +24,7 @@ export type TabType =
   | "executive-summary" 
   | "prompts" 
   | "sources-all" 
-  | "competitors-comparisons" 
-  | "brand-sentiment" 
+  | "competitors-comparisons"
   | "recommendations";
 
 interface ResultsContextType {
@@ -33,6 +35,7 @@ interface ResultsContextType {
   dataReady: boolean;
   activeTab: TabType;
   setActiveTab: (tab: TabType) => void;
+  isAnalyzing: boolean;
 }
 
 const ResultsContext = createContext<ResultsContextType | null>(null);
@@ -62,18 +65,22 @@ export const ResultsProvider: React.FC<ResultsProviderProps> = ({ children }) =>
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Map URL paths to tab types
+  const { 
+    isAnalyzing, 
+    triggeredAt, 
+    completeAnalysis, 
+    isNewerThanTrigger,
+    startAnalysis 
+  } = useAnalysisState();
+
   const pathToTab: Record<string, TabType> = {
-    "/newresults": "overview",
-    "/newresults/executive-summary": "executive-summary",
-    "/newresults/prompts": "prompts",
-    "/newresults/sources-all": "sources-all",
-    "/newresults/competitors-comparisons": "competitors-comparisons",
-    "/newresults/brand-sentiment": "brand-sentiment",
-    "/newresults/recommendations": "recommendations",
+    "/results": "overview",
+    "/results/executive-summary": "executive-summary",
+    "/results/prompts": "prompts",
+    "/results/sources-all": "sources-all",
+    "/results/competitors-comparisons": "competitors-comparisons",
   };
 
-  // Sync activeTab with URL path
   useEffect(() => {
     const currentPath = location.pathname;
     const matchedTab = pathToTab[currentPath];
@@ -82,17 +89,15 @@ export const ResultsProvider: React.FC<ResultsProviderProps> = ({ children }) =>
     }
   }, [location.pathname]);
 
-  // Wrapper to also update URL when tab changes programmatically
   const setActiveTab = (tab: TabType) => {
     setActiveTabState(tab);
     const tabToPath: Record<TabType, string> = {
-      "overview": "/newresults",
-      "executive-summary": "/newresults/executive-summary",
-      "prompts": "/newresults/prompts",
-      "sources-all": "/newresults/sources-all",
-      "competitors-comparisons": "/newresults/competitors-comparisons",
-      "brand-sentiment": "/newresults/brand-sentiment",
-      "recommendations": "/newresults/recommendations",
+      "overview": "/results",
+      "executive-summary": "/results/executive-summary",
+      "prompts": "/results/prompts",
+      "sources-all": "/results/sources-all",
+      "competitors-comparisons": "/results/competitors-comparisons",
+      "recommendations": "/results/recommendations",
     };
     const targetPath = tabToPath[tab];
     if (targetPath && location.pathname !== targetPath) {
@@ -100,13 +105,10 @@ export const ResultsProvider: React.FC<ResultsProviderProps> = ({ children }) =>
     }
   };
 
-  // Polling configuration
-  const POLL_INITIAL_DELAY_MS = 2 * 60 * 1000;
   const POLL_INTERVAL_MS = 2 * 60 * 1000;
-  const POLL_MAX_ATTEMPTS = 5;
+  const POLL_MAX_ATTEMPTS = 30;
   const POLL_COOLDOWN_MS = 10 * 60 * 1000;
 
-  // Refs for polling
   const pollingTimerRef = useRef<number>();
   const hasShownStartMessageRef = useRef(false);
   const previousAnalyticsRef = useRef<AnalyticsData | null>(null);
@@ -118,10 +120,14 @@ export const ResultsProvider: React.FC<ResultsProviderProps> = ({ children }) =>
   const isInCooldownRef = useRef(false);
   const hasReceivedDataRef = useRef(false);
   const accessTokenRef = useRef<string>("");
-  const initialPollDoneRef = useRef(false);
-  const toastRef = useRef(toast);
-  const analysisTriggeredAtRef = useRef<number | null>(null);
   const hasFetchedRef = useRef(false);
+  const toastRef = useRef(toast);
+  const hasShownCompletionToastRef = useRef(false);
+  const pageLoadTimestampRef = useRef<number>(Date.now()); // Track when page loaded
+  
+  const getCompletionToastShownKey = useCallback(() => {
+    return getEmailScopedKey(STORAGE_KEYS.COMPLETION_TOAST_SHOWN);
+  }, []);
 
   useEffect(() => {
     toastRef.current = toast;
@@ -135,38 +141,40 @@ export const ResultsProvider: React.FC<ResultsProviderProps> = ({ children }) =>
     accessTokenRef.current = localStorage.getItem("access_token") || "";
   }, []);
 
-  // Try to load analytics from localStorage on mount
+  // Load existing data from localStorage on mount
   useEffect(() => {
-    const loaded = loadAnalyticsFromStorage();
-    if (loaded) {
-      console.log('📦 [CONTEXT] Loaded analytics from localStorage');
-      setDataReady(true);
-    }
+    const loadExistingData = () => {
+      try {
+        const lastDataKey = getEmailScopedKey(STORAGE_KEYS.LAST_ANALYSIS_DATA);
+        const stored = localStorage.getItem(lastDataKey);
+        
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed.analytics?.length > 0) {
+            const latestAnalysis = parsed.analytics[0];
+            
+            if (latestAnalysis.status?.toLowerCase() === "completed") {
+              console.log("📦 [MOUNT] Loading completed analysis from localStorage");
+              setCurrentAnalytics(latestAnalysis);
+              setPreviousAnalytics(latestAnalysis);
+              setDataReady(true);
+              setIsLoading(false);
+              
+              // Also update analyticsData cache
+              setAnalyticsData(parsed);
+            }
+          }
+        }
+      } catch (e) {
+        console.error("Failed to load existing data:", e);
+      }
+    };
+    
+    loadExistingData();
   }, []);
 
-  // Update analyticsData whenever currentAnalytics changes
-  useEffect(() => {
-    if (currentAnalytics && currentAnalytics.status?.toLowerCase() === "completed") {
-      setAnalyticsData({
-        analytics: [currentAnalytics],
-        count: 1,
-        limit: 1,
-        product_id: productData?.id || "",
-      });
-      setDataReady(true);
-    } else if (previousAnalytics && previousAnalytics.status?.toLowerCase() === "completed") {
-      setAnalyticsData({
-        analytics: [previousAnalytics],
-        count: 1,
-        limit: 1,
-        product_id: productData?.id || "",
-      });
-      setDataReady(true);
-    }
-  }, [currentAnalytics, previousAnalytics, productData]);
-
   const scheduleNextPoll = useCallback(
-    (productId: string, wasInitialPoll: boolean) => {
+    (productId: string) => {
       if (pollingTimerRef.current) {
         clearTimeout(pollingTimerRef.current);
       }
@@ -176,54 +184,34 @@ export const ResultsProvider: React.FC<ResultsProviderProps> = ({ children }) =>
         return;
       }
 
-      if (wasInitialPoll && !initialPollDoneRef.current) {
-        initialPollDoneRef.current = true;
-        console.log(`⏱️ [SCHEDULE] Initial poll done - waiting ${POLL_INITIAL_DELAY_MS / 60000} minutes before batch`);
-        pollingTimerRef.current = window.setTimeout(() => {
-          if (
-            mountedRef.current &&
-            currentProductIdRef.current === productId &&
-            !hasReceivedDataRef.current
-          ) {
-            isPollingRef.current = false;
-            pollingAttemptsRef.current = 0;
-            pollProductAnalytics(productId, false);
-          }
-        }, POLL_INITIAL_DELAY_MS);
-      } else {
-        console.log(`⏱️ [SCHEDULE] Scheduling batch poll in ${POLL_INTERVAL_MS / 60000} minutes...`);
-        pollingTimerRef.current = window.setTimeout(() => {
-          if (
-            mountedRef.current &&
-            currentProductIdRef.current === productId &&
-            !hasReceivedDataRef.current
-          ) {
-            isPollingRef.current = false;
-            pollProductAnalytics(productId, false);
-          }
-        }, POLL_INTERVAL_MS);
-      }
+      console.log(`⏱️ [SCHEDULE] Scheduling next poll in ${POLL_INTERVAL_MS / 60000} minutes...`);
+      pollingTimerRef.current = window.setTimeout(() => {
+        if (
+          mountedRef.current &&
+          currentProductIdRef.current === productId &&
+          !hasReceivedDataRef.current
+        ) {
+          isPollingRef.current = false;
+          pollProductAnalytics(productId);
+        }
+      }, POLL_INTERVAL_MS);
     },
     []
   );
 
   const pollProductAnalytics = useCallback(
-    async (productId: string, isInitialPoll: boolean = false) => {
-      const attemptNum = pollingAttemptsRef.current + 1;
-      console.log(
-        `🔄 [POLL] Starting poll #${attemptNum} for product:`,
-        productId,
-        isInitialPoll ? "(INITIAL)" : "(BATCH)"
-      );
+    async (productId: string) => {
+      pollingAttemptsRef.current += 1;
+      const attemptNum = pollingAttemptsRef.current;
+      console.log(`[POLL] Starting poll #${attemptNum} for product:`, productId);
 
-      // Early exit checks
       if (!mountedRef.current) {
-        console.log("⏸️ [POLL] Component unmounted - aborting");
+        console.log("[POLL] Component unmounted - aborting");
         return;
       }
 
       if (isInCooldownRef.current) {
-        console.log("❄️ [POLL] In cooldown period - skipping poll");
+        console.log("[POLL] In cooldown period - skipping poll");
         return;
       }
 
@@ -233,13 +221,12 @@ export const ResultsProvider: React.FC<ResultsProviderProps> = ({ children }) =>
       }
 
       if (isPollingRef.current) {
-        console.log("⏸️ [POLL] Already polling - skipping");
+        console.log("[POLL] Already polling - skipping");
         return;
       }
 
       if (!productId || !accessTokenRef.current) {
-        console.log("⏸️ [POLL] Missing productId or accessToken");
-        // If no access token, trigger logout
+        console.log("[POLL] Missing productId or accessToken");
         if (!accessTokenRef.current) {
           console.log("🔒 [POLL] No access token - redirecting to login");
           handleUnauthorized();
@@ -247,10 +234,9 @@ export const ResultsProvider: React.FC<ResultsProviderProps> = ({ children }) =>
         return;
       }
 
-      // Check retry limit
-      if (!isInitialPoll && pollingAttemptsRef.current >= POLL_MAX_ATTEMPTS) {
+      if (pollingAttemptsRef.current >= POLL_MAX_ATTEMPTS) {
         console.log(
-          `🛑 [POLL] Reached max batch limit (${POLL_MAX_ATTEMPTS}) - entering ${POLL_COOLDOWN_MS / 60000} min cooldown`
+          `🛑 [POLL] Reached max poll limit (${POLL_MAX_ATTEMPTS}) - entering ${POLL_COOLDOWN_MS / 60000} min cooldown`
         );
         isInCooldownRef.current = true;
 
@@ -271,34 +257,28 @@ export const ResultsProvider: React.FC<ResultsProviderProps> = ({ children }) =>
             !hasReceivedDataRef.current &&
             currentProductIdRef.current === productId
           ) {
-            console.log("🔄 [POLL] Cooldown complete - resetting counter and starting new batch");
+            console.log("[POLL] Cooldown complete - resetting counter and starting new batch");
             pollingAttemptsRef.current = 0;
             isInCooldownRef.current = false;
-            pollProductAnalytics(productId, false);
+            pollProductAnalytics(productId);
           }
         }, POLL_COOLDOWN_MS);
 
         return;
       }
 
-      // Acquire lock
       isPollingRef.current = true;
-      if (!isInitialPoll) {
-        pollingAttemptsRef.current += 1;
-      }
       console.log(`✅ [POLL] Lock acquired, attempt ${pollingAttemptsRef.current}/${POLL_MAX_ATTEMPTS}`);
 
       try {
         const res = await getProductAnalytics(productId, accessTokenRef.current);
-        console.log("📊 [POLL] Analytics response received:", res);
+        console.log("[POLL] Analytics response received:", res);
 
-        // Check mounted state after async operation
         if (!mountedRef.current) {
-          console.log("⏸️ [POLL] Component unmounted during fetch - aborting");
+          console.log("[POLL] Component unmounted during fetch - aborting");
           return;
         }
 
-        // Double-check we haven't received data yet
         if (hasReceivedDataRef.current) {
           console.log("✅ [POLL] Data received while fetching - aborting");
           return;
@@ -314,36 +294,51 @@ export const ResultsProvider: React.FC<ResultsProviderProps> = ({ children }) =>
               mostRecentAnalysis.updated_at ||
               mostRecentAnalysis.created_at;
 
-            // Save to localStorage
-            if (res.product_id) {
-              localStorage.setItem("product_id", res.product_id);
-            }
-            if (mostRecentAnalysis.analytics?.analysis_scope?.search_keywords) {
-              const keywords = mostRecentAnalysis.analytics.analysis_scope.search_keywords;
-              localStorage.setItem(
-                "keywords",
-                JSON.stringify(keywords.map((k: string) => ({ keyword: k })))
-              );
-              localStorage.setItem("keyword_count", keywords.length.toString());
-            }
-
-            const prevAnalytics = previousAnalyticsRef.current;
-            const isPreviousCompleted = prevAnalytics?.status?.toLowerCase() === "completed";
-
-            // Check if this analysis is newer than when we triggered a new analysis
             const analysisTimestamp = currentDate ? new Date(currentDate).getTime() : 0;
-            const isNewAnalysis = !analysisTriggeredAtRef.current || analysisTimestamp > analysisTriggeredAtRef.current;
+            const isNewData = isNewerThanTrigger(analysisTimestamp);
 
-            console.log(`📅 [POLL] Analysis date: ${currentDate}, Trigger time: ${analysisTriggeredAtRef.current ? new Date(analysisTriggeredAtRef.current).toISOString() : 'none'}, isNew: ${isNewAnalysis}`);
+            console.log(`[POLL] Analysis date: ${currentDate}, Trigger time: ${triggeredAt ? new Date(triggeredAt).toISOString() : 'none'}, isNew: ${isNewData}`);
 
-            // COMPLETED or FAILED = STOP ONLY IF it's a NEW analysis
-            if ((currentStatus === "completed" || currentStatus === "failed") && isNewAnalysis) {
+            // COMPLETED or FAILED = STOP ONLY IF it's NEWER analysis
+            if ((currentStatus === "completed" || currentStatus === "failed") && isNewData) {
               hasReceivedDataRef.current = true;
               pollingAttemptsRef.current = 0;
-              initialPollDoneRef.current = true;
-              analysisTriggeredAtRef.current = null;
+              
+              // CRITICAL FIX: Clear old data FIRST
+              console.log("🧹 [POLL] Clearing old data from storage");
+              clearAnalyticsDataForCurrentUser();
+              clearCurrentAnalyticsData();
+              
+              // CRITICAL FIX: Save new data to localStorage IMMEDIATELY
+              console.log("💾 [POLL] Saving new data to localStorage immediately");
+              const dataToSave = {
+                analytics: [mostRecentAnalysis],
+                count: 1,
+                limit: 1,
+                product_id: productId,
+              };
+              
+              // Save to email-scoped key
+              const lastDataKey = getEmailScopedKey(STORAGE_KEYS.LAST_ANALYSIS_DATA);
+              const lastDateKey = getEmailScopedKey(STORAGE_KEYS.LAST_ANALYSIS_DATE);
+              
+              try {
+                localStorage.setItem(lastDataKey, JSON.stringify(dataToSave));
+                if (currentDate) {
+                  localStorage.setItem(lastDateKey, currentDate);
+                }
+                console.log("✅ [POLL] New data saved to localStorage successfully");
+              } catch (e) {
+                console.error("❌ [POLL] Failed to save to localStorage:", e);
+              }
+              
+              // Also update analyticsData cache
+              setAnalyticsData(dataToSave);
+              
+              // Clear analysis state
+              completeAnalysis();
 
-              // Clear all timers immediately
+              // Clear all timers
               if (pollingTimerRef.current) {
                 clearTimeout(pollingTimerRef.current);
                 pollingTimerRef.current = undefined;
@@ -353,92 +348,94 @@ export const ResultsProvider: React.FC<ResultsProviderProps> = ({ children }) =>
                 cooldownTimerRef.current = undefined;
               }
 
+              // Update React state
               setCurrentAnalytics(mostRecentAnalysis);
+              setPreviousAnalytics(mostRecentAnalysis);
+              setDataReady(true);
               setIsLoading(false);
 
-              const previousDate =
-                prevAnalytics?.date ||
-                prevAnalytics?.updated_at ||
-                prevAnalytics?.created_at;
-
-              // Show toast only for newly completed analysis
-              if (currentStatus === "completed" && previousDate && currentDate && currentDate > previousDate) {
-                toastRef.current({
-                  title: "Analysis Completed",
-                  description: "Your analysis is now complete and available on this page.",
-                  duration: 10000,
-                });
-                console.log("🎉 [POLL] Showing completion notification for new completed analysis");
-              }
-
-              if (currentStatus === "completed") {
-                setPreviousAnalytics(mostRecentAnalysis);
-                localStorage.setItem("last_analysis_data", JSON.stringify(res));
-                if (currentDate) {
-                  localStorage.setItem("last_analysis_date", currentDate);
+              // Show completion notification ONLY if page was loaded BEFORE analysis completed
+              if (currentStatus === "completed" && !hasShownCompletionToastRef.current) {
+                // Check if analysis completed AFTER this page load
+                const analysisCompletedAfterPageLoad = analysisTimestamp > pageLoadTimestampRef.current;
+                
+                if (analysisCompletedAfterPageLoad) {
+                  // Analysis completed while user is on this page -> ask to refresh
+                  hasShownCompletionToastRef.current = true;
+                  toastRef.current({
+                    title: "Analysis Complete!",
+                    description: "Your analysis is ready. Refresh the page to see the latest data.",
+                    duration: 10000,
+                  });
+                  console.log("🎉 [POLL] Showing refresh notification - analysis completed while on page");
+                } else {
+                  // Page was refreshed AFTER analysis completed -> no notification needed
+                  console.log("✅ [POLL] Page already refreshed after completion - no notification");
                 }
               }
 
-              console.log(`✅ [POLL] Analysis ${currentStatus.toUpperCase()} - ALL polling stopped permanently`);
+              console.log(`✅ [POLL] Analysis ${currentStatus.toUpperCase()} - ALL polling stopped, data saved`);
               return;
             }
 
-            // OLD completed data found but waiting for NEW analysis - continue polling
-            if ((currentStatus === "completed" || currentStatus === "failed") && !isNewAnalysis) {
-              console.log(`⏳ [POLL] Found OLD ${currentStatus} analysis - waiting for NEW analysis, continuing poll`);
-              setCurrentAnalytics(mostRecentAnalysis);
+            // OLD completed data found but waiting for NEW analysis
+            if ((currentStatus === "completed" || currentStatus === "failed") && !isNewData) {
+              console.log(`⏳ [POLL] Found OLD ${currentStatus} analysis - waiting for NEW analysis`);
+              
+              // Show old data while waiting
+              if (!currentAnalytics) {
+                setCurrentAnalytics(mostRecentAnalysis);
+                setPreviousAnalytics(mostRecentAnalysis);
+                setDataReady(true);
+              }
+              
               setIsLoading(true);
 
               if (!hasShownStartMessageRef.current && mountedRef.current) {
                 toastRef.current({
                   title: "Analysis in Progress",
-                  description: "Your new analysis has begun. Please stay on this page, you'll receive a notification when it's ready.",
+                  description: "Your new analysis has begun. We'll notify you when it's ready.",
                   duration: 10000,
                 });
                 hasShownStartMessageRef.current = true;
               }
 
-              scheduleNextPoll(productId, isInitialPoll);
+              scheduleNextPoll(productId);
               return;
             }
 
-            // IN_PROGRESS or ERROR - continue polling
+            // IN_PROGRESS or ERROR
             if (currentStatus === "error" || currentStatus === "in_progress") {
-              setCurrentAnalytics(mostRecentAnalysis);
-
-              if (isPreviousCompleted) {
-                setIsLoading(false);
-              } else {
-                setIsLoading(true);
+              if (!currentAnalytics) {
+                setCurrentAnalytics(mostRecentAnalysis);
               }
+
+              setIsLoading(true);
 
               if (!hasShownStartMessageRef.current && mountedRef.current) {
                 toastRef.current({
                   title: "Analysis in Progress",
-                  description: "Your analysis has begun. Please stay on this page, you'll receive a notification here when it's ready.",
+                  description: "Your analysis has begun. We'll notify you when it's ready.",
                   duration: 10000,
                 });
                 hasShownStartMessageRef.current = true;
               }
 
-              scheduleNextPoll(productId, isInitialPoll);
+              scheduleNextPoll(productId);
               return;
             }
 
-            // Unknown status - continue polling
-            setCurrentAnalytics(mostRecentAnalysis);
-            if (isPreviousCompleted) {
-              setIsLoading(false);
-            } else {
-              setIsLoading(true);
+            // Unknown status
+            if (!currentAnalytics) {
+              setCurrentAnalytics(mostRecentAnalysis);
             }
+            setIsLoading(true);
             console.log(`⚠️ [POLL] Unknown status "${currentStatus}" - continuing polling`);
-            scheduleNextPoll(productId, isInitialPoll);
+            scheduleNextPoll(productId);
           } else {
-            // No analysis found - keep polling
             console.log("⚠️ [POLL] No analysis found - scheduling next poll");
             setIsLoading(true);
-            scheduleNextPoll(productId, isInitialPoll);
+            scheduleNextPoll(productId);
           }
         } else {
           throw new Error("Invalid response format");
@@ -446,40 +443,47 @@ export const ResultsProvider: React.FC<ResultsProviderProps> = ({ children }) =>
       } catch (err: any) {
         console.error(`❌ [POLL] Failed to fetch analytics:`, err);
 
-        // Check for auth errors
         if (isUnauthorizedError(err)) {
           console.log("🔒 [POLL] Unauthorized error - logging out");
           handleUnauthorized();
           return;
         }
 
-        // Don't retry if we already have completed data
         if (hasReceivedDataRef.current) {
           console.log("✅ [POLL] Already have completed data - not retrying after error");
           return;
         }
 
-        // Schedule retry
-        scheduleNextPoll(productId, isInitialPoll);
+        scheduleNextPoll(productId);
       } finally {
         isPollingRef.current = false;
         console.log("🔓 [POLL] Lock released");
       }
     },
-    [scheduleNextPoll]
+    [scheduleNextPoll, isNewerThanTrigger, triggeredAt, completeAnalysis]
   );
 
-  // Parse location.state
+  // Parse location.state and handle incoming navigation
   useEffect(() => {
     mountedRef.current = true;
     const state = location.state as any;
 
-    // Check for valid access token
     const accessToken = localStorage.getItem("access_token");
     if (!accessToken) {
       console.log("🔒 [STATE] No access token - redirecting to login");
       handleUnauthorized();
       return;
+    }
+
+    if (state?.isNew && state?.productId && state?.analysisTriggeredAt) {
+      console.log("🆕 [STATE] New analysis detected from InputPage");
+      setIsLoading(true);
+      setDataReady(false);
+      hasReceivedDataRef.current = false;
+      hasFetchedRef.current = false;
+      hasShownCompletionToastRef.current = false;
+      // Reset page load timestamp when new analysis is triggered
+      pageLoadTimestampRef.current = Date.now();
     }
 
     if (state?.product?.id) {
@@ -488,11 +492,6 @@ export const ResultsProvider: React.FC<ResultsProviderProps> = ({ children }) =>
         name: state.product.name || state.product.website || state.product.id,
         website: state.website || state.product.website || "",
       });
-
-      if (state.analysisTriggeredAt) {
-        analysisTriggeredAtRef.current = state.analysisTriggeredAt;
-        console.log("📅 [STATE] New analysis triggered at:", new Date(analysisTriggeredAtRef.current!).toISOString());
-      }
     } else if (state?.productId || state?.id) {
       const pid = state.productId || state.id;
       setProductData({
@@ -500,20 +499,13 @@ export const ResultsProvider: React.FC<ResultsProviderProps> = ({ children }) =>
         name: state.website || pid.toString(),
         website: state.website || "",
       });
-
-      if (state.analysisTriggeredAt) {
-        analysisTriggeredAtRef.current = state.analysisTriggeredAt;
-        console.log("📅 [STATE] New analysis triggered at:", new Date(analysisTriggeredAtRef.current!).toISOString());
-      }
     } else if (products && products.length > 0) {
-      // Use products from auth context if available
       setProductData({
         id: products[0].id,
         name: products[0].name || products[0].website,
         website: products[0].website || "",
       });
     } else {
-      // Try to load from localStorage before redirecting
       const storedProductId = localStorage.getItem("product_id");
       if (storedProductId) {
         setProductData({
@@ -530,35 +522,14 @@ export const ResultsProvider: React.FC<ResultsProviderProps> = ({ children }) =>
     return () => {
       mountedRef.current = false;
     };
-  }, [location.state, navigate, products]);
+  }, [location.state, navigate, products, startAnalysis]);
 
-  // Load previous from localStorage
-  useEffect(() => {
-    const lastAnalysisData = localStorage.getItem("last_analysis_data");
-    if (lastAnalysisData) {
-      try {
-        const parsed = JSON.parse(lastAnalysisData);
-        if (parsed.analytics?.length > 0) {
-          const lastCompleted = parsed.analytics.find(
-            (a: AnalyticsData) => a.status?.toLowerCase() === "completed"
-          );
-          if (lastCompleted) {
-            setPreviousAnalytics(lastCompleted);
-          }
-        }
-      } catch (e) {
-        console.error("Failed to parse last analysis:", e);
-      }
-    }
-  }, []);
-
-  // Start polling when productId changes - ONLY ONCE
+  // Start polling when productId changes
   useEffect(() => {
     const productId = productData?.id;
 
     if (!productId) return;
 
-    // Skip if we've already fetched for this product
     if (currentProductIdRef.current === productId && hasFetchedRef.current) {
       return;
     }
@@ -567,11 +538,11 @@ export const ResultsProvider: React.FC<ResultsProviderProps> = ({ children }) =>
     hasFetchedRef.current = true;
 
     hasShownStartMessageRef.current = false;
+    hasShownCompletionToastRef.current = false;
     isPollingRef.current = false;
     pollingAttemptsRef.current = 0;
     isInCooldownRef.current = false;
     hasReceivedDataRef.current = false;
-    initialPollDoneRef.current = false;
 
     if (pollingTimerRef.current) {
       clearTimeout(pollingTimerRef.current);
@@ -582,8 +553,8 @@ export const ResultsProvider: React.FC<ResultsProviderProps> = ({ children }) =>
       cooldownTimerRef.current = undefined;
     }
 
-    console.log("▶️ [EFFECT] Starting INITIAL poll for product:", productId);
-    pollProductAnalytics(productId, true);
+    console.log("▶️ [EFFECT] Starting poll for product:", productId);
+    pollProductAnalytics(productId);
 
     return () => {
       if (pollingTimerRef.current) {
@@ -597,20 +568,17 @@ export const ResultsProvider: React.FC<ResultsProviderProps> = ({ children }) =>
       isPollingRef.current = false;
       pollingAttemptsRef.current = 0;
       isInCooldownRef.current = false;
-      initialPollDoneRef.current = false;
     };
   }, [productData?.id, pollProductAnalytics]);
 
-  // Cleanup on unmount
   useEffect(() => {
     mountedRef.current = true;
-    console.log("🎬 [MOUNT] Component mounted");
+    console.log("[MOUNT] Component mounted");
 
     return () => {
-      console.log("🛑 [UNMOUNT] Component unmounting - cleaning up");
+      console.log("🛑 [UNMOUNT] Component unmounting");
       mountedRef.current = false;
       currentProductIdRef.current = null;
-      analysisTriggeredAtRef.current = null;
       hasFetchedRef.current = false;
     };
   }, []);
@@ -625,6 +593,7 @@ export const ResultsProvider: React.FC<ResultsProviderProps> = ({ children }) =>
         dataReady,
         activeTab,
         setActiveTab,
+        isAnalyzing,
       }}
     >
       {children}
