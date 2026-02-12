@@ -2,6 +2,7 @@
 import axios, { AxiosResponse } from "axios";
 import { API_ENDPOINTS } from "./api";
 import { handleUnauthorized, isUnauthorizedError } from "./lib/authGuard";
+import { setAccessToken, getAccessToken, clearAccessToken } from "./lib/secureTokenStore";
 
 /* =====================
    TYPES
@@ -69,9 +70,9 @@ const API = axios.create({
   baseURL: import.meta.env.VITE_BASE_URL,
 });
 
-// Request interceptor - add auth token
+// Request interceptor - add auth token from secure memory store
 API.interceptors.request.use((config) => {
-  const token = localStorage.getItem("access_token");
+  const token = getAccessToken();
   if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -105,18 +106,21 @@ API.interceptors.response.use(
 export const login = async (payload: LoginRequest): Promise<LoginResponse> => {
   const res: AxiosResponse<LoginResponse> = await API.post(API_ENDPOINTS.login, payload);
 
-  // Save the access token if present
+  // Save the access token to secure in-memory store (NOT localStorage)
   if (res.data.access_token && res.data.access_token.trim() !== "") {
-    localStorage.setItem("access_token", res.data.access_token);
+    setAccessToken(res.data.access_token);
 
     const appId = res.data.user?.owned_applications?.[0]?.id;
     if (appId) {
       localStorage.setItem("application_id", appId);
     }
-  } else {
-    console.log('No access token in response - email verification may be pending');
   }
 
+  // Remove access_token from the returned data to prevent leaking
+  const sanitizedResponse = { ...res.data };
+  delete (sanitizedResponse as any).access_token;
+  // Keep user info but the token is stored in memory only
+  
   return res.data;
 };
 
@@ -129,9 +133,9 @@ export const register = async (
       payload
     );
 
-    // Store tokens if registration successful
+    // Store token in secure memory store (NOT localStorage)
     if (res.data.access_token) {
-      localStorage.setItem("access_token", res.data.access_token);
+      setAccessToken(res.data.access_token);
     }
     if (res.data.application?.id) {
       localStorage.setItem("application_id", res.data.application.id);
@@ -553,15 +557,7 @@ export interface SearchResultsResponse {
   keywords: KeywordData[];
 }
 
-// Auth interceptor
-API.interceptors.request.use((config) => {
-  const token = localStorage.getItem("access_token");
-  if (token && config.headers) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  config.headers["Content-Type"] = "application/json";
-  return config;
-});
+// Duplicate auth interceptor removed - using the one at top with secure token store
 
 /* =====================
    HELPER

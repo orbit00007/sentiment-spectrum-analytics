@@ -1,41 +1,54 @@
 const ANALYTICS_STORAGE_KEY_PREFIX = 'geo_analytics_data';
 let currentAnalyticsData: any = null;
-let currentUserEmail: string | null = null;
+let currentUserId: string | null = null;
 
-// Get storage key for specific user email
-const getStorageKey = (email?: string): string => {
-  const userEmail = email || currentUserEmail || localStorage.getItem('user_email') || '';
-  if (userEmail) {
-    return `${ANALYTICS_STORAGE_KEY_PREFIX}_${userEmail.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+// Get storage key for specific user ID
+const getStorageKey = (userId?: string): string => {
+  const id = userId || currentUserId || localStorage.getItem('user_id') || '';
+  if (id) {
+    return `${ANALYTICS_STORAGE_KEY_PREFIX}_${id.replace(/[^a-z0-9\-]/g, '_')}`;
   }
   return ANALYTICS_STORAGE_KEY_PREFIX;
 };
 
-// Get current user email
+// Get current user ID
+export const getCurrentUserId = (): string | null => {
+  return currentUserId || localStorage.getItem('user_id');
+};
+
+// Legacy alias - returns user ID now
 export const getCurrentUserEmail = (): string | null => {
-  return currentUserEmail || localStorage.getItem('user_email');
+  return getCurrentUserId();
 };
 
-// Set current user email (call this on login)
+// Set current user ID (call this on login)
+export const setCurrentUserId = (userId: string) => {
+  currentUserId = userId;
+  localStorage.setItem('user_id', userId);
+  currentAnalyticsData = null;
+};
+
+// Legacy alias
 export const setCurrentUserEmail = (email: string) => {
-  currentUserEmail = email;
-  localStorage.setItem('user_email', email);
-  // Clear current data so it reloads for this user
-  currentAnalyticsData = null;
-  console.log('👤 [ANALYTICS] User email set:', email);
+  // Now expects userId instead - kept for backward compat
+  // The auth-context now passes userId
+  setCurrentUserId(email);
 };
 
-// Clear user email (call on logout)
-export const clearCurrentUserEmail = () => {
-  currentUserEmail = null;
+// Clear user ID (call on logout)
+export const clearCurrentUserId = () => {
+  currentUserId = null;
   currentAnalyticsData = null;
-  console.log('👤 [ANALYTICS] User email cleared from memory');
+};
+
+// Legacy alias
+export const clearCurrentUserEmail = () => {
+  clearCurrentUserId();
 };
 
 // Clear current analytics data (call when starting new analysis)
 export const clearCurrentAnalyticsData = () => {
   currentAnalyticsData = null;
-  console.log('🧹 [ANALYTICS] Current analytics data cleared from memory');
 };
 
 // Format logo URL using Google Favicon service
@@ -50,40 +63,36 @@ export const formatLogoUrl = (domain: string): string => {
 // Load analytics from localStorage for current user
 export const loadAnalyticsFromStorage = (): boolean => {
   try {
-    // Try email-scoped key from LAST_ANALYSIS_DATA
-    const userEmail = getCurrentUserEmail();
-    if (userEmail) {
-      const sanitizedEmail = userEmail.toLowerCase().replace(/[^a-z0-9]/g, '_');
-      const lastDataKey = `last_analysis_data_${sanitizedEmail}`;
+    const userId = getCurrentUserId();
+    if (userId) {
+      const sanitizedId = userId.replace(/[^a-z0-9\-]/g, '_');
+      const lastDataKey = `last_analysis_data_${sanitizedId}`;
       const stored = localStorage.getItem(lastDataKey);
       
       if (stored) {
         const parsed = JSON.parse(stored);
         if (parsed.analytics?.[0]) {
           currentAnalyticsData = parsed;
-          console.log('📦 [ANALYTICS] Data loaded from email-scoped key:', lastDataKey);
           return true;
         }
       }
     }
     
-    // Fallback to old keys for backward compatibility
+    // Fallback to old keys
     const storageKey = getStorageKey();
     const stored = localStorage.getItem(storageKey);
     if (stored) {
       currentAnalyticsData = JSON.parse(stored);
-      console.log('📦 [ANALYTICS] Data loaded from legacy key:', storageKey);
       return true;
     }
     
     const legacyStored = localStorage.getItem(ANALYTICS_STORAGE_KEY_PREFIX);
     if (legacyStored) {
       currentAnalyticsData = JSON.parse(legacyStored);
-      console.log('📦 [ANALYTICS] Data loaded from legacy key');
       return true;
     }
   } catch (e) {
-    console.error('Failed to load analytics from localStorage:', e);
+    // ignore parse errors
   }
   return false;
 };
@@ -125,13 +134,10 @@ export const getModelName = (): string => {
 // Get human-readable model display name
 export const getModelDisplayName = (modelName: string): string => {
   const normalized = modelName.toLowerCase();
-
   if (normalized === 'openai') return 'ChatGPT';
   if (normalized === 'gemini') return 'Gemini';
   if (normalized === 'google_ai_overview') return 'Google AI Overview';
   if (normalized === 'google_ai_mode') return 'Google AI Mode';
-
-  // Fallback: basic capitalization
   return modelName.charAt(0).toUpperCase() + modelName.slice(1);
 };
 
@@ -275,13 +281,11 @@ export const getBrandInfoWithLogos = (): Array<{
   if (!brands || !Array.isArray(brands)) {
     const hasWarned = sessionStorage.getItem('analytics_brands_warning');
     if (!hasWarned) {
-      console.warn('⚠️ [ANALYTICS] No brands array found in analytics data');
       sessionStorage.setItem('analytics_brands_warning', 'true');
     }
     return [];
   }
   
-  // Reverse for descending order (highest score first)
   const reversedBrands = [...brands].reverse();
   
   return reversedBrands.map((brand: any) => ({
@@ -577,20 +581,11 @@ export const getSentiment = () => {
   };
 };
 
-// Set analytics data - CRITICAL: This is the main entry point for new data
+// Set analytics data
 export const setAnalyticsData = (apiResponse: any) => {
   if (apiResponse && apiResponse.analytics && Array.isArray(apiResponse.analytics)) {
-    // CRITICAL: Always update in-memory cache immediately
     currentAnalyticsData = apiResponse;
-    console.log('📦 [ANALYTICS] In-memory data updated');
-    
-    // Clear the warning flag when new data arrives
     sessionStorage.removeItem('analytics_brands_warning');
-    
-    // NOTE: localStorage persistence is now handled in ResultsContext
-    // This function only updates the in-memory cache
-  } else {
-    console.error('Invalid analytics data format');
   }
 };
 
@@ -598,15 +593,11 @@ export const setAnalyticsData = (apiResponse: any) => {
 export const clearAnalyticsData = () => {
   currentAnalyticsData = null;
   sessionStorage.removeItem('analytics_brands_warning');
-  console.log('📦 [ANALYTICS] Cached data cleared from memory');
-  
-  // NOTE: localStorage clearing is now handled in storageKeys.ts
 };
 
 // Force refresh analytics data (bypasses cache)
 export const forceRefreshAnalytics = () => {
   clearAnalyticsData();
-  console.log('🔄 [ANALYTICS] Cache cleared - next data fetch will be fresh');
 };
 
 // Get sources data formatted for the comparison table

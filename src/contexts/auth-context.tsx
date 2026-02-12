@@ -6,8 +6,9 @@ import {
   RegisterRequest,
   RegisterResponse,
 } from "@/apiHelpers";
-import { setCurrentUserEmail, clearCurrentUserEmail } from "@/results/data/analyticsData";
+import { setCurrentUserId, clearCurrentUserId } from "@/results/data/analyticsData";
 import { setAnalysisUserEmail, clearAnalysisUserEmail } from "@/hooks/useAnalysisState";
+import { setAccessToken, getAccessToken, clearAccessToken, hasAccessToken } from "@/lib/secureTokenStore";
 
 /* =====================
    TYPES
@@ -70,10 +71,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   /* Restore state from localStorage on refresh */
   useEffect(() => {
     const storedAppId = localStorage.getItem("application_id");
-    const storedToken = localStorage.getItem("access_token");
     const storedFirstName = localStorage.getItem("first_name");
     const storedApplications = localStorage.getItem("applications");
     const storedProducts = localStorage.getItem("products");
+    const storedUserId = localStorage.getItem("user_id");
     
     if (storedAppId) {
       setApplicationId(storedAppId);
@@ -87,14 +88,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setProducts(JSON.parse(storedProducts));
     }
     
-    // If we have a token, restore user state (user is logged in)
-    if (storedToken) {
+    // If we have a token in sessionStorage, restore user state
+    if (hasAccessToken() && storedUserId) {
       setUser({ 
-        id: "restored", 
-        email: "user@restored.com", 
+        id: storedUserId, 
+        email: "",
         first_name: storedFirstName || "User", 
         last_name: "User" 
       });
+      // Re-scope analytics to this user
+      setCurrentUserId(storedUserId);
+      setAnalysisUserEmail(storedUserId);
     }
   }, []);
 
@@ -111,17 +115,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return 'email_not_verified';
       }
 
-      // We have a valid response with access_token
+      // Token is already stored in memory by loginAPI
+      // Store it again to ensure it's set (loginAPI handles this)
+      if (res.access_token) {
+        setAccessToken(res.access_token);
+      }
+
       if (res.user) {
         const extendedUser = res.user as ExtendedUser;
         setUser(extendedUser);
 
-        // Set user email for analytics data mapping and analysis state scoping
-        setCurrentUserEmail(email);
-        setAnalysisUserEmail(email);
+        // Use user ID for scoping instead of email
+        const userId = extendedUser.id;
+        setCurrentUserId(userId);
+        setAnalysisUserEmail(userId);
 
-        // Save first name to localStorage
+        // Save first name and user ID (NOT email) to localStorage
         localStorage.setItem("first_name", extendedUser.first_name);
+        localStorage.setItem("user_id", userId);
 
         // Store applications and products from response
         const appsFromResponse = (res as any).applications || [];
@@ -157,8 +168,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       return false;
     } catch (error: any) {
-      console.error('Auth context: Login error:', error);
-      console.error('Error response:', error.response?.data);
       throw error;
     } finally {
       setIsLoading(false);
@@ -166,7 +175,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   /* =====================
-     REGISTER (auto-login after success)
+     REGISTER
      ===================== */
   const register = async (
     email: string,
@@ -175,7 +184,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   ) => {
     setIsLoading(true);
     try {
-      // Split full name on first space
       const parts = fullName.trim().split(' ');
       const firstName = parts[0];
       const lastName = parts.slice(1).join(' ') || ' ';
@@ -195,35 +203,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.setItem("application_id", response.application.id);
       }
 
-      // Save first name to localStorage
+      // Save first name and user ID
       localStorage.setItem("first_name", firstName);
-          } finally {
+      if (response.user?.id) {
+        localStorage.setItem("user_id", response.user.id);
+      }
+    } finally {
       setIsLoading(false);
     }
   };
 
   /* =====================
-     LOGOUT - Clear session data but preserve analytics
+     LOGOUT
      ===================== */
   const logout = () => {
-    // NOTE: Do NOT clear analysis state on logout - it should persist per email
-    // The analysis state is email-scoped in sessionStorage and should remain
-    // so when the user logs back in, they see their analysis is still running
-    
-    // Clear user email references (but keep email-scoped data)
     clearAnalysisUserEmail();
-    clearCurrentUserEmail();
+    clearCurrentUserId();
+    clearAccessToken();
     
-    // Clear only session-related items, NOT analytics data or analysis state
     const sessionItems = [
-      'access_token',
-      'refresh_token',
       'application_id',
       'applications',
       'products',
       'first_name',
       'product_id',
-      // Note: 'user_email' is kept in localStorage to help restore state on login
+      'user_id',
     ];
     
     sessionItems.forEach(key => {
@@ -234,10 +238,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     });
     
-    // Do NOT clear sessionStorage - analysis state is stored there per email
-    // sessionStorage.clear(); // REMOVED - this was wiping analysis state
-    
-    // Reset state
     setUser(null);
     setApplicationId(null);
     setApplications([]);
