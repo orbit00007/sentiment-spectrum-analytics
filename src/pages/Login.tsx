@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Eye, EyeOff } from "lucide-react";
 import { getProductsByApplication } from "@/apiHelpers";
+import { getAccessToken } from "@/lib/secureTokenStore";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -48,7 +49,7 @@ const Login = () => {
       });
 
       // Use the same logic as Index page
-      const accessToken = localStorage.getItem("access_token") || "";
+      const accessToken = getAccessToken() || "";
       const applicationId = localStorage.getItem("application_id") || "";
   
       if (!applicationId) {
@@ -84,9 +85,6 @@ const Login = () => {
         navigate("/input");
       }
     } catch (error: any) {
-      console.error('Login error caught:', error);
-      console.error('Error response:', error.response?.data);
-      
       const errorMessage = error.response?.data?.error || error.response?.data?.message || "Please check your credentials and try again.";
       
       toast({

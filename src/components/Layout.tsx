@@ -10,6 +10,7 @@ import {
 import { User, LogOut, RefreshCw } from "lucide-react";
 import { useState, useEffect } from "react";
 import { regenerateAnalysis } from "@/apiHelpers";
+import { getAccessToken } from "@/lib/secureTokenStore";
 import { useToast } from "@/hooks/use-toast";
 
 interface LayoutProps {
@@ -41,7 +42,7 @@ export const Layout = ({ children, showNavigation = true, sidebarTrigger }: Layo
 
     setIsRegenerating(true);
     try {
-      const accessToken = localStorage.getItem("access_token") || "";
+      const accessToken = getAccessToken() || "";
 
       // Call regenerate analysis API
       await regenerateAnalysis(productId, accessToken);

@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/auth-context";
 import { regenerateAnalysis } from "@/apiHelpers";
+import { getAccessToken } from "@/lib/secureTokenStore";
 import { useToast } from "@/hooks/use-toast";
 import { useAnalysisState } from "@/hooks/useAnalysisState";
 import {
@@ -311,7 +312,7 @@ export const Header = () => {
     startAnalysis(productId);
 
     try {
-      const accessToken = localStorage.getItem("access_token") || "";
+      const accessToken = getAccessToken() || "";
       await regenerateAnalysis(productId, accessToken);
 
       toast({
