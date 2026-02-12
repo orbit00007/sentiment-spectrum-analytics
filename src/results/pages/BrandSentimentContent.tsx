@@ -2,6 +2,7 @@ import { TierBadge } from "@/results/ui/TierBadge";
 import { getCompetitorSentiment, getBrandName, getSentiment, getBrandLogo } from "@/results/data/analyticsData";
 import { Info, ThumbsUp, ThumbsDown, Minus } from "lucide-react";
 import { useMemo } from "react";
+import ReactMarkdown from 'react-markdown';
 import {
   Tooltip,
   TooltipContent,
@@ -17,8 +18,8 @@ const BrandSentimentContent = () => {
   const outlookOrder = { 'Positive': 0, 'Neutral': 1, 'Negative': 2 };
   const sortedSentiment = useMemo(() => {
     return [...competitorSentiment].sort((a, b) => {
-      return (outlookOrder[a.outlook as keyof typeof outlookOrder] || 2) - 
-             (outlookOrder[b.outlook as keyof typeof outlookOrder] || 2);
+      return (outlookOrder[a.outlook as keyof typeof outlookOrder] || 2) -
+        (outlookOrder[b.outlook as keyof typeof outlookOrder] || 2);
     });
   }, [competitorSentiment]);
 
@@ -53,9 +54,9 @@ const BrandSentimentContent = () => {
         <div className="flex items-start gap-4">
           <div className="flex-shrink-0">
             {brandLogo ? (
-              <img 
-                src={brandLogo} 
-                alt={brandName} 
+              <img
+                src={brandLogo}
+                alt={brandName}
                 className="w-12 h-12 rounded-full object-contain bg-white shadow-md"
                 onError={(e) => { e.currentTarget.style.display = 'none'; }}
               />
@@ -70,7 +71,11 @@ const BrandSentimentContent = () => {
               <h3 className="text-lg font-semibold text-foreground">{brandName} Sentiment Overview</h3>
               <TierBadge tier={sentiment.dominant_sentiment} />
             </div>
-            <p className="text-muted-foreground text-sm md:text-base leading-relaxed">{sentiment.summary}</p>
+            <div className="text-muted-foreground text-sm md:text-base leading-relaxed prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0.5 prose-strong:text-foreground">
+              <ReactMarkdown>
+                {sentiment.summary}
+              </ReactMarkdown>
+            </div>
           </div>
         </div>
       </div>
@@ -85,7 +90,7 @@ const BrandSentimentContent = () => {
             'Neutral': 'from-gray-500/20 to-gray-500/5 border-gray-500/30',
             'Negative': 'from-red-500/20 to-red-500/5 border-red-500/30'
           };
-          
+
           return (
             <div key={sentimentType} className={`rounded-xl border p-4 md:p-5 bg-gradient-to-br ${colors[sentimentType as keyof typeof colors]}`}>
               <div className="flex items-center justify-between mb-4">
@@ -95,16 +100,15 @@ const BrandSentimentContent = () => {
               <p className="text-sm text-muted-foreground mb-3">Brands with {sentimentType.toLowerCase()} outlook</p>
               <div className="flex flex-wrap gap-2">
                 {matchingBrands.map(item => (
-                  <div 
-                    key={item.brand} 
-                    className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-full bg-card/80 border ${
-                      item.brand === brandName ? 'border-primary text-primary' : 'border-border text-foreground'
-                    }`}
+                  <div
+                    key={item.brand}
+                    className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-full bg-card/80 border ${item.brand === brandName ? 'border-primary text-primary' : 'border-border text-foreground'
+                      }`}
                   >
                     {item.logo && (
-                      <img 
-                        src={item.logo} 
-                        alt={item.brand} 
+                      <img
+                        src={item.logo}
+                        alt={item.brand}
                         className="w-4 h-4 rounded-full object-contain bg-white"
                         onError={(e) => { e.currentTarget.style.display = 'none'; }}
                       />
@@ -137,23 +141,22 @@ const BrandSentimentContent = () => {
               {sortedSentiment.map((item, index) => {
                 const isPrimaryBrand = item.brand === brandName;
                 return (
-                  <tr 
-                    key={index} 
+                  <tr
+                    key={index}
                     className={`border-b border-border/50 ${isPrimaryBrand ? 'bg-primary/5' : 'hover:bg-muted/20'} transition-colors`}
                   >
                     <td className={`py-4 px-4 md:px-6 font-medium ${isPrimaryBrand ? 'text-primary' : 'text-foreground'}`}>
                       <div className="flex items-center gap-3">
                         {item.logo ? (
-                          <img 
-                            src={item.logo} 
-                            alt={item.brand} 
+                          <img
+                            src={item.logo}
+                            alt={item.brand}
                             className="w-8 h-8 rounded-full object-contain bg-white shadow-sm"
                             onError={(e) => { e.currentTarget.style.display = 'none'; }}
                           />
                         ) : (
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                            isPrimaryBrand ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
-                          }`}>
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${isPrimaryBrand ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                            }`}>
                             {item.brand[0]}
                           </div>
                         )}
@@ -164,7 +167,11 @@ const BrandSentimentContent = () => {
                       </div>
                     </td>
                     <td className="py-4 px-4 md:px-6 text-sm text-muted-foreground max-w-md hidden md:table-cell">
-                      <p className="line-clamp-2">{item.summary}</p>
+                      <div className="prose prose-xs max-w-none text-muted-foreground prose-p:my-0.5 prose-ul:my-0.5 prose-li:my-0 prose-strong:text-foreground line-clamp-4 hover:line-clamp-none transition-all">
+                        <ReactMarkdown>
+                          {item.summary}
+                        </ReactMarkdown>
+                      </div>
                     </td>
                     <td className="py-4 px-4 md:px-6">
                       <div className="flex justify-center">

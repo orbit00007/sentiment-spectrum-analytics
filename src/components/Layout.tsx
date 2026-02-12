@@ -48,7 +48,7 @@ export const Layout = ({ children, showNavigation = true, sidebarTrigger }: Layo
 
       toast({
         title: "Analysis in Progress",
-        description: "Your analysis has begun. Please stay on this page, you'll receive a notification here when it's ready.",
+        description: "Your analysis has begun. You'll receive a notification on your email when it's ready.",
         duration: 10000,
       });
 

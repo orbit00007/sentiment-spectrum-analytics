@@ -122,6 +122,19 @@ export const getModelName = (): string => {
   return analytics?.models_used || '';
 };
 
+// Get human-readable model display name
+export const getModelDisplayName = (modelName: string): string => {
+  const normalized = modelName.toLowerCase();
+
+  if (normalized === 'openai') return 'ChatGPT';
+  if (normalized === 'gemini') return 'Gemini';
+  if (normalized === 'google_ai_overview') return 'Google AI Overview';
+  if (normalized === 'google_ai_mode') return 'Google AI Mode';
+
+  // Fallback: basic capitalization
+  return modelName.charAt(0).toUpperCase() + modelName.slice(1);
+};
+
 // Get analysis date
 export const getAnalysisDate = (): string => {
   if (!currentAnalyticsData) {
@@ -132,10 +145,13 @@ export const getAnalysisDate = (): string => {
   
   try {
     const date = new Date(rawDate);
-    return date.toLocaleDateString('en-US', { 
+    return date.toLocaleString('en-US', { 
       year: 'numeric', 
       month: 'short', 
-      day: 'numeric' 
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
     });
   } catch {
     return rawDate;
@@ -155,7 +171,7 @@ export const getKeywords = (): string[] => {
 };
 
 // Get search keywords with prompts
-export const getSearchKeywordsWithPrompts = (): Array<{ id: string; name: string; prompts: string[] }> => {
+export const getSearchKeywordsWithPrompts = (): Array<{ id: string; name: string; prompts: [{ query: string; brands_per_llm: Record<string, any> }] }> => {
   const analytics = getAnalytics();
   const searchKeywords = analytics?.search_keywords || {};
   return Object.entries(searchKeywords).map(([id, data]: [string, any]) => ({

@@ -11,7 +11,10 @@ const BrandInfoBar = () => {
   const brandLogo = getBrandLogo();
   const analysisDate = getAnalysisDate();
   
-  const models = modelName?.split(",").map((m) => m.trim()).filter(m => m === 'openai' || m === 'gemini') || [];
+  const models = modelName
+    ?.split(",")
+    .map((m) => m.trim())
+    .filter(Boolean) || [];
   
   if (!brandName) return null;
   

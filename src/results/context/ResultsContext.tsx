@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/auth-context";
-import { getProductAnalytics } from "@/apiHelpers";
+import { getProductAnalytics, getAnalyticsList, getAnalyticsById, AnalyticsListItem } from "@/apiHelpers";
 import { setAnalyticsData, clearCurrentAnalyticsData } from "@/results/data/analyticsData";
 import { clearAnalyticsDataForCurrentUser } from "@/lib/storageKeys";
 import { useToast } from "@/hooks/use-toast";
@@ -25,7 +25,8 @@ export type TabType =
   | "prompts" 
   | "sources-all" 
   | "competitors-comparisons"
-  | "recommendations";
+  | "recommendations"
+  | "content-impact-analysis";
 
 interface ResultsContextType {
   productData: any;
@@ -36,6 +37,13 @@ interface ResultsContextType {
   activeTab: TabType;
   setActiveTab: (tab: TabType) => void;
   isAnalyzing: boolean;
+  analyticsList: AnalyticsListItem[];
+  isAnalyticsListLoading: boolean;
+  isSwitchingAnalytics: boolean;
+  selectedAnalyticsId: string | null;
+  refreshAnalyticsList: (limit?: number) => Promise<void>;
+  switchToAnalytics: (analyticsId: string) => Promise<void>;
+  analyticsVersion: number;
 }
 
 const ResultsContext = createContext<ResultsContextType | null>(null);
@@ -59,6 +67,11 @@ export const ResultsProvider: React.FC<ResultsProviderProps> = ({ children }) =>
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [dataReady, setDataReady] = useState<boolean>(false);
   const [activeTab, setActiveTabState] = useState<TabType>("overview");
+  const [analyticsList, setAnalyticsList] = useState<AnalyticsListItem[]>([]);
+  const [isAnalyticsListLoading, setIsAnalyticsListLoading] = useState<boolean>(false);
+  const [isSwitchingAnalytics, setIsSwitchingAnalytics] = useState<boolean>(false);
+  const [selectedAnalyticsId, setSelectedAnalyticsId] = useState<string | null>(null);
+  const [analyticsVersion, setAnalyticsVersion] = useState<number>(0);
 
   const { products } = useAuth();
   const { toast } = useToast();
@@ -98,6 +111,7 @@ export const ResultsProvider: React.FC<ResultsProviderProps> = ({ children }) =>
       "sources-all": "/results/sources-all",
       "competitors-comparisons": "/results/competitors-comparisons",
       "recommendations": "/results/recommendations",
+      "content-impact-analysis": "/results/content-impact-analysis",
     };
     const targetPath = tabToPath[tab];
     if (targetPath && location.pathname !== targetPath) {
@@ -121,9 +135,11 @@ export const ResultsProvider: React.FC<ResultsProviderProps> = ({ children }) =>
   const hasReceivedDataRef = useRef(false);
   const accessTokenRef = useRef<string>("");
   const hasFetchedRef = useRef(false);
+  const isLoadingListRef = useRef(false);
   const toastRef = useRef(toast);
   const hasShownCompletionToastRef = useRef(false);
   const pageLoadTimestampRef = useRef<number>(Date.now()); // Track when page loaded
+  const analyticsCacheKeyRef = useRef<string>("");
   
   const getCompletionToastShownKey = useCallback(() => {
     return getEmailScopedKey(STORAGE_KEYS.COMPLETION_TOAST_SHOWN);
@@ -139,7 +155,60 @@ export const ResultsProvider: React.FC<ResultsProviderProps> = ({ children }) =>
 
   useEffect(() => {
     accessTokenRef.current = localStorage.getItem("access_token") || "";
+    analyticsCacheKeyRef.current = getEmailScopedKey(STORAGE_KEYS.PREVIOUS_ANALYTICS_CACHE);
   }, []);
+
+  const loadAnalyticsCache = useCallback((): Record<string, any> => {
+    const key = analyticsCacheKeyRef.current;
+    if (!key) return {};
+    try {
+      const stored = localStorage.getItem(key);
+      if (!stored) return {};
+      const parsed = JSON.parse(stored);
+      if (parsed && typeof parsed === "object") {
+        return parsed as Record<string, any>;
+      }
+    } catch (e) {
+      console.error("Failed to parse analytics cache:", e);
+    }
+    return {};
+  }, []);
+
+  const saveAnalyticsCache = useCallback((cache: Record<string, any>) => {
+    const key = analyticsCacheKeyRef.current;
+    if (!key) return;
+    try {
+      localStorage.setItem(key, JSON.stringify(cache));
+    } catch (e) {
+      console.error("Failed to save analytics cache:", e);
+    }
+  }, []);
+
+  const pruneAnalyticsCache = useCallback((validIds: string[]) => {
+    if (!validIds || validIds.length === 0) {
+      const key = analyticsCacheKeyRef.current;
+      if (key) {
+        try {
+          localStorage.removeItem(key);
+        } catch {
+          // ignore
+        }
+      }
+      return;
+    }
+    const cache = loadAnalyticsCache();
+    const validSet = new Set(validIds);
+    let changed = false;
+    Object.keys(cache).forEach((id) => {
+      if (!validSet.has(id)) {
+        delete cache[id];
+        changed = true;
+      }
+    });
+    if (changed) {
+      saveAnalyticsCache(cache);
+    }
+  }, [loadAnalyticsCache, saveAnalyticsCache]);
 
   // Load existing data from localStorage on mount
   useEffect(() => {
@@ -353,6 +422,9 @@ export const ResultsProvider: React.FC<ResultsProviderProps> = ({ children }) =>
               setPreviousAnalytics(mostRecentAnalysis);
               setDataReady(true);
               setIsLoading(false);
+              
+              // Increment version to force component re-renders
+              setAnalyticsVersion(prev => prev + 1);
 
               // Show completion notification ONLY if page was loaded BEFORE analysis completed
               if (currentStatus === "completed" && !hasShownCompletionToastRef.current) {
@@ -394,7 +466,7 @@ export const ResultsProvider: React.FC<ResultsProviderProps> = ({ children }) =>
               if (!hasShownStartMessageRef.current && mountedRef.current) {
                 toastRef.current({
                   title: "Analysis in Progress",
-                  description: "Your new analysis has begun. We'll notify you when it's ready.",
+                  description: "Your new analysis has begun. You'll receive a notification on your email when it's ready.",
                   duration: 10000,
                 });
                 hasShownStartMessageRef.current = true;
@@ -415,7 +487,7 @@ export const ResultsProvider: React.FC<ResultsProviderProps> = ({ children }) =>
               if (!hasShownStartMessageRef.current && mountedRef.current) {
                 toastRef.current({
                   title: "Analysis in Progress",
-                  description: "Your analysis has begun. We'll notify you when it's ready.",
+                  description: "Your analysis has begun. You'll receive a notification on your email when it's ready.",
                   duration: 10000,
                 });
                 hasShownStartMessageRef.current = true;
@@ -461,6 +533,149 @@ export const ResultsProvider: React.FC<ResultsProviderProps> = ({ children }) =>
       }
     },
     [scheduleNextPoll, isNewerThanTrigger, triggeredAt, completeAnalysis]
+  );
+
+  const refreshAnalyticsList = useCallback(
+    async (limit: number = 10) => {
+      const productId = currentProductIdRef.current || productData?.id;
+      if (!productId) return;
+
+      if (isLoadingListRef.current) {
+        console.log("⏳ [LIST] Already loading analytics list, skipping");
+        return;
+      }
+
+      isLoadingListRef.current = true;
+      setIsAnalyticsListLoading(true);
+      try {
+        console.log("🔄 [LIST] Fetching analytics list for product:", productId);
+        const list = await getAnalyticsList(productId, limit);
+        const sorted = [...list].sort((a, b) => {
+          const tA = new Date(a.created_at).getTime();
+          const tB = new Date(b.created_at).getTime();
+          return tB - tA;
+        });
+        setAnalyticsList(sorted);
+
+        const currentId = currentAnalytics?.id;
+        if (currentId && sorted.some((item) => item.analytics_id === currentId)) {
+          setSelectedAnalyticsId(currentId);
+        }
+
+        pruneAnalyticsCache(sorted.map((item) => item.analytics_id));
+        console.log("✅ [LIST] Analytics list loaded successfully:", sorted.length, "items");
+      } catch (err) {
+        console.error("Failed to refresh analytics list:", err);
+      } finally {
+        setIsAnalyticsListLoading(false);
+        isLoadingListRef.current = false;
+      }
+    },
+    [productData?.id, currentAnalytics, pruneAnalyticsCache]
+  );
+
+  const switchToAnalytics = useCallback(
+    async (analyticsId: string) => {
+      if (!analyticsId) return;
+
+      if (selectedAnalyticsId === analyticsId && currentAnalytics?.id === analyticsId) {
+        console.log("⏭️ [SWITCH] Already viewing this analytics:", analyticsId);
+        return;
+      }
+
+      setIsSwitchingAnalytics(true);
+      setSelectedAnalyticsId(analyticsId);
+
+      try {
+        let response = null;
+
+        const lastDataKey = getEmailScopedKey(STORAGE_KEYS.LAST_ANALYSIS_DATA);
+        try {
+          const storedData = localStorage.getItem(lastDataKey);
+          if (storedData) {
+            const parsed = JSON.parse(storedData);
+            if (parsed.analytics?.[0]?.id === analyticsId) {
+              console.log("✅ [SWITCH] Found analytics in localStorage:", analyticsId);
+              response = parsed;
+            }
+          }
+        } catch (e) {
+          console.error("Failed to parse localStorage data:", e);
+        }
+
+        if (!response) {
+          let cache = loadAnalyticsCache();
+          response = cache[analyticsId];
+          if (response) {
+            console.log("✅ [SWITCH] Found analytics in cache:", analyticsId);
+          }
+        }
+
+        if (!response) {
+          console.log("🔄 [SWITCH] Fetching analytics from API:", analyticsId);
+          const apiResponse = await getAnalyticsById(analyticsId);
+          
+          if (!apiResponse) {
+            console.error("❌ [SWITCH] No response from API");
+            return;
+          }
+          
+          if (Array.isArray(apiResponse.analytics)) {
+            response = apiResponse;
+          } else if (apiResponse.id === analyticsId) {
+            response = {
+              analytics: [apiResponse],
+              count: 1,
+              limit: 1,
+              product_id: apiResponse.product_id
+            };
+            console.log("📦 [SWITCH] Normalized single analytics object to array format");
+          } else {
+            console.error("❌ [SWITCH] Invalid analytics-by-id response structure", apiResponse);
+            return;
+          }
+        }
+
+        if (response) {
+          const cache = loadAnalyticsCache();
+          const updatedCache = {
+            ...cache,
+            [analyticsId]: response,
+          };
+          saveAnalyticsCache(updatedCache);
+          console.log("💾 [SWITCH] Saved to cache:", analyticsId);
+          
+          try {
+            localStorage.setItem(lastDataKey, JSON.stringify(response));
+            const lastDateKey = getEmailScopedKey(STORAGE_KEYS.LAST_ANALYSIS_DATE);
+            if (response.analytics[0]?.created_at) {
+              localStorage.setItem(lastDateKey, response.analytics[0].created_at);
+            }
+            console.log("💾 [SWITCH] Saved to localStorage:", analyticsId);
+          } catch (e) {
+            console.error("Failed to save to localStorage:", e);
+          }
+        }
+
+        const selected = response.analytics[0];
+        
+        console.log("🔄 [SWITCH] Updating UI with analytics:", analyticsId);
+        setAnalyticsData(response);
+        setCurrentAnalytics(selected);
+        setPreviousAnalytics(selected);
+        setDataReady(true);
+        setIsLoading(false);
+        
+        // Increment version to force component re-renders
+        setAnalyticsVersion(prev => prev + 1);
+        console.log("✅ [SWITCH] Analytics version incremented to trigger re-renders");
+      } catch (err) {
+        console.error("Failed to switch analytics:", err);
+      } finally {
+        setIsSwitchingAnalytics(false);
+      }
+    },
+    [selectedAnalyticsId, currentAnalytics, loadAnalyticsCache, saveAnalyticsCache]
   );
 
   // Parse location.state and handle incoming navigation
@@ -572,6 +787,17 @@ export const ResultsProvider: React.FC<ResultsProviderProps> = ({ children }) =>
   }, [productData?.id, pollProductAnalytics]);
 
   useEffect(() => {
+    if (!productData?.id) return;
+    if (analyticsList.length > 0) {
+      console.log("⏭️ [EFFECT] Analytics list already loaded, skipping refresh");
+      return;
+    }
+    
+    console.log("📋 [EFFECT] Initial analytics list load for product:", productData.id);
+    refreshAnalyticsList();
+  }, [productData?.id, refreshAnalyticsList, analyticsList.length]);
+
+  useEffect(() => {
     mountedRef.current = true;
     console.log("[MOUNT] Component mounted");
 
@@ -594,6 +820,13 @@ export const ResultsProvider: React.FC<ResultsProviderProps> = ({ children }) =>
         activeTab,
         setActiveTab,
         isAnalyzing,
+        analyticsList,
+        isAnalyticsListLoading,
+        isSwitchingAnalytics,
+        selectedAnalyticsId,
+        refreshAnalyticsList,
+        switchToAnalytics,
+        analyticsVersion,
       }}
     >
       {children}

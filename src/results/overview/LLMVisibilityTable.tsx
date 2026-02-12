@@ -1,9 +1,11 @@
 import {
   getLlmData,
   getSearchKeywordsWithPrompts,
+  getModelDisplayName,
 } from "@/results/data/analyticsData";
 import { LLMIcon } from "@/results/ui/LLMIcon";
 import { Bot } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export const LLMVisibilityTable = () => {
   // 🔹 Get data
@@ -20,10 +22,7 @@ export const LLMVisibilityTable = () => {
   const platformData = Object.entries(llmData).map(
     ([platform, data]: [string, any]) => ({
       platform,
-      displayName:
-        platform === "openai"
-          ? "ChatGPT"
-          : platform.charAt(0).toUpperCase() + platform.slice(1),
+      displayName: getModelDisplayName(platform),
       appearances: data.mentions_count || 0,
 
       // ✅ unified total prompt count
@@ -94,9 +93,15 @@ export const LLMVisibilityTable = () => {
                 </td>
 
                 <td className="py-3 px-4 text-center">
-                  <span className="text-foreground">
-                    {row.prompts}
-                  </span>
+                  <Link
+                    to={`/results/prompts?expandAll=true&viewType=model`}
+                    className="text-primary text-sm font-medium hover:underline"
+                    title="View Prompts"
+                  >
+                    <span className="text-foreground">
+                      {row.prompts}
+                    </span>
+                  </Link>
                 </td>
 
                 <td className="py-3 px-4 text-center">

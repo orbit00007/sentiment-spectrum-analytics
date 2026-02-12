@@ -91,7 +91,6 @@ API.interceptors.response.use(
     const isAuthEndpoint = authEndpoints.some(endpoint => requestUrl.includes(endpoint));
     
     if (!isAuthEndpoint && isUnauthorizedError(error)) {
-      console.log("🔒 [API] Unauthorized error detected - logging out user");
       handleUnauthorized();
       return Promise.reject(error);
     }
@@ -104,19 +103,15 @@ API.interceptors.response.use(
    AUTH HELPERS
    ===================== */
 export const login = async (payload: LoginRequest): Promise<LoginResponse> => {
-  console.log('Login API called with email:', payload.email);
   const res: AxiosResponse<LoginResponse> = await API.post(API_ENDPOINTS.login, payload);
-  console.log('Login API response:', res.data);
 
   // Save the access token if present
   if (res.data.access_token && res.data.access_token.trim() !== "") {
     localStorage.setItem("access_token", res.data.access_token);
-    console.log('Access token saved');
 
     const appId = res.data.user?.owned_applications?.[0]?.id;
     if (appId) {
       localStorage.setItem("application_id", appId);
-      console.log('Application ID saved:', appId);
     }
   } else {
     console.log('No access token in response - email verification may be pending');
@@ -185,9 +180,7 @@ export const resetPassword = async (token: string, newPassword: string): Promise
 
 export const verifyEmail = async (token: string): Promise<any> => {
   try {
-    console.log('Verify email API called with token:', token);
     const res = await API.get(`${API_ENDPOINTS.verifyEmail}?token=${token}`);
-    console.log('Verify email API response:', res.data);
     return res.data;
   } catch (error) {
     console.error('Verify email error:', error);
@@ -259,6 +252,12 @@ export const generateWithKeywords = async (
 /* =====================
    ANALYTICS HELPERS
    ===================== */
+
+export interface AnalyticsListItem {
+  analytics_id: string;
+  created_at: string;
+}
+
 export const getProductAnalytics = async (
   productId: string,
   accessToken: string
@@ -271,6 +270,33 @@ export const getProductAnalytics = async (
     });
     return res?.data || null;
   } catch (error) {
+    return null;
+  }
+};
+
+export const getAnalyticsList = async (
+  productId: string,
+  limit: number = 10
+): Promise<AnalyticsListItem[]> => {
+  try {
+    const res = await API.get(
+      API_ENDPOINTS.getAnalyticsList(productId, limit)
+    );
+    return (res?.data as AnalyticsListItem[]) || [];
+  } catch (error) {
+    console.error("Failed to fetch analytics list:", error);
+    return [];
+  }
+};
+
+export const getAnalyticsById = async (
+  analyticsId: string
+): Promise<any> => {
+  try {
+    const res = await API.get(API_ENDPOINTS.getAnalyticsById(analyticsId));
+    return res?.data || null;
+  } catch (error) {
+    console.error("Failed to fetch analytics by id:", error);
     return null;
   }
 };

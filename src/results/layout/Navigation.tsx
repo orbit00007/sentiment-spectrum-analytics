@@ -23,7 +23,7 @@ const navItems: Array<{
       { label: "Prompts", tab: "prompts" },
       { label: "Sources", tab: "sources-all" },
       { label: "Competitor Analysis", tab: "competitors-comparisons" },
-      { label: "Content Impact Analysis", tab: "competitors-comparisons", disabled: true},
+      { label: "Content Impact Analysis", tab: "content-impact-analysis", disabled: true},
     ],
   },
   {

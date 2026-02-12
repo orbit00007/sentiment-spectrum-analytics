@@ -3,6 +3,7 @@ import { getKeywords, getBrandName, getCompetitorData } from "@/results/data/ana
 import { Target, ChevronDown } from "lucide-react";
 import { useState, useMemo } from "react";
 import { toOrdinal } from "@/results/data/formulas";
+import { useResults } from "@/results/context/ResultsContext";
 
 const COLORS = [
   'hsl(217, 91%, 60%)', // primary blue
@@ -14,6 +15,7 @@ const COLORS = [
 ];
 
 export const BrandMentionsRadar = () => {
+  const { analyticsVersion } = useResults();
   const keywords = getKeywords();
   const brandName = getBrandName();
   const competitorDataList = getCompetitorData();
@@ -21,7 +23,7 @@ export const BrandMentionsRadar = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   
   // Get all brands dynamically
-  const allBrands = useMemo(() => competitorDataList.map(c => c.name), [competitorDataList]);
+  const allBrands = useMemo(() => competitorDataList.map(c => c.name), [competitorDataList, analyticsVersion]);
   
   // Chart data: brands on the edges
   const chartData = useMemo(() => {
@@ -39,7 +41,7 @@ export const BrandMentionsRadar = () => {
         return { brand, score: keywordIdx >= 0 ? competitor.keywordScores[keywordIdx] || 0 : 0 };
       }
     });
-  }, [allBrands, competitorDataList, selectedKeyword, keywords]);
+  }, [allBrands, competitorDataList, selectedKeyword, keywords, analyticsVersion]);
 
   const maxScore = Math.max(...chartData.map(d => d.score), 1);
   

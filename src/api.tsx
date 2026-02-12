@@ -21,6 +21,13 @@ export const API_ENDPOINTS = {
   getProductAnalytics: (productId: string) =>
     `${BASE_URL}/api/v1/products/analytics/${productId}`,
 
+  // Analytics history
+  getAnalyticsList: (productId: string, limit: number = 10) =>
+    `${BASE_URL}/api/v1/analytics/product/${productId}/list?limit=${limit}`,
+
+  getAnalyticsById: (analyticsId: string) =>
+    `${BASE_URL}/api/v1/analytics/${analyticsId}`,
+
   // Product by Application ID
   getProductsByApplication: (applicationId: string) =>
     `${BASE_URL}/api/v1/products/application/${applicationId}`,

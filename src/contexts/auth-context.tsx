@@ -104,14 +104,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string): Promise<boolean | 'email_not_verified'> => {
     setIsLoading(true);
     try {
-      console.log('Auth context: Attempting login for:', email);
       const res = await loginAPI({ email, password });
-
-      console.log('Auth context: Login response received', res);
 
       // Check if email is not verified
       if (!res.access_token || res.access_token.trim() === "") {
-        console.log('Auth context: No access token - email not verified');
         return 'email_not_verified';
       }
 
@@ -119,8 +115,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (res.user) {
         const extendedUser = res.user as ExtendedUser;
         setUser(extendedUser);
-
-        console.log('Auth context: User set:', extendedUser);
 
         // Set user email for analytics data mapping and analysis state scoping
         setCurrentUserEmail(email);
@@ -134,8 +128,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setApplications(appsFromResponse);
         localStorage.setItem("applications", JSON.stringify(appsFromResponse));
 
-        console.log('Auth context: Applications:', appsFromResponse);
-
         // Extract products from applications
         const allProducts: Product[] = [];
         appsFromResponse.forEach((app: Application) => {
@@ -145,8 +137,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
         setProducts(allProducts);
         localStorage.setItem("products", JSON.stringify(allProducts));
-
-        console.log('Auth context: Products:', allProducts);
 
         // Pick applicationId from response
         let appId: string | null = null;
@@ -160,7 +150,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (appId) {
           setApplicationId(appId);
-          console.log('Auth context: Application ID set:', appId);
         }
 
         return true;
@@ -208,9 +197,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // Save first name to localStorage
       localStorage.setItem("first_name", firstName);
-      
-      console.log("Registration completed successfully");
-    } finally {
+          } finally {
       setIsLoading(false);
     }
   };

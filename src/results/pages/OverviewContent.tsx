@@ -1,5 +1,6 @@
 import { useResults } from "@/results/context/ResultsContext";
 import { useEffect, useState, useMemo } from "react";
+import ReactMarkdown from "react-markdown";
 import {
   getAIVisibilityMetrics,
   getMentionsPosition,
@@ -12,6 +13,7 @@ import { PlatformPresence } from "@/results/overview/PlatformPresence";
 import { CompetitorComparisonChart } from "@/results/overview/CompetitorComparisonChart";
 import { BrandMentionsRadar } from "@/results/overview/BrandMentionsRadar";
 import BrandInfoBar from "@/results/overview/BrandInfoBar";
+import { IntentWiseScoring } from "@/results/overview/IntentWiseScoring";
 import { TierBadge } from "@/results/ui/TierBadge";
 import { toOrdinal } from "@/results/data/formulas";
 import {
@@ -32,11 +34,12 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useNavigate } from "react-router-dom";
 
 const OverviewContent = () => {
-  const { dataReady } = useResults();
+  const { dataReady, analyticsVersion } = useResults();
   const [animatedBars, setAnimatedBars] = useState(false);
-
+  const navigate = useNavigate();
   // FIX 1: Check if analytics data is available first
   const analyticsAvailable = hasAnalyticsData();
 
@@ -57,7 +60,7 @@ const OverviewContent = () => {
       };
     }
     return getAIVisibilityMetrics();
-  }, [analyticsAvailable]);
+  }, [analyticsAvailable, analyticsVersion]);
 
   const mentionsData = useMemo(() => {
     if (!analyticsAvailable) {
@@ -71,19 +74,19 @@ const OverviewContent = () => {
       };
     }
     return getMentionsPosition();
-  }, [analyticsAvailable]);
+  }, [analyticsAvailable, analyticsVersion]);
 
   const brandMentionRates = useMemo(() => {
     if (!analyticsAvailable) return [];
     return getBrandMentionResponseRates();
-  }, [analyticsAvailable]);
+  }, [analyticsAvailable, analyticsVersion]);
 
   const sentiment = useMemo(() => {
     if (!analyticsAvailable) {
       return { dominant_sentiment: "N/A", summary: "" };
     }
     return getSentiment();
-  }, [analyticsAvailable]);
+  }, [analyticsAvailable, analyticsVersion]);
 
   useEffect(() => {
     if (dataReady && analyticsAvailable) {
@@ -108,7 +111,9 @@ const OverviewContent = () => {
       return `Your brand is leading in brand mention score among ${totalBrands} brands.`;
     }
 
-    return `Your brand ranked at ${toOrdinal(position)} position out of ${totalBrands} brands.`;
+    return `Your brand ranked at ${toOrdinal(
+      position
+    )} position out of ${totalBrands} brands.`;
   }, [mentionsData]);
 
   const visibilityInsight = useMemo(() => {
@@ -167,16 +172,39 @@ const OverviewContent = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
           {/* AI Visibility Card */}
           <div className="bg-card rounded-xl border p-4 md:p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <div className="p-2 rounded-lg bg-primary/10">
                   <TrendingUp className="w-4 h-4 md:w-5 md:h-5 text-primary" />
                 </div>
-                <span className="font-semibold text-foreground">
-                  AI Visibility
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-semibold text-foreground">
+                    AI Visibility
+                  </span>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Info className="w-4 h-4 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      <p className="text-sm">
+                        Measures how prominently your brand appears in
+                        AI-generated responses. This score is calculated based
+                        on your selected prompts/queries and ranked against
+                        competitors.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
               </div>
               <TierBadge tier={visibilityData.tier} />
+            </div>
+
+            {/* Header */}
+            <div className="grid grid-cols-[auto_1fr_auto] gap-3 text-xs text-muted-foreground mb-3 pb-2 border-b border-border">
+              <span>
+                A weighted score based on where and how often your brand appears
+                in AI responses across multiple LLMs
+              </span>
             </div>
 
             {/* Score Display */}
@@ -283,7 +311,7 @@ const OverviewContent = () => {
             </div>
 
             {/* FIX 4: Add unique keys using brand name + index */}
-            <div className="space-y-3">
+            <div className="space-y-3 py-2">
               {brandMentionRates.map((item, index) => {
                 return (
                   <div
@@ -303,7 +331,14 @@ const OverviewContent = () => {
                       </span>
                     </div>
 
-                    <div className="relative h-6 bg-muted rounded overflow-hidden">
+                    <div
+                      className="relative h-6 bg-muted rounded overflow-hidden cursor-pointer"
+                      onClick={() => {
+                        navigate(
+                          `/results/prompts?expandAll=true&viewType=brand`
+                        );
+                      }}
+                    >
                       <div
                         className={`absolute left-0 top-0 h-full rounded transition-all duration-700 ease-out ${
                           item.isTestBrand
@@ -349,10 +384,32 @@ const OverviewContent = () => {
               </div>
               <TierBadge tier={sentiment.dominant_sentiment} />
             </div>
-            <div className="flex flex-col items-center justify-center py-2">
-              <p className="text-sm text-muted-foreground text-center leading-relaxed">
-                {sentiment.summary || "No sentiment data available"}
-              </p>
+            {/* Header */}
+            <div className="grid grid-cols-[auto_1fr_auto] gap-3 text-xs text-muted-foreground mb-3 pb-2 border-b border-border">
+              <span>How AI models perceives your brand</span>
+            </div>
+            <div className="py-2">
+              <ul className="space-y-2 list-disc pl-5 text-sm text-foreground leading-relaxed">
+                {sentiment.summary ? (
+                  sentiment.summary
+                    .split("\n")
+                    .map((line) => line.trim())
+                    .filter((line) => line.length > 0)
+                    .map((line) => line.replace(/^-\s*/, "")) // Remove leading "- " if present
+                    .map((sentence, index) => (
+                      <li
+                        key={`sentiment-${index}`}
+                        className="text-foreground"
+                      >
+                        {sentence}
+                      </li>
+                    ))
+                ) : (
+                  <li className="text-muted-foreground">
+                    No sentiment data available
+                  </li>
+                )}
+              </ul>
             </div>
           </div>
         </div>
@@ -367,6 +424,10 @@ const OverviewContent = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
           <LLMVisibilityTable />
           <PlatformPresence />
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+          <IntentWiseScoring />
         </div>
       </div>
     </div>

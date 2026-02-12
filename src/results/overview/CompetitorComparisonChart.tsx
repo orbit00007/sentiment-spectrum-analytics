@@ -11,6 +11,7 @@ import {
 import { getBrandInfoWithLogos, getBrandName } from "@/results/data/analyticsData";
 import { TrendingUp } from "lucide-react";
 import { useState, useMemo } from "react";
+import { useResults } from "@/results/context/ResultsContext";
 
 type ViewMode = "geo_score" | "mentions";
 
@@ -24,6 +25,7 @@ const competitorColors = [
 ];
 
 export const CompetitorComparisonChart = () => {
+  const { analyticsVersion } = useResults();
   const [viewMode, setViewMode] = useState<ViewMode>("geo_score");
   const brandInfo = getBrandInfoWithLogos();
   const brandName = getBrandName();
@@ -39,7 +41,7 @@ export const CompetitorComparisonChart = () => {
           : competitorColors[colorIndex++ % competitorColors.length];
     });
     return map;
-  }, [brandInfo, brandName]);
+  }, [brandInfo, brandName, analyticsVersion]);
 
   // Keep brand at top, REVERSE competitors to show them in ascending order (lowest first)
   const sortedBrands = useMemo(() => {
@@ -48,7 +50,7 @@ export const CompetitorComparisonChart = () => {
     
     // FIXED: Reverse competitors so lowest scores appear at bottom
     return myBrand ? [myBrand, ...competitors.reverse()] : competitors.reverse();
-  }, [brandInfo, brandName]);
+  }, [brandInfo, brandName, analyticsVersion]);
 
   const chartData = useMemo(() => {
     return sortedBrands.map((brand) => ({
@@ -64,7 +66,7 @@ export const CompetitorComparisonChart = () => {
       isBrand: brand.brand === brandName,
       color: brandColors[brand.brand],
     }));
-  }, [sortedBrands, viewMode, brandName, brandColors]);
+  }, [sortedBrands, viewMode, brandName, brandColors, analyticsVersion]);
 
   const maxValue = useMemo(
     () => Math.max(...chartData.map((d) => d.value), 1),

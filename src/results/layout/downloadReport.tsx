@@ -18,6 +18,7 @@ import {
   getAnalysisKeywords,
   getSentiment,
   getBrandMentionResponseRates,
+  getModelDisplayName,
 } from '@/results/data/analyticsData';
 
 // Type definitions
@@ -55,6 +56,12 @@ interface BrandInfo {
   mention_breakdown: Record<string, number> | null;
 }
 
+interface Prompt {
+  query: string;
+  category?: string;
+  brands_per_llm: Record<string, string[]>;
+}
+
 interface PrintableContentProps {
   brandName: string;
   brandWebsite: string;
@@ -81,7 +88,7 @@ interface PrintableContentProps {
     overall_effort: string;
     impact: string;
   }>;
-  keywords: Array<{ id: string; name: string; prompts: string[] }>;
+  keywords: Array<{ id: string; name: string; prompts: Prompt[] }>;
   llmData: Record<string, LlmDataItem>;
   aiVisibility: {
     score: number;
@@ -344,8 +351,11 @@ const PrintableContent = ({
   // Sort brands by geo_score for consistent display
   const sortedBrands = [...brandInfo].sort((a, b) => b.geo_score - a.geo_score);
 
-  // Get models array
-  const models = modelName?.split(",").map((m) => m.trim()).filter(m => m === 'openai' || m === 'gemini') || [];
+  // Get models array (all models used, normalized)
+  const models = modelName
+    ?.split(",")
+    .map((m) => m.trim())
+    .filter(Boolean) || [];
 
   // Get brand score for a keyword
   const getBrandScoreForKeyword = (keywordId: string) => {
@@ -401,7 +411,7 @@ const PrintableContent = ({
           <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginBottom: '20px', flexWrap: 'wrap' }}>
             {models.map((model, idx) => (
               <span key={idx} style={{ ...styles.badge, backgroundColor: '#e0e7ff', color: '#3730a3' }}>
-                {model === 'openai' ? 'ChatGPT' : model.charAt(0).toUpperCase() + model.slice(1)}
+                {getModelDisplayName(model)}
               </span>
             ))}
           </div>
@@ -479,7 +489,7 @@ const PrintableContent = ({
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
               {models.map((model, idx) => (
                 <span key={idx} style={{ ...styles.badge, backgroundColor: '#e0e7ff', color: '#3730a3', margin: 0 }}>
-                  {model === 'openai' ? 'ChatGPT' : model.charAt(0).toUpperCase() + model.slice(1)}
+                  {getModelDisplayName(model)}
                 </span>
               ))}
             </div>
@@ -567,7 +577,7 @@ const PrintableContent = ({
             {Object.entries(llmData).map(([llm, data], idx) => (
               <tr key={idx} style={idx % 2 === 1 ? styles.tableRowAlt : {}}>
                 <td style={{ ...styles.tableCell, fontWeight: '600' }}>
-                  {llm === 'openai' ? 'ChatGPT' : llm.charAt(0).toUpperCase() + llm.slice(1)}
+                  {getModelDisplayName(llm)}
                 </td>
                 <td style={styles.tableCell}>{data.mentions_count}</td>
                 <td style={styles.tableCell}>{totalPrompts}</td>
@@ -777,7 +787,7 @@ const PrintableContent = ({
                   {kw.prompts.map((prompt, pIdx) => (
                     <tr key={pIdx} style={pIdx % 2 === 1 ? styles.tableRowAlt : {}}>
                       <td style={{ ...styles.tableCell, textAlign: 'center' }}>{pIdx + 1}</td>
-                      <td style={styles.tableCell}>{prompt}</td>
+                      <td style={styles.tableCell}>{prompt.query}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -1189,7 +1199,7 @@ const PrintableContent = ({
         <div style={styles.card}>
           <h4 style={styles.subsubsectionHeader}>Data Collection</h4>
           <p style={{ marginBottom: '12px' }}>
-            This analysis was conducted by querying multiple AI language models (LLMs) including {Object.keys(llmData).map(l => l === 'openai' ? 'ChatGPT' : l.charAt(0).toUpperCase() + l.slice(1)).join(', ')} 
+            This analysis was conducted by querying multiple AI language models (LLMs) including {Object.keys(llmData).map(getModelDisplayName).join(', ')} 
             across {keywords.length} keyword categories with a total of {totalPrompts} unique prompts.
           </p>
           

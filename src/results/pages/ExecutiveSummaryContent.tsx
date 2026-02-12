@@ -106,7 +106,7 @@ const ExecutiveSummaryContent = () => {
             </h3>
           </div>
           <ul className="space-y-2 md:space-y-3">
-            {executiveSummary.strengths.map((strength, index) => (
+            {executiveSummary.strengths?.map((strength, index) => (
               <li
                 key={index}
                 className="flex items-start gap-2 md:gap-3 p-2 md:p-3 bg-green-500/5 rounded-lg border border-green-500/10"
@@ -133,7 +133,7 @@ const ExecutiveSummaryContent = () => {
             </h3>
           </div>
           <ul className="space-y-2 md:space-y-3">
-            {executiveSummary.weaknesses.map((weakness, index) => (
+            {executiveSummary.weaknesses?.map((weakness, index) => (
               <li
                 key={index}
                 className="flex items-start gap-2 md:gap-3 p-2 md:p-3 bg-red-500/5 rounded-lg border border-red-500/10"
@@ -292,7 +292,7 @@ const ExecutiveSummaryContent = () => {
           </h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
-          {executiveSummary.prioritized_actions.map((action, index) => (
+          {executiveSummary.prioritized_actions?.map((action, index) => (
             <div
               key={index}
               className="flex items-start gap-3 md:gap-4 p-3 md:p-4 bg-gradient-to-br from-muted/50 to-muted/30 rounded-xl border border-border hover:border-primary/30 transition-colors"

@@ -16,13 +16,10 @@ const ForgotPassword = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Forgot password form submitted with email:', email);
     setIsLoading(true);
     
     try {
-      console.log('Calling forgot password API...');
       const response = await forgotPassword(email);
-      console.log('Forgot password API response:', response);
       setSubmitted(true);
       toast({
         title: "Reset link sent!",

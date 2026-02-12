@@ -16,6 +16,7 @@ import {
 } from "@/results/data/analyticsData";
 import { Layers, ChevronDown } from "lucide-react";
 import { useState, useMemo } from "react";
+import { useResults } from "@/results/context/ResultsContext";
 
 type ViewMode = "count" | "score";
 
@@ -28,6 +29,7 @@ const competitorColors = [
 ];
 
 export const SourceMentionsChart = () => {
+  const { analyticsVersion } = useResults();
   const analytics = getAnalytics();
   const brandName = getBrandName();
   const competitorNames = getCompetitorNames();
@@ -46,7 +48,7 @@ export const SourceMentionsChart = () => {
           : competitorColors[index++ % competitorColors.length];
     });
     return map;
-  }, [competitorNames, brandName]);
+  }, [competitorNames, brandName, analyticsVersion]);
 
   // Extract sources data from the new object structure
   const sourcesData = analytics?.sources_and_content_impact;
@@ -54,7 +56,7 @@ export const SourceMentionsChart = () => {
   const sources = useMemo(() => {
     if (!sourcesData || typeof sourcesData !== "object") return [];
     return Object.keys(sourcesData);
-  }, [sourcesData]);
+  }, [sourcesData, analyticsVersion]);
 
   const [selectedSource, setSelectedSource] = useState("All Sources");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);

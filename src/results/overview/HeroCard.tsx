@@ -1,17 +1,23 @@
 import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getCompetitorVisibility, getBrandName } from "@/results/data/analyticsData";
+import { useResults } from "@/results/context/ResultsContext";
+import { useMemo } from "react";
 
 export const HeroCard = () => {
+  const { analyticsVersion } = useResults();
   const brandName = getBrandName();
   const competitorVisibility = getCompetitorVisibility();
-  const topTwo = competitorVisibility.filter(c => c.brand !== brandName).slice(0, 2);
-  const brand = competitorVisibility.find(c => c.brand === brandName);
+  
+  const displayData = useMemo(() => {
+    const topTwo = competitorVisibility.filter(c => c.brand !== brandName).slice(0, 2);
+    const brand = competitorVisibility.find(c => c.brand === brandName);
 
-  const displayData = [
-    ...topTwo.map(c => ({ name: c.brand, visibility: c.visibility, isBrand: false, logo: c.logo })),
-    { name: brandName, visibility: brand?.visibility || 0, isBrand: true, logo: brand?.logo || '' }
-  ];
+    return [
+      ...topTwo.map(c => ({ name: c.brand, visibility: c.visibility, isBrand: false, logo: c.logo })),
+      { name: brandName, visibility: brand?.visibility || 0, isBrand: true, logo: brand?.logo || '' }
+    ];
+  }, [competitorVisibility, brandName, analyticsVersion]);
 
   return (
     <div className="amplitude-gradient rounded-xl p-4 md:p-6 text-primary-foreground overflow-hidden">

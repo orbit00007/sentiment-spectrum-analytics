@@ -441,7 +441,7 @@ export default function Results() {
                 toastRef.current({
                   title: "Analysis in Progress",
                   description:
-                    "Your new analysis has begun. Please stay on this page, you'll receive a notification when it's ready.",
+                    "Your new analysis has begun. You'll receive a notification on your email when it's ready.",
                   duration: 10000,
                 });
                 hasShownStartMessageRef.current = true;
@@ -466,7 +466,7 @@ export default function Results() {
                 toastRef.current({
                   title: "Analysis in Progress",
                   description:
-                    "Your analysis has begun. Please stay on this page, you'll receive a notification here when it's ready.",
+                    "Your analysis has begun. You'll receive a notification on your email when it's ready.",
                   duration: 10000,
                 });
                 hasShownStartMessageRef.current = true;

@@ -75,7 +75,6 @@ function writeToStorage(state: AnalysisState) {
     const key = getStorageKey();
     // Use localStorage instead of sessionStorage so it persists across logout/login
     localStorage.setItem(key, JSON.stringify(state));
-    console.log(`🔒 [ANALYSIS_STATE] Written to key: ${key}, isAnalyzing: ${state.isAnalyzing}`);
   } catch {
     // ignore quota errors
   }
@@ -122,7 +121,6 @@ export function setAnalysisUserEmail(email: string) {
   // Always reload state for the user (important for login)
   cachedState = readFromStorage(email);
   notifySubscribers();
-  console.log(`👤 [ANALYSIS_STATE] User email set: ${email}, isAnalyzing: ${cachedState.isAnalyzing}`);
 }
 
 /**
@@ -132,7 +130,6 @@ export function clearAnalysisUserEmail() {
   currentUserEmail = null;
   cachedState = defaultState;
   notifySubscribers();
-  console.log("👤 [ANALYSIS_STATE] User email cleared");
 }
 
 /**
@@ -160,7 +157,6 @@ export function useAnalysisState() {
       productId,
     };
     writeToStorage(newState);
-    console.log("🚀 [ANALYSIS_STATE] Analysis started for product:", productId);
   }, []);
 
   /**
@@ -168,7 +164,6 @@ export function useAnalysisState() {
    */
   const completeAnalysis = useCallback(() => {
     writeToStorage(defaultState);
-    console.log("✅ [ANALYSIS_STATE] Analysis completed - state cleared");
   }, []);
 
   /**
@@ -184,7 +179,6 @@ export function useAnalysisState() {
     }
     cachedState = defaultState;
     notifySubscribers();
-    console.log("🧹 [ANALYSIS_STATE] State cleared");
   }, []);
 
   /**

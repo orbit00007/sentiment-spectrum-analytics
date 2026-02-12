@@ -26,6 +26,7 @@ export const STORAGE_KEYS = {
   ANALYSIS_STATE: "analysis_state",
   USER_EMAIL: "user_email",
   COMPLETION_TOAST_SHOWN: "completion_toast_shown",
+  PREVIOUS_ANALYTICS_CACHE: "previous_analytics_cache",
 } as const;
 
 // Clear analytics data for current user (call when starting new analysis)
@@ -47,8 +48,6 @@ export function clearAnalyticsDataForCurrentUser(): void {
       // ignore
     }
   });
-  
-  console.log("🧹 [STORAGE] Cleared analytics data for current user");
 }
 
 // Get all email-scoped datasets from localStorage

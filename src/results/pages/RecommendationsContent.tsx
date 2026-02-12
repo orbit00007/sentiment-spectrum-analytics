@@ -5,7 +5,8 @@ import {
   Target,
   TrendingUp,
   Zap,
-  ArrowRight,
+  Play, 
+  ChevronDown,
   CheckCircle,
 } from "lucide-react";
 
@@ -13,6 +14,7 @@ const RecommendationsContent = () => {
   const brandName = getBrandName();
   const recommendations = getRecommendations();
   const [activeFilter, setActiveFilter] = useState<"all" | "high" | "medium" | "quick">("all");
+  const [expandedHowTo, setExpandedHowTo] = useState<Record<number, boolean>>({});
 
   const getEffortConfig = (effort: string) => {
     switch (effort) {
@@ -214,7 +216,14 @@ const RecommendationsContent = () => {
         {displayedRecommendations.map((rec: any, index: number) => {
           const effortConfig = getEffortConfig(rec.overall_effort);
           const impactConfig = getImpactConfig(rec.impact);
-          
+          const hasSuggestedActionV1 =
+            rec.suggested_action_v1 &&
+            typeof rec.suggested_action_v1 === "object" &&
+            Object.keys(rec.suggested_action_v1).length > 0;
+          const insightSummary =
+            rec.insight?.summary || rec.overall_insight || "";
+          const isHowToExpanded = !!expandedHowTo[index];
+
           // Determine circle color based on active filter
           let circleConfig = impactConfig;
           if (activeFilter === "quick") {
@@ -247,7 +256,7 @@ const RecommendationsContent = () => {
                         </span>
                       </div>
                       <p className="text-xs md:text-base text-foreground leading-relaxed">
-                        {rec.overall_insight}
+                        {insightSummary}
                       </p>
                     </div>
                   </div>
@@ -283,20 +292,111 @@ const RecommendationsContent = () => {
 
               {/* Action */}
               <div className="px-3 pb-3 md:px-6 md:pb-6">
-                <div className="flex items-start gap-2 md:gap-3 p-3 md:p-4 bg-gradient-to-r from-primary/5 to-transparent rounded-lg md:rounded-xl border border-primary/10">
-                  <div className="flex-shrink-0 p-1.5 md:p-2 bg-primary/10 rounded-lg">
-                    <Target className="w-3 h-3 md:w-4 md:h-4 text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <span className="text-[10px] md:text-xs font-medium text-primary uppercase tracking-wider block mb-0.5 md:mb-1">
-                      Suggested Action
+  {hasSuggestedActionV1 && (
+    <div className="rounded-xl bg-blue-50 border border-blue-100 px-6 py-5 space-y-5">
+
+      {/* Header */}
+      <div className="flex items-center gap-2">
+        <Target className="w-4 h-4 text-blue-600" />
+        <span className="text-xs font-semibold text-blue-600 uppercase tracking-wider">
+          Suggested action
+        </span>
+      </div>
+
+      {/* Main strategy */}
+      {rec.suggested_action_v1?.strategy && (
+        <p className="text-lg font-semibold text-foreground leading-snug">
+          {rec.suggested_action_v1.strategy}
+        </p>
+      )}
+
+      <div className="border-t border-blue-100" />
+
+      {/* Start here */}
+      {rec.suggested_action_v1?.start_here && (
+        <div className="space-y-2">
+          <button
+            type="button"
+            className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 cursor-pointer hover:text-blue-700 transition-colors"
+            onClick={() =>
+              setExpandedHowTo((prev) => ({
+                ...prev,
+                [index]: !prev[index],
+              }))
+            }
+          >
+            <Play className="w-4 h-4 stroke-[2] fill-none" />
+            Start here
+          </button>
+
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            {rec.suggested_action_v1.start_here}
+          </p>
+        </div>
+      )}
+
+      <div className="border-t border-blue-100" />
+
+      {/* How to execute */}
+      {Array.isArray(rec.suggested_action_v1?.how_to_execute) && (
+        <div>
+          <button
+            type="button"
+            className="w-full flex items-center gap-2 text-sm font-medium text-blue-600"
+            onClick={() =>
+              setExpandedHowTo((prev) => ({
+                ...prev,
+                [index]: !prev[index],
+              }))
+            }
+          >
+            <ChevronDown
+              className={`w-4 h-4 transition-transform ${
+                isHowToExpanded ? "rotate-180" : ""
+              }`}
+            />
+            How to execute
+          </button>
+
+          {isHowToExpanded && (
+            <ol className="mt-4 space-y-3">
+              {rec.suggested_action_v1.how_to_execute.map(
+                (step: string, stepIndex: number) => (
+                  <li
+                    key={stepIndex}
+                    className="flex gap-3 text-sm text-foreground"
+                  >
+                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-medium">
+                      {stepIndex + 1}
                     </span>
-                    <p className="text-xs md:text-sm text-foreground leading-relaxed">
-                      {rec.suggested_action}
-                    </p>
-                  </div>
-                </div>
-              </div>
+                    <span className="leading-relaxed">{step}</span>
+                  </li>
+                )
+              )}
+            </ol>
+          )}
+        </div>
+      )}
+
+      <div className="border-t border-blue-100" />
+
+      {/* Success signal */}
+      {rec.suggested_action_v1?.success_signal && (
+        <div>
+          <p className="text-sm font-medium text-blue-600 mb-1">
+            Success signal
+          </p>
+          <p className="text-sm italic text-muted-foreground leading-relaxed">
+            {rec.suggested_action_v1.success_signal}
+          </p>
+        </div>
+      )}
+    </div>
+  )}
+</div>
+
+
+
             </div>
           );
         })}
