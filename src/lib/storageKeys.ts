@@ -4,14 +4,14 @@
  */
 
 // Get sanitized email string for use in storage keys
-export function getSanitizedUserId(userId?: string): string {
-  const id = userId || localStorage.getItem("user_id") || "";
-  return id.replace(/[^a-z0-9\-]/g, "_");
+export function getSanitizedEmail(email?: string): string {
+  const userEmail = email || localStorage.getItem("user_email") || "";
+  return userEmail.toLowerCase().replace(/[^a-z0-9]/g, "_");
 }
 
 // Get email-scoped key
-export function getEmailScopedKey(baseKey: string, userId?: string): string {
-  const sanitized = getSanitizedUserId(userId);
+export function getEmailScopedKey(baseKey: string, email?: string): string {
+  const sanitized = getSanitizedEmail(email);
   if (sanitized) {
     return `${baseKey}_${sanitized}`;
   }
@@ -24,14 +24,14 @@ export const STORAGE_KEYS = {
   LAST_ANALYSIS_DATA: "last_analysis_data",
   LAST_ANALYSIS_DATE: "last_analysis_date",
   ANALYSIS_STATE: "analysis_state",
-  USER_ID: "user_id",
+  USER_EMAIL: "user_email",
   COMPLETION_TOAST_SHOWN: "completion_toast_shown",
   PREVIOUS_ANALYTICS_CACHE: "previous_analytics_cache",
 } as const;
 
 // Clear analytics data for current user (call when starting new analysis)
 export function clearAnalyticsDataForCurrentUser(): void {
-  const sanitized = getSanitizedUserId();
+  const sanitized = getSanitizedEmail();
   if (!sanitized) return;
   
   const keysToRemove = [

@@ -6,7 +6,6 @@ import { setAnalyticsData, clearCurrentAnalyticsData } from "@/results/data/anal
 import { clearAnalyticsDataForCurrentUser } from "@/lib/storageKeys";
 import { useToast } from "@/hooks/use-toast";
 import { handleUnauthorized, isUnauthorizedError } from "@/lib/authGuard";
-import { getAccessToken, hasAccessToken } from "@/lib/secureTokenStore";
 import { useAnalysisState } from "@/hooks/useAnalysisState";
 import { getEmailScopedKey, STORAGE_KEYS } from "@/lib/storageKeys";
 
@@ -155,7 +154,7 @@ export const ResultsProvider: React.FC<ResultsProviderProps> = ({ children }) =>
   }, [previousAnalytics]);
 
   useEffect(() => {
-    accessTokenRef.current = getAccessToken() || "";
+    accessTokenRef.current = localStorage.getItem("access_token") || "";
     analyticsCacheKeyRef.current = getEmailScopedKey(STORAGE_KEYS.PREVIOUS_ANALYTICS_CACHE);
   }, []);
 
@@ -684,7 +683,9 @@ export const ResultsProvider: React.FC<ResultsProviderProps> = ({ children }) =>
     mountedRef.current = true;
     const state = location.state as any;
 
-    if (!hasAccessToken()) {
+    const accessToken = localStorage.getItem("access_token");
+    if (!accessToken) {
+      console.log("🔒 [STATE] No access token - redirecting to login");
       handleUnauthorized();
       return;
     }

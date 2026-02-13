@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { getAccessToken } from '@/lib/secureTokenStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -55,7 +54,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ productId, className, 
   const [suggestedQuestions, setSuggestedQuestions] = useState<string[]>([]);
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const accessToken = getAccessToken() || "";
+  const accessToken = localStorage.getItem("access_token") || "";
 
   // Load chat history and suggested questions on mount
   useEffect(() => {

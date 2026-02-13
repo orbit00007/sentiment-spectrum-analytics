@@ -1,7 +1,13 @@
 /**
  * useAnalysisState - Single source of truth for analysis lifecycle state
  * 
- * State is persisted to localStorage and scoped PER USER ID.
+ * Manages:
+ * - Whether an analysis is currently in progress (isAnalyzing)
+ * - When the current analysis was triggered (triggeredAt)
+ * - Locking mechanism to disable buttons during analysis
+ * 
+ * State is persisted to localStorage (NOT sessionStorage) so it survives logout/login
+ * All keys are SCOPED PER USER EMAIL to prevent state leakage between accounts.
  */
 
 import { useCallback, useSyncExternalStore } from "react";
@@ -21,30 +27,35 @@ const defaultState: AnalysisState = {
   productId: null,
 };
 
+// In-memory cache for SSR safety and fast reads
 let cachedState: AnalysisState = defaultState;
-let currentUserId: string | null = null;
+let currentUserEmail: string | null = null;
 
+// Subscribers for useSyncExternalStore
 const subscribers = new Set<() => void>();
 
 function notifySubscribers() {
   subscribers.forEach((cb) => cb());
 }
 
-// Get storage key scoped to user ID
-function getStorageKey(userId?: string): string {
-  const id = userId || currentUserId || localStorage.getItem("user_id") || "";
-  if (id) {
-    return `${STORAGE_KEY_PREFIX}_${id.replace(/[^a-z0-9\-]/g, "_")}`;
+// Get storage key scoped to user email
+function getStorageKey(email?: string): string {
+  const userEmail = email || currentUserEmail || localStorage.getItem("user_email") || "";
+  if (userEmail) {
+    const sanitizedEmail = userEmail.toLowerCase().replace(/[^a-z0-9]/g, "_");
+    return `${STORAGE_KEY_PREFIX}_${sanitizedEmail}`;
   }
   return STORAGE_KEY_PREFIX;
 }
 
-function readFromStorage(userId?: string): AnalysisState {
+function readFromStorage(email?: string): AnalysisState {
   try {
-    const key = getStorageKey(userId);
+    const key = getStorageKey(email);
+    // Use localStorage instead of sessionStorage so it persists across logout/login
     const raw = localStorage.getItem(key);
     if (raw) {
       const parsed = JSON.parse(raw) as AnalysisState;
+      // Validate shape
       if (
         typeof parsed.isAnalyzing === "boolean" &&
         (parsed.triggeredAt === null || typeof parsed.triggeredAt === "number") &&
@@ -54,7 +65,7 @@ function readFromStorage(userId?: string): AnalysisState {
       }
     }
   } catch {
-    // ignore
+    // ignore parse errors
   }
   return defaultState;
 }
@@ -62,9 +73,10 @@ function readFromStorage(userId?: string): AnalysisState {
 function writeToStorage(state: AnalysisState) {
   try {
     const key = getStorageKey();
+    // Use localStorage instead of sessionStorage so it persists across logout/login
     localStorage.setItem(key, JSON.stringify(state));
   } catch {
-    // ignore
+    // ignore quota errors
   }
   cachedState = state;
   notifySubscribers();
@@ -72,7 +84,7 @@ function writeToStorage(state: AnalysisState) {
 
 // Initialize cache
 if (typeof window !== "undefined") {
-  currentUserId = localStorage.getItem("user_id");
+  currentUserEmail = localStorage.getItem("user_email");
   cachedState = readFromStorage();
 }
 
@@ -92,24 +104,30 @@ function getServerSnapshot(): AnalysisState {
 }
 
 /**
- * Set current user ID for scoping (call on login)
+ * Set current user email for scoping (call on login)
+ * This will load the analysis state for this specific user
  */
-export function setAnalysisUserEmail(userId: string) {
-  currentUserId = userId;
+export function setAnalysisUserEmail(email: string) {
+  const prevEmail = currentUserEmail;
+  currentUserEmail = email;
+  
+  // Save email to localStorage for persistence
   try {
-    localStorage.setItem("user_id", userId);
+    localStorage.setItem("user_email", email);
   } catch {
     // ignore
   }
-  cachedState = readFromStorage(userId);
+  
+  // Always reload state for the user (important for login)
+  cachedState = readFromStorage(email);
   notifySubscribers();
 }
 
 /**
- * Clear user ID (call on logout)
+ * Clear user email (call on logout)
  */
 export function clearAnalysisUserEmail() {
-  currentUserId = null;
+  currentUserEmail = null;
   cachedState = defaultState;
   notifySubscribers();
 }
@@ -120,7 +138,12 @@ export function clearAnalysisUserEmail() {
 export function useAnalysisState() {
   const state = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
+  /**
+   * Call when a new analysis is triggered (from InputPage or Regenerate)
+   * Note: Old data is NOT cleared here - it's cleared only when new data arrives
+   */
   const startAnalysis = useCallback((productId: string) => {
+    // Clear the completion toast flag so notification can show for new analysis
     try {
       const toastKey = getEmailScopedKey(STORAGE_KEYS.COMPLETION_TOAST_SHOWN);
       localStorage.removeItem(toastKey);
@@ -136,10 +159,17 @@ export function useAnalysisState() {
     writeToStorage(newState);
   }, []);
 
+  /**
+   * Call when analysis completes (success or failure)
+   */
   const completeAnalysis = useCallback(() => {
     writeToStorage(defaultState);
   }, []);
 
+  /**
+   * Force clear state (e.g., when analysis completes or on explicit clear)
+   * Note: This should NOT be called on logout - analysis state should persist
+   */
   const clearAnalysisState = useCallback(() => {
     try {
       const key = getStorageKey();
@@ -151,9 +181,13 @@ export function useAnalysisState() {
     notifySubscribers();
   }, []);
 
+  /**
+   * Check if a given analysis timestamp is newer than when we triggered
+   * Used to determine if API response is from our current analysis or old data
+   */
   const isNewerThanTrigger = useCallback(
     (analysisTimestamp: number | null): boolean => {
-      if (!state.triggeredAt) return true;
+      if (!state.triggeredAt) return true; // No trigger = accept any data
       if (!analysisTimestamp) return false;
       return analysisTimestamp > state.triggeredAt;
     },
@@ -170,3 +204,7 @@ export function useAnalysisState() {
     isNewerThanTrigger,
   };
 }
+
+// Note: We no longer clear analysis state on logout
+// The state is email-scoped and should persist so users see their analysis
+// is still running when they log back in

@@ -86,7 +86,12 @@ const NewResultsContainer = () => {
   const [initializing, setInitializing] = useState(true);
 
   useEffect(() => {
-    // Auth check handled by context using in-memory token store
+    console.log("🎬 [NewResultsContainer] Mount - checking auth");
+    // Check auth immediately on mount
+    const accessToken = localStorage.getItem("access_token");
+    if (!accessToken) {
+      console.log("🔒 [NewResultsContainer] No token - will redirect in context");
+    }
     // Small delay to ensure DOM is ready
     const timer = setTimeout(() => {
       setInitializing(false);

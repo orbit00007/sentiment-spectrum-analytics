@@ -23,10 +23,12 @@ const ResetPassword = () => {
     e.preventDefault();
     
     const token = searchParams.get('token');
-    
+    console.log('Reset password form submitted');
+    console.log('Token from URL:', token);
+    console.log('Password length:', password.length);
     
     if (!token) {
-      
+      console.log('No token found in URL');
       toast({
         title: "Invalid reset link",
         description: "Please use the link from your email.",
@@ -36,7 +38,7 @@ const ResetPassword = () => {
     }
     
     if (password !== confirmPassword) {
-      
+      console.log('Passwords do not match');
       toast({
         title: "Passwords don't match",
         description: "Please make sure both passwords are the same.",
@@ -46,7 +48,7 @@ const ResetPassword = () => {
     }
 
     if (password.length < 6) {
-      
+      console.log('Password too short');
       toast({
         title: "Password too short",
         description: "Password must be at least 6 characters long.",
@@ -56,18 +58,19 @@ const ResetPassword = () => {
     }
 
     setIsLoading(true);
-    
+    console.log('Calling reset password API...');
     
     try {
       const response = await resetPassword(token, password);
-      
+      console.log('Reset password API response:', response);
       setSuccess(true);
       toast({
         title: "Password reset successful",
         description: "Your password has been updated.",
       });
     } catch (error: any) {
-      
+      console.error('Reset password error:', error);
+      console.error('Error response:', error.response?.data);
       const errorMessage = error.response?.data?.error || error.response?.data?.message || "The link may be expired or invalid.";
       toast({
         title: "Failed to reset password",

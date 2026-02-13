@@ -12,7 +12,6 @@ import { QueryAnalysis } from "@/components/QueryAnalysis";
 import { ChatSidebar } from "@/components/ChatSidebar";
 import { Search } from "lucide-react";
 import { regenerateAnalysis, getProductAnalytics } from "@/apiHelpers";
-import { getAccessToken } from "@/lib/secureTokenStore";
 import {
   SidebarProvider,
   Sidebar,
@@ -220,7 +219,7 @@ export default function Results() {
   }, [previousAnalytics]);
 
   useEffect(() => {
-    accessTokenRef.current = getAccessToken() || "";
+    accessTokenRef.current = localStorage.getItem("access_token") || "";
   }, []);
 
   const handleNewAnalysis = () => {

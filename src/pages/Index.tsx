@@ -1,5 +1,4 @@
 import { Link, useNavigate } from "react-router-dom";
-import { getAccessToken } from "@/lib/secureTokenStore";
 import { useAuth } from "@/contexts/auth-context";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
@@ -57,7 +56,7 @@ const Index = () => {
       setCheckingProduct(true);
 
       try {
-        const accessToken = getAccessToken() || "";
+        const accessToken = localStorage.getItem("access_token") || "";
         const applicationId = localStorage.getItem("application_id") || "";
         
         if (!applicationId) {
@@ -116,7 +115,7 @@ const Index = () => {
     }
   
     try {
-      const accessToken = getAccessToken() || "";
+      const accessToken = localStorage.getItem("access_token") || "";
       const applicationId = localStorage.getItem("application_id") || "";
   
       if (!applicationId) {
@@ -156,7 +155,7 @@ const Index = () => {
     }
 
     try {
-      const accessToken = getAccessToken() || "";
+      const accessToken = localStorage.getItem("access_token") || "";
       const applicationId = localStorage.getItem("application_id") || "";
   
       if (!applicationId) {
