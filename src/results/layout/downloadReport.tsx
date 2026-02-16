@@ -231,40 +231,40 @@ const PrintableContent = ({
   // Styles
   const styles = {
     page: {
-      padding: '50px',
+      padding: '32px 40px',
       fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
       color: '#1a1a1a',
-      fontSize: '11pt',
-      lineHeight: '1.6',
+      fontSize: '9.5pt',
+      lineHeight: '1.5',
       backgroundColor: '#ffffff',
     },
     coverPage: {
       textAlign: 'center' as const,
-      paddingTop: '180px',
-      paddingBottom: '180px',
+      paddingTop: '120px',
+      paddingBottom: '80px',
       pageBreakAfter: 'always' as const,
       borderBottom: '3px solid #2563eb',
     },
     mainTitle: {
-      fontSize: '42px',
+      fontSize: '34px',
       fontWeight: '700',
-      marginBottom: '20px',
+      marginBottom: '14px',
       color: '#1e40af',
       letterSpacing: '-0.5px',
     },
     brandTitle: {
-      fontSize: '32px',
+      fontSize: '26px',
       fontWeight: '600',
       color: '#374151',
-      marginBottom: '12px',
+      marginBottom: '8px',
     },
     websiteText: {
-      fontSize: '16px',
+      fontSize: '14px',
       color: '#6b7280',
-      marginBottom: '40px',
+      marginBottom: '28px',
     },
     dateText: {
-      fontSize: '14px',
+      fontSize: '12px',
       color: '#9ca3af',
       fontStyle: 'italic' as const,
     },
@@ -272,56 +272,56 @@ const PrintableContent = ({
       pageBreakBefore: 'auto' as const,
       pageBreakAfter: 'auto' as const,
       pageBreakInside: 'avoid' as const,
-      marginBottom: '40px',
+      marginBottom: '20px',
     },
     sectionHeader: {
-      fontSize: '24px',
+      fontSize: '20px',
       fontWeight: '700',
-      marginBottom: '24px',
-      marginTop: '32px',
-      paddingBottom: '12px',
+      marginBottom: '14px',
+      marginTop: '20px',
+      paddingBottom: '8px',
       borderBottom: '3px solid #2563eb',
       color: '#1e40af',
     },
     subsectionHeader: {
-      fontSize: '18px',
+      fontSize: '15px',
       fontWeight: '600',
-      marginBottom: '16px',
-      marginTop: '24px',
+      marginBottom: '10px',
+      marginTop: '18px',
       color: '#1f2937',
     },
     subsubsectionHeader: {
-      fontSize: '15px',
+      fontSize: '13px',
       fontWeight: '600',
-      marginBottom: '12px',
-      marginTop: '16px',
+      marginBottom: '8px',
+      marginTop: '12px',
       color: '#374151',
     },
     card: {
-      padding: '20px',
+      padding: '14px',
       backgroundColor: '#f9fafb',
-      borderRadius: '8px',
-      marginBottom: '20px',
+      borderRadius: '6px',
+      marginBottom: '14px',
       border: '1px solid #e5e7eb',
       pageBreakInside: 'avoid' as const,
     },
     metricCard: {
-      padding: '24px',
+      padding: '14px',
       backgroundColor: '#eff6ff',
-      borderRadius: '8px',
-      marginBottom: '20px',
+      borderRadius: '6px',
+      marginBottom: '14px',
       border: '2px solid #bfdbfe',
       textAlign: 'center' as const,
       pageBreakInside: 'avoid' as const,
     },
     metricValue: {
-      fontSize: '48px',
+      fontSize: '32px',
       fontWeight: '700',
       color: '#1e40af',
-      marginBottom: '8px',
+      marginBottom: '4px',
     },
     metricLabel: {
-      fontSize: '14px',
+      fontSize: '11px',
       color: '#6b7280',
       fontWeight: '600',
       textTransform: 'uppercase' as const,
@@ -330,22 +330,22 @@ const PrintableContent = ({
     table: {
       width: '100%',
       borderCollapse: 'collapse' as const,
-      marginTop: '16px',
-      marginBottom: '24px',
-      fontSize: '10pt',
+      marginTop: '8px',
+      marginBottom: '14px',
+      fontSize: '9pt',
     },
     tableHeader: {
       border: '1px solid #d1d5db',
-      padding: '12px',
+      padding: '8px 10px',
       textAlign: 'left' as const,
       backgroundColor: '#1e40af',
       color: '#ffffff',
       fontWeight: '600',
-      fontSize: '11pt',
+      fontSize: '9pt',
     },
     tableCell: {
       border: '1px solid #d1d5db',
-      padding: '10px',
+      padding: '6px 10px',
       backgroundColor: '#ffffff',
     },
     tableRowAlt: {
@@ -353,39 +353,39 @@ const PrintableContent = ({
     },
     badge: {
       display: 'inline-block',
-      padding: '6px 12px',
+      padding: '3px 8px',
       borderRadius: '4px',
-      fontSize: '11px',
+      fontSize: '10px',
       fontWeight: '600',
-      marginRight: '8px',
-      marginBottom: '8px',
+      marginRight: '6px',
+      marginBottom: '4px',
     },
     list: {
       listStyleType: 'disc' as const,
-      paddingLeft: '24px',
-      marginBottom: '16px',
+      paddingLeft: '20px',
+      marginBottom: '10px',
     },
     listItem: {
-      marginBottom: '8px',
-      lineHeight: '1.6',
+      marginBottom: '4px',
+      lineHeight: '1.5',
     },
     footer: {
-      marginTop: '60px',
-      paddingTop: '24px',
+      marginTop: '30px',
+      paddingTop: '16px',
       borderTop: '2px solid #e5e7eb',
       textAlign: 'center' as const,
       color: '#9ca3af',
-      fontSize: '10pt',
+      fontSize: '9pt',
     },
     brandInfoBar: {
       display: 'flex',
       alignItems: 'center',
-      gap: '20px',
-      padding: '20px',
+      gap: '16px',
+      padding: '14px',
       backgroundColor: '#f9fafb',
-      borderRadius: '8px',
+      borderRadius: '6px',
       border: '1px solid #e5e7eb',
-      marginBottom: '24px',
+      marginBottom: '16px',
     },
   };
 
@@ -510,16 +510,16 @@ const PrintableContent = ({
          ══════════════════════════════════════════════════════ */}
       <div style={styles.coverPage}>
         {brandLogo && (
-          <div style={{ marginBottom: '30px' }}>
+          <div style={{ marginBottom: '20px' }}>
             <img src={brandLogo} alt={brandName}
-              style={{ width: '80px', height: '80px', objectFit: 'contain', margin: '0 auto' }} />
+              style={{ width: '64px', height: '64px', objectFit: 'contain', margin: '0 auto' }} />
           </div>
         )}
         <h1 style={styles.mainTitle}>AI Visibility Analysis Report</h1>
         <h2 style={styles.brandTitle}>{brandName}</h2>
         <p style={styles.websiteText}>{brandWebsite}</p>
-        <div style={{ marginTop: '40px' }}>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginBottom: '20px', flexWrap: 'wrap' }}>
+        <div style={{ marginTop: '24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginBottom: '14px', flexWrap: 'wrap' }}>
             {models.map((model, idx) => (
               <span key={idx} style={{ ...styles.badge, backgroundColor: '#e0e7ff', color: '#3730a3' }}>
                 {getModelDisplayName(model)}
@@ -537,7 +537,7 @@ const PrintableContent = ({
          ══════════════════════════════════════════════════════ */}
       <div style={{ pageBreakAfter: 'always' }}>
         <h2 style={styles.sectionHeader}>Table of Contents</h2>
-        <div style={{ paddingLeft: '20px', lineHeight: '2' }}>
+        <div style={{ paddingLeft: '16px', lineHeight: '1.7', fontSize: '10pt' }}>
           <p><strong>1. Brand Overview</strong></p>
           <p style={{ paddingLeft: '20px' }}>1.1 Brand Information</p>
           <p style={{ paddingLeft: '20px' }}>1.2 Key Metrics Summary</p>
@@ -609,32 +609,32 @@ const PrintableContent = ({
 
         {/* 1.2 Key Metrics Summary */}
         <h3 style={styles.subsectionHeader}>1.2 Key Metrics Summary</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '16px', marginBottom: '30px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '12px', marginBottom: '16px' }}>
           <div style={styles.metricCard}>
             <div style={styles.metricValue}>{aiVisibility?.score || 0}</div>
             <div style={styles.metricLabel}>AI Visibility Score</div>
-            <div style={{ marginTop: '12px' }}>
+            <div style={{ marginTop: '6px' }}>
               <span style={getTierBadgeStyle(aiVisibility?.tier)}>{aiVisibility?.tier || 'N/A'} Tier</span>
             </div>
           </div>
           <div style={styles.metricCard}>
             <div style={styles.metricValue}>{mentionsData?.brandMentions || 0}</div>
             <div style={styles.metricLabel}>Total Mentions</div>
-            <div style={{ marginTop: '12px' }}>
+            <div style={{ marginTop: '6px' }}>
               <span style={getTierBadgeStyle(mentionsData?.tier)}>{mentionsData?.tier || 'N/A'} Tier</span>
             </div>
           </div>
           <div style={styles.metricCard}>
             <div style={styles.metricValue}>{totalPrompts}</div>
             <div style={styles.metricLabel}>Prompts Analyzed</div>
-            <div style={{ marginTop: '12px' }}>
+            <div style={{ marginTop: '6px' }}>
               <span style={{ ...styles.badge, backgroundColor: '#e0e7ff', color: '#3730a3' }}>{keywords.length} Keywords</span>
             </div>
           </div>
           <div style={styles.metricCard}>
             <div style={styles.metricValue}>{Object.keys(llmData).length}</div>
             <div style={styles.metricLabel}>LLM Platforms</div>
-            <div style={{ marginTop: '12px' }}>
+            <div style={{ marginTop: '6px' }}>
               <span style={getTierBadgeStyle(sentiment?.dominant_sentiment)}>{sentiment?.dominant_sentiment}</span>
             </div>
           </div>
@@ -644,18 +644,18 @@ const PrintableContent = ({
         {aiVisibility?.positionBreakdown && (
           <div style={styles.card}>
             <h4 style={styles.subsubsectionHeader}>Ranking Distribution</h4>
-            <div style={{ display: 'flex', gap: '20px', justifyContent: 'space-around', marginTop: '16px' }}>
+            <div style={{ display: 'flex', gap: '16px', justifyContent: 'space-around', marginTop: '8px' }}>
               <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '32px', fontWeight: '700', color: '#16a34a' }}>{aiVisibility.positionBreakdown.topPosition}%</div>
-                <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>Top Position (#1)</div>
+                <div style={{ fontSize: '24px', fontWeight: '700', color: '#16a34a' }}>{aiVisibility.positionBreakdown.topPosition}%</div>
+                <div style={{ fontSize: '10px', color: '#6b7280', marginTop: '2px' }}>Top Position (#1)</div>
               </div>
               <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '32px', fontWeight: '700', color: '#ca8a04' }}>{aiVisibility.positionBreakdown.midPosition}%</div>
-                <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>Mid Position (2-4)</div>
+                <div style={{ fontSize: '24px', fontWeight: '700', color: '#ca8a04' }}>{aiVisibility.positionBreakdown.midPosition}%</div>
+                <div style={{ fontSize: '10px', color: '#6b7280', marginTop: '2px' }}>Mid Position (2-4)</div>
               </div>
               <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '32px', fontWeight: '700', color: '#dc2626' }}>{aiVisibility.positionBreakdown.lowPosition}%</div>
-                <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>Low Position (5+)</div>
+                <div style={{ fontSize: '24px', fontWeight: '700', color: '#dc2626' }}>{aiVisibility.positionBreakdown.lowPosition}%</div>
+                <div style={{ fontSize: '10px', color: '#6b7280', marginTop: '2px' }}>Low Position (5+)</div>
               </div>
             </div>
           </div>
@@ -759,19 +759,19 @@ const PrintableContent = ({
       {/* ══════════════════════════════════════════════════════
           SECTION 2: EXECUTIVE SUMMARY
          ══════════════════════════════════════════════════════ */}
-      <div style={{ pageBreakAfter: 'always' }}>
+      <div style={{ pageBreakBefore: 'always' }}>
         <h2 style={styles.sectionHeader}>2. Executive Summary</h2>
 
         <h3 style={styles.subsectionHeader}>2.1 Brand Score & Positioning</h3>
         {executiveSummary?.brand_score_and_tier && (
           <div style={styles.card}>
-            <p style={{ fontSize: '13pt', lineHeight: '1.8' }}>{executiveSummary.brand_score_and_tier}</p>
+            <p style={{ fontSize: '10pt', lineHeight: '1.6' }}>{executiveSummary.brand_score_and_tier}</p>
           </div>
         )}
         {executiveSummary?.conclusion && (
           <div style={styles.card}>
             <h4 style={styles.subsubsectionHeader}>Strategic Conclusion</h4>
-            <p style={{ lineHeight: '1.8' }}>{executiveSummary.conclusion}</p>
+            <p style={{ lineHeight: '1.6' }}>{executiveSummary.conclusion}</p>
           </div>
         )}
 
@@ -853,15 +853,15 @@ const PrintableContent = ({
       <div style={{ pageBreakBefore: 'always' }}>
         <h2 style={styles.sectionHeader}>3. AI Prompts & Query Analysis</h2>
 
-        <div style={{ ...styles.card, marginBottom: '24px' }}>
+        <div style={{ ...styles.card, marginBottom: '14px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-around', textAlign: 'center' }}>
             <div>
-              <div style={{ fontSize: '36px', fontWeight: '700', color: '#1e40af' }}>{keywords.length}</div>
-              <div style={{ fontSize: '12px', color: '#6b7280' }}>Keywords Analyzed</div>
+              <div style={{ fontSize: '24px', fontWeight: '700', color: '#1e40af' }}>{keywords.length}</div>
+              <div style={{ fontSize: '10px', color: '#6b7280' }}>Keywords Analyzed</div>
             </div>
             <div>
-              <div style={{ fontSize: '36px', fontWeight: '700', color: '#1e40af' }}>{totalPrompts}</div>
-              <div style={{ fontSize: '12px', color: '#6b7280' }}>Total Prompts</div>
+              <div style={{ fontSize: '24px', fontWeight: '700', color: '#1e40af' }}>{totalPrompts}</div>
+              <div style={{ fontSize: '10px', color: '#6b7280' }}>Total Prompts</div>
             </div>
           </div>
         </div>
@@ -873,16 +873,16 @@ const PrintableContent = ({
           const brandsToDisplay = getBrandsForKeyword(kw.id);
 
           return (
-            <div key={idx} style={{ ...styles.card, pageBreakInside: 'avoid', marginBottom: '24px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <div key={idx} style={{ ...styles.card, pageBreakInside: 'avoid', marginBottom: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                 <div>
-                  <h4 style={{ ...styles.subsubsectionHeader, marginTop: '0', marginBottom: '4px' }}>Keyword {idx + 1}: {kw.name}</h4>
-                  <p style={{ fontSize: '11pt', color: '#6b7280', margin: 0 }}>{kw.prompts?.length || 0} prompts analyzed</p>
+                  <h4 style={{ ...styles.subsubsectionHeader, marginTop: '0', marginBottom: '2px' }}>Keyword {idx + 1}: {kw.name}</h4>
+                  <p style={{ fontSize: '9pt', color: '#6b7280', margin: 0 }}>{kw.prompts?.length || 0} prompts analyzed</p>
                 </div>
                 <div style={{ textAlign: 'center' }}>
                   <span style={{
                     display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                    width: '48px', height: '48px', borderRadius: '50%', fontSize: '18px', fontWeight: '700',
+                    width: '36px', height: '36px', borderRadius: '50%', fontSize: '14px', fontWeight: '700',
                     backgroundColor: brandScore >= 3 ? '#d1fae5' : brandScore >= 1 ? '#fef3c7' : '#fee2e2',
                     color: brandScore >= 3 ? '#065f46' : brandScore >= 1 ? '#92400e' : '#991b1b',
                   }}>{brandScore}</span>
@@ -891,8 +891,8 @@ const PrintableContent = ({
               </div>
 
               {/* Prompts Table */}
-              <h5 style={{ fontSize: '13px', fontWeight: '600', marginBottom: '12px', color: '#374151' }}>📝 AI Prompts Used</h5>
-              <table style={{ ...styles.table, fontSize: '10pt', marginBottom: '16px' }}>
+              <h5 style={{ fontSize: '11px', fontWeight: '600', marginBottom: '6px', color: '#374151' }}>📝 AI Prompts Used</h5>
+              <table style={{ ...styles.table, fontSize: '9pt', marginBottom: '10px' }}>
                 <thead>
                   <tr>
                     <th style={{ ...styles.tableHeader, width: '40px' }}>#</th>
@@ -912,8 +912,8 @@ const PrintableContent = ({
               </table>
 
               {/* Brand Mentions Breakdown */}
-              <h5 style={{ fontSize: '13px', fontWeight: '600', marginBottom: '12px', color: '#374151' }}>🏆 Brand Mentions for "{kw.name}"</h5>
-              <table style={{ ...styles.table, fontSize: '10pt' }}>
+              <h5 style={{ fontSize: '11px', fontWeight: '600', marginBottom: '6px', color: '#374151' }}>🏆 Brand Mentions for "{kw.name}"</h5>
+              <table style={{ ...styles.table, fontSize: '9pt' }}>
                 <thead>
                   <tr>
                     <th style={styles.tableHeader}>Brand</th>
@@ -952,7 +952,7 @@ const PrintableContent = ({
         <p style={{ color: '#6b7280', marginBottom: '16px' }}>Which brands each AI model recommends for each prompt</p>
 
         {keywords.map((kw, kwIdx) => (
-          <div key={kwIdx} style={{ ...styles.card, pageBreakInside: 'avoid', marginBottom: '24px' }}>
+          <div key={kwIdx} style={{ ...styles.card, pageBreakInside: 'avoid', marginBottom: '14px' }}>
             <h4 style={{ ...styles.subsubsectionHeader, marginTop: '0' }}>Keyword: {kw.name}</h4>
             <table style={{ ...styles.table, fontSize: '9pt' }}>
               <thead>
@@ -1290,7 +1290,7 @@ const PrintableContent = ({
         </div>
 
         {/* Sentiment Summary Cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '16px' }}>
           {['Positive', 'Neutral', 'Negative'].map(sentimentType => {
             const matchingBrands = competitorSentiment.filter(c => c.outlook === sentimentType);
             const count = matchingBrands.length;
@@ -1306,9 +1306,9 @@ const PrintableContent = ({
                 borderColor: colors[sentimentType].border,
                 textAlign: 'center'
               }}>
-                <div style={{ fontSize: '36px', fontWeight: '700', color: colors[sentimentType].border }}>{count}</div>
-                <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '8px' }}>{sentimentType}</div>
-                <div style={{ fontSize: '11px', color: '#6b7280' }}>
+                <div style={{ fontSize: '24px', fontWeight: '700', color: colors[sentimentType].border }}>{count}</div>
+                <div style={{ fontSize: '12px', fontWeight: '600', marginBottom: '4px' }}>{sentimentType}</div>
+                <div style={{ fontSize: '10px', color: '#6b7280' }}>
                   {matchingBrands.map(b => b.brand).join(', ') || 'None'}
                 </div>
               </div>
@@ -1354,36 +1354,36 @@ const PrintableContent = ({
           <h2 style={styles.sectionHeader}>7. Strategic Recommendations</h2>
 
           {/* Quick Stats */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '16px' }}>
             <div style={{ ...styles.card, textAlign: 'center', backgroundColor: '#dcfce7', borderColor: '#16a34a' }}>
-              <div style={{ fontSize: '36px', fontWeight: '700', color: '#16a34a' }}>
+              <div style={{ fontSize: '24px', fontWeight: '700', color: '#16a34a' }}>
                 {recommendations.filter((r: any) => r.impact === 'High').length}
               </div>
-              <div style={{ fontSize: '14px', fontWeight: '600' }}>High Impact</div>
+              <div style={{ fontSize: '12px', fontWeight: '600' }}>High Impact</div>
             </div>
             <div style={{ ...styles.card, textAlign: 'center', backgroundColor: '#fef3c7', borderColor: '#ca8a04' }}>
-              <div style={{ fontSize: '36px', fontWeight: '700', color: '#ca8a04' }}>
+              <div style={{ fontSize: '24px', fontWeight: '700', color: '#ca8a04' }}>
                 {recommendations.filter((r: any) => r.impact === 'Medium').length}
               </div>
-              <div style={{ fontSize: '14px', fontWeight: '600' }}>Medium Impact</div>
+              <div style={{ fontSize: '12px', fontWeight: '600' }}>Medium Impact</div>
             </div>
             <div style={{ ...styles.card, textAlign: 'center', backgroundColor: '#dbeafe', borderColor: '#1e40af' }}>
-              <div style={{ fontSize: '36px', fontWeight: '700', color: '#1e40af' }}>
+              <div style={{ fontSize: '24px', fontWeight: '700', color: '#1e40af' }}>
                 {recommendations.filter((r: any) => r.overall_effort === 'Low' && r.impact === 'High').length}
               </div>
-              <div style={{ fontSize: '14px', fontWeight: '600' }}>Quick Wins</div>
+              <div style={{ fontSize: '12px', fontWeight: '600' }}>Quick Wins</div>
             </div>
           </div>
 
           <h3 style={styles.subsectionHeader}>7.1 Prioritized Action Items</h3>
 
           {recommendations.map((rec: any, idx: number) => (
-            <div key={idx} style={{ ...styles.card, pageBreakInside: 'avoid', marginBottom: '24px' }}>
-              <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <div key={idx} style={{ ...styles.card, pageBreakInside: 'avoid', marginBottom: '14px' }}>
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
                 <span style={{
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                  width: '32px', height: '32px', borderRadius: '50%',
-                  backgroundColor: '#1e40af', color: '#ffffff', fontWeight: '700', fontSize: '14px',
+                  width: '26px', height: '26px', borderRadius: '50%',
+                  backgroundColor: '#1e40af', color: '#ffffff', fontWeight: '700', fontSize: '12px',
                 }}>{idx + 1}</span>
                 <h4 style={{ ...styles.subsubsectionHeader, marginTop: '0', marginBottom: '0' }}>Recommendation {idx + 1}</h4>
                 <span style={getImpactBadgeStyle(rec.impact)}>Impact: {rec.impact}</span>
@@ -1391,52 +1391,52 @@ const PrintableContent = ({
               </div>
 
               {/* Insight */}
-              <div style={{ marginBottom: '16px' }}>
-                <h5 style={{ fontSize: '13px', fontWeight: '600', marginBottom: '8px', color: '#374151' }}>💡 Strategic Insight</h5>
-                <p style={{ fontSize: '11pt', lineHeight: '1.7', color: '#4b5563' }}>
+              <div style={{ marginBottom: '10px' }}>
+                <h5 style={{ fontSize: '11px', fontWeight: '600', marginBottom: '4px', color: '#374151' }}>💡 Strategic Insight</h5>
+                <p style={{ fontSize: '9.5pt', lineHeight: '1.5', color: '#4b5563' }}>
                   {rec.insight?.summary || rec.overall_insight}
                 </p>
               </div>
 
               {/* Suggested Action (legacy) */}
               {rec.suggested_action && (
-                <div style={{ marginBottom: '16px' }}>
-                  <h5 style={{ fontSize: '13px', fontWeight: '600', marginBottom: '8px', color: '#374151' }}>✅ Suggested Action</h5>
-                  <p style={{ fontSize: '11pt', lineHeight: '1.7', color: '#1f2937' }}>{rec.suggested_action}</p>
+                <div style={{ marginBottom: '10px' }}>
+                  <h5 style={{ fontSize: '11px', fontWeight: '600', marginBottom: '4px', color: '#374151' }}>✅ Suggested Action</h5>
+                  <p style={{ fontSize: '9.5pt', lineHeight: '1.5', color: '#1f2937' }}>{rec.suggested_action}</p>
                 </div>
               )}
 
               {/* Suggested Action V1 (detailed format) */}
               {rec.suggested_action_v1 && typeof rec.suggested_action_v1 === 'object' && Object.keys(rec.suggested_action_v1).length > 0 && (
                 <div style={{
-                  padding: '20px',
+                  padding: '12px',
                   backgroundColor: '#eff6ff',
-                  borderRadius: '8px',
+                  borderRadius: '6px',
                   border: '1px solid #bfdbfe',
                 }}>
-                  <h5 style={{ fontSize: '13px', fontWeight: '600', marginBottom: '12px', color: '#1e40af' }}>🎯 Detailed Action Plan</h5>
+                  <h5 style={{ fontSize: '11px', fontWeight: '600', marginBottom: '8px', color: '#1e40af' }}>🎯 Detailed Action Plan</h5>
 
                   {rec.suggested_action_v1.strategy && (
-                    <div style={{ marginBottom: '16px' }}>
-                      <p style={{ fontSize: '14px', fontWeight: '600', color: '#1f2937', lineHeight: '1.6' }}>
+                    <div style={{ marginBottom: '8px' }}>
+                      <p style={{ fontSize: '10pt', fontWeight: '600', color: '#1f2937', lineHeight: '1.5' }}>
                         {rec.suggested_action_v1.strategy}
                       </p>
                     </div>
                   )}
 
                   {rec.suggested_action_v1.start_here && (
-                    <div style={{ marginBottom: '16px' }}>
-                      <h6 style={{ fontSize: '12px', fontWeight: '600', color: '#1e40af', marginBottom: '6px' }}>▶ Start Here</h6>
-                      <p style={{ fontSize: '11pt', color: '#4b5563', lineHeight: '1.7' }}>{rec.suggested_action_v1.start_here}</p>
+                    <div style={{ marginBottom: '8px' }}>
+                      <h6 style={{ fontSize: '10px', fontWeight: '600', color: '#1e40af', marginBottom: '4px' }}>▶ Start Here</h6>
+                      <p style={{ fontSize: '9.5pt', color: '#4b5563', lineHeight: '1.5' }}>{rec.suggested_action_v1.start_here}</p>
                     </div>
                   )}
 
                   {Array.isArray(rec.suggested_action_v1.how_to_execute) && rec.suggested_action_v1.how_to_execute.length > 0 && (
-                    <div style={{ marginBottom: '16px' }}>
-                      <h6 style={{ fontSize: '12px', fontWeight: '600', color: '#1e40af', marginBottom: '8px' }}>📋 How to Execute</h6>
-                      <ol style={{ paddingLeft: '24px', margin: '0' }}>
+                    <div style={{ marginBottom: '8px' }}>
+                      <h6 style={{ fontSize: '10px', fontWeight: '600', color: '#1e40af', marginBottom: '4px' }}>📋 How to Execute</h6>
+                      <ol style={{ paddingLeft: '20px', margin: '0' }}>
                         {rec.suggested_action_v1.how_to_execute.map((step: string, stepIdx: number) => (
-                          <li key={stepIdx} style={{ marginBottom: '8px', lineHeight: '1.6', fontSize: '11pt', color: '#4b5563' }}>
+                          <li key={stepIdx} style={{ marginBottom: '4px', lineHeight: '1.5', fontSize: '9.5pt', color: '#4b5563' }}>
                             {step}
                           </li>
                         ))}
@@ -1445,9 +1445,9 @@ const PrintableContent = ({
                   )}
 
                   {rec.suggested_action_v1.success_signal && (
-                    <div style={{ borderTop: '1px solid #bfdbfe', paddingTop: '12px' }}>
-                      <h6 style={{ fontSize: '12px', fontWeight: '600', color: '#1e40af', marginBottom: '6px' }}>✨ Success Signal</h6>
-                      <p style={{ fontSize: '11pt', color: '#4b5563', fontStyle: 'italic', lineHeight: '1.6' }}>
+                    <div style={{ borderTop: '1px solid #bfdbfe', paddingTop: '8px' }}>
+                      <h6 style={{ fontSize: '10px', fontWeight: '600', color: '#1e40af', marginBottom: '4px' }}>✨ Success Signal</h6>
+                      <p style={{ fontSize: '9.5pt', color: '#4b5563', fontStyle: 'italic', lineHeight: '1.5' }}>
                         {rec.suggested_action_v1.success_signal}
                       </p>
                     </div>
@@ -1474,7 +1474,7 @@ const PrintableContent = ({
       {/* ══════════════════════════════════════════════════════
           SECTION 8: APPENDIX
          ══════════════════════════════════════════════════════ */}
-      <div style={{ pageBreakBefore: 'always' }}>
+      <div style={{ pageBreakBefore: 'auto', marginTop: '20px' }}>
         <h2 style={styles.sectionHeader}>8. Appendix</h2>
 
         <h3 style={styles.subsectionHeader}>8.1 Competitor Brand Summaries</h3>
@@ -1624,7 +1624,7 @@ export const generateReport = (toast: (props: { title: string; description: stri
 
   styleSheet.textContent = `
     @media print {
-      @page { size: A4; margin: 15mm; }
+      @page { size: A4; margin: 12mm 14mm; }
       body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
       body > *:not(#print-report-container) { display: none !important; }
       #print-report-container { display: block !important; }
