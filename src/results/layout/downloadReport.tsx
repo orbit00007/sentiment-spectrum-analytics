@@ -125,7 +125,7 @@ interface PrintableContentProps {
   sourcesData: Record<string, any>;
 }
 
-// ─── Intent helpers ────────────────────────────────────────
+// ─── Intent helpers ─────────────────────────────────────────
 const INTENTS = [
   { key: "discovery", label: "Discovery" },
   { key: "use_case", label: "Use Case" },
@@ -177,429 +177,1316 @@ const computeIntentData = (
     const data = result[intent.key];
     const testData = data[testBrand];
     const presencePct = testData && testData.total > 0 ? (testData.vis / testData.total) * 100 : 0;
+
     let leaderBrand = "";
     let leaderPct = 0;
     brands.forEach(b => {
       const pct = data[b].total > 0 ? (data[b].vis / data[b].total) * 100 : 0;
       if (pct > leaderPct) { leaderPct = pct; leaderBrand = b; }
     });
+
     let status = "Weak";
     if (presencePct >= 60) status = "Leading";
     else if (presencePct >= 40) status = "Strong";
     else if (presencePct >= 20) status = "Moderate";
     else if (presencePct >= 5) status = "Weak";
     else status = "Very Low";
-    return { intent: intent.label, presencePct: Math.round(presencePct), status, leader: leaderBrand, leaderPct: Math.round(leaderPct) };
+
+    return {
+      intent: intent.label,
+      presencePct: Math.round(presencePct),
+      status,
+      leader: leaderBrand,
+      leaderPct: Math.round(leaderPct),
+    };
   });
 };
 
-// ─── Printable Report Component ──────────────────────────────
-const PrintableContent = ({
-  brandName, brandWebsite, brandLogo, modelName, analysisDate, analysisKeywords,
-  brandInfo, executiveSummary, recommendations, keywords, llmData, aiVisibility,
-  mentionsData, sourcesAndContentImpact, platformPresence, competitorSentiment,
-  sentiment, brandMentionRates, competitorData, keywordNames, sourcesData,
-}: PrintableContentProps) => {
-  const s = {
-    page: { padding: '28px 36px', fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif", color: '#1a1a1a', fontSize: '8.5pt', lineHeight: '1.4', backgroundColor: '#fff' },
-    section: { marginBottom: '12px' },
-    sectionHeader: { fontSize: '16px', fontWeight: '700' as const, marginBottom: '8px', marginTop: '14px', paddingBottom: '5px', borderBottom: '2px solid #2563eb', color: '#1e40af' },
-    subsectionHeader: { fontSize: '12px', fontWeight: '600' as const, marginBottom: '6px', marginTop: '12px', color: '#1f2937' },
-    subsubsectionHeader: { fontSize: '10px', fontWeight: '600' as const, marginBottom: '4px', marginTop: '8px', color: '#374151' },
-    card: { padding: '10px', backgroundColor: '#f9fafb', borderRadius: '4px', marginBottom: '8px', border: '1px solid #e5e7eb', pageBreakInside: 'avoid' as const },
-    metricCard: { padding: '10px', backgroundColor: '#eff6ff', borderRadius: '4px', border: '1.5px solid #bfdbfe', textAlign: 'center' as const, pageBreakInside: 'avoid' as const },
-    metricValue: { fontSize: '24px', fontWeight: '700' as const, color: '#1e40af', marginBottom: '2px' },
-    metricLabel: { fontSize: '8px', color: '#6b7280', fontWeight: '600' as const, textTransform: 'uppercase' as const, letterSpacing: '0.3px' },
-    table: { width: '100%', borderCollapse: 'collapse' as const, marginTop: '4px', marginBottom: '8px', fontSize: '8pt' },
-    th: { border: '1px solid #d1d5db', padding: '5px 6px', textAlign: 'left' as const, backgroundColor: '#1e40af', color: '#fff', fontWeight: '600' as const, fontSize: '7.5pt' },
-    td: { border: '1px solid #d1d5db', padding: '4px 6px', backgroundColor: '#fff' },
-    altRow: { backgroundColor: '#f9fafb' },
-    badge: { display: 'inline-block', padding: '2px 6px', borderRadius: '3px', fontSize: '7.5pt', fontWeight: '600' as const },
-    list: { listStyleType: 'disc' as const, paddingLeft: '16px', marginBottom: '6px' },
-    listItem: { marginBottom: '2px', lineHeight: '1.4' },
-  };
+// ─── Enterprise Design System ────────────────────────────────
+const COLORS = {
+  navy: '#0f172a',
+  navyLight: '#1e293b',
+  blue: '#1e40af',
+  blueLight: '#3b82f6',
+  bluePale: '#eff6ff',
+  blueBorder: '#bfdbfe',
+  slate: '#334155',
+  slateLight: '#64748b',
+  slatePale: '#94a3b8',
+  gray100: '#f8fafc',
+  gray200: '#f1f5f9',
+  gray300: '#e2e8f0',
+  gray400: '#cbd5e1',
+  white: '#ffffff',
+  green: '#059669',
+  greenBg: '#ecfdf5',
+  greenBorder: '#a7f3d0',
+  amber: '#d97706',
+  amberBg: '#fffbeb',
+  amberBorder: '#fde68a',
+  red: '#dc2626',
+  redBg: '#fef2f2',
+  redBorder: '#fecaca',
+  gold: '#b45309',
+};
 
-  const tierBadge = (tier: string) => {
-    const base = { ...s.badge };
-    switch (tier?.toLowerCase()) {
-      case 'high': case 'positive': case 'leading': case 'strong': return { ...base, backgroundColor: '#d1fae5', color: '#065f46' };
-      case 'medium': case 'neutral': case 'moderate': return { ...base, backgroundColor: '#fef3c7', color: '#92400e' };
-      case 'low': case 'negative': case 'weak': case 'very low': return { ...base, backgroundColor: '#fee2e2', color: '#991b1b' };
-      default: return { ...base, backgroundColor: '#f3f4f6', color: '#374151' };
-    }
-  };
+const S = {
+  page: {
+    fontFamily: "'Georgia', 'Times New Roman', serif",
+    color: COLORS.navy,
+    fontSize: '9.5pt',
+    lineHeight: '1.65',
+    backgroundColor: COLORS.white,
+  },
+  sansSerif: {
+    fontFamily: "'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
+  },
 
-  const outlookBadge = (outlook: string) => tierBadge(outlook);
+  // Cover page
+  coverPage: {
+    minHeight: '100vh',
+    display: 'flex',
+    flexDirection: 'column' as const,
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
+    textAlign: 'center' as const,
+    pageBreakAfter: 'always' as const,
+    background: `linear-gradient(135deg, ${COLORS.navy} 0%, #1e3a5f 50%, ${COLORS.blue} 100%)`,
+    color: COLORS.white,
+    padding: '60px 40px',
+    position: 'relative' as const,
+  },
+  coverWatermark: {
+    position: 'absolute' as const,
+    top: '30px',
+    right: '40px',
+    fontSize: '10px',
+    letterSpacing: '3px',
+    textTransform: 'uppercase' as const,
+    color: 'rgba(255,255,255,0.35)',
+    fontFamily: "'Segoe UI', sans-serif",
+    fontWeight: '600' as const,
+  },
+  coverTitle: {
+    fontSize: '14px',
+    fontWeight: '600' as const,
+    letterSpacing: '4px',
+    textTransform: 'uppercase' as const,
+    color: 'rgba(255,255,255,0.7)',
+    marginBottom: '24px',
+    fontFamily: "'Segoe UI', sans-serif",
+  },
+  coverBrandName: {
+    fontSize: '42px',
+    fontWeight: '700' as const,
+    letterSpacing: '-1px',
+    marginBottom: '12px',
+    lineHeight: '1.1',
+  },
+  coverReportTitle: {
+    fontSize: '20px',
+    fontWeight: '400' as const,
+    color: 'rgba(255,255,255,0.85)',
+    marginBottom: '40px',
+    maxWidth: '500px',
+    lineHeight: '1.4',
+  },
+  coverMeta: {
+    fontSize: '11px',
+    color: 'rgba(255,255,255,0.6)',
+    fontFamily: "'Segoe UI', sans-serif",
+    marginBottom: '6px',
+  },
+  coverModelBadge: {
+    display: 'inline-block',
+    padding: '5px 14px',
+    borderRadius: '20px',
+    fontSize: '11px',
+    fontWeight: '600' as const,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    color: COLORS.white,
+    margin: '4px',
+    fontFamily: "'Segoe UI', sans-serif",
+    border: '1px solid rgba(255,255,255,0.2)',
+  },
+  coverFooter: {
+    position: 'absolute' as const,
+    bottom: '40px',
+    fontSize: '11px',
+    color: 'rgba(255,255,255,0.4)',
+    fontFamily: "'Segoe UI', sans-serif",
+  },
 
+  // Section headers
+  sectionPage: {
+    padding: '24px 40px 0 40px',
+    pageBreakBefore: 'auto' as const,
+    pageBreakInside: 'auto' as const,
+  },
+  sectionHeader: {
+    fontSize: '18px',
+    fontWeight: '700' as const,
+    color: COLORS.navy,
+    marginBottom: '4px',
+    letterSpacing: '-0.3px',
+  },
+  sectionSubtitle: {
+    fontSize: '10px',
+    color: COLORS.slateLight,
+    marginBottom: '14px',
+    fontFamily: "'Segoe UI', sans-serif",
+    lineHeight: '1.5',
+  },
+  sectionDivider: {
+    width: '60px',
+    height: '3px',
+    backgroundColor: COLORS.blue,
+    marginBottom: '20px',
+    borderRadius: '2px',
+  },
+
+  // Subsections
+  subsection: {
+    fontSize: '14px',
+    fontWeight: '700' as const,
+    color: COLORS.navyLight,
+    marginTop: '16px',
+    marginBottom: '8px',
+  },
+  subsubsection: {
+    fontSize: '13px',
+    fontWeight: '600' as const,
+    color: COLORS.slate,
+    marginTop: '16px',
+    marginBottom: '8px',
+  },
+
+  // Cards
+  card: {
+    padding: '12px 16px',
+    backgroundColor: COLORS.gray100,
+    borderRadius: '6px',
+    marginBottom: '10px',
+    border: `1px solid ${COLORS.gray300}`,
+    pageBreakInside: 'auto' as const,
+  },
+  calloutCard: {
+    padding: '14px 18px',
+    borderRadius: '6px',
+    marginBottom: '10px',
+    pageBreakInside: 'auto' as const,
+    borderLeft: `4px solid ${COLORS.blue}`,
+    backgroundColor: COLORS.bluePale,
+  },
+  riskCard: {
+    padding: '10px 16px',
+    borderRadius: '6px',
+    marginBottom: '8px',
+    pageBreakInside: 'auto' as const,
+    borderLeft: '4px solid',
+  },
+
+  // KPI blocks
+  kpiGrid: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr 1fr',
+    gap: '14px',
+    marginBottom: '20px',
+  },
+  kpiBlock: {
+    padding: '12px 10px',
+    borderRadius: '6px',
+    textAlign: 'center' as const,
+    pageBreakInside: 'avoid' as const,
+    border: `1px solid ${COLORS.gray300}`,
+    backgroundColor: COLORS.white,
+  },
+  kpiValue: {
+    fontSize: '24px',
+    fontWeight: '700' as const,
+    color: COLORS.blue,
+    marginBottom: '2px',
+    fontFamily: "'Segoe UI', sans-serif",
+    lineHeight: '1.1',
+  },
+  kpiLabel: {
+    fontSize: '10px',
+    color: COLORS.slateLight,
+    fontWeight: '600' as const,
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.7px',
+    fontFamily: "'Segoe UI', sans-serif",
+  },
+  kpiSub: {
+    fontSize: '10px',
+    color: COLORS.slatePale,
+    marginTop: '4px',
+    fontFamily: "'Segoe UI', sans-serif",
+  },
+
+  // Tables
+  table: {
+    width: '100%',
+    borderCollapse: 'collapse' as const,
+    marginTop: '8px',
+    marginBottom: '16px',
+    fontSize: '9pt',
+    fontFamily: "'Segoe UI', sans-serif",
+  },
+  th: {
+    border: `1px solid ${COLORS.gray300}`,
+    padding: '10px 12px',
+    textAlign: 'left' as const,
+    backgroundColor: COLORS.navy,
+    color: COLORS.white,
+    fontWeight: '600' as const,
+    fontSize: '9pt',
+    letterSpacing: '0.3px',
+  },
+  td: {
+    border: `1px solid ${COLORS.gray300}`,
+    padding: '8px 12px',
+    backgroundColor: COLORS.white,
+    fontSize: '9pt',
+  },
+  tdAlt: {
+    backgroundColor: COLORS.gray100,
+  },
+
+  // Badges
+  badge: {
+    display: 'inline-block',
+    padding: '3px 10px',
+    borderRadius: '4px',
+    fontSize: '10px',
+    fontWeight: '600' as const,
+    fontFamily: "'Segoe UI', sans-serif",
+    letterSpacing: '0.3px',
+  },
+
+  // Footer
+  footer: {
+    marginTop: '40px',
+    paddingTop: '20px',
+    borderTop: `2px solid ${COLORS.gray300}`,
+    textAlign: 'center' as const,
+    color: COLORS.slatePale,
+    fontSize: '9pt',
+    fontFamily: "'Segoe UI', sans-serif",
+  },
+
+  // Utility
+  text: {
+    lineHeight: '1.7',
+    color: COLORS.slate,
+    fontSize: '10pt',
+  },
+  pageBreak: {
+    pageBreakBefore: 'auto' as const,
+    padding: '24px 40px 0 40px',
+  },
+};
+
+// ─── Helper functions ─────────────────────────────────────
+const tierBadge = (tier: string) => {
+  const t = tier?.toLowerCase() || '';
+  if (['high', 'positive', 'leading', 'strong', 'leader'].includes(t))
+    return { ...S.badge, backgroundColor: COLORS.greenBg, color: COLORS.green, border: `1px solid ${COLORS.greenBorder}` };
+  if (['medium', 'neutral', 'moderate', 'strong performer', 'challenger'].includes(t))
+    return { ...S.badge, backgroundColor: COLORS.amberBg, color: COLORS.amber, border: `1px solid ${COLORS.amberBorder}` };
+  if (['low', 'negative', 'weak', 'very low', 'laggard', 'absent'].includes(t))
+    return { ...S.badge, backgroundColor: COLORS.redBg, color: COLORS.red, border: `1px solid ${COLORS.redBorder}` };
+  return { ...S.badge, backgroundColor: COLORS.gray200, color: COLORS.slate, border: `1px solid ${COLORS.gray300}` };
+};
+
+const severityColor = (level: string) => {
+  switch (level) {
+    case 'Critical': return COLORS.red;
+    case 'High': return COLORS.red;
+    case 'Medium': return COLORS.amber;
+    case 'Low': return COLORS.green;
+    default: return COLORS.slateLight;
+  }
+};
+
+const getVisibilityTier = (score: number): string => {
+  if (score >= 70) return 'Leader';
+  if (score >= 50) return 'Strong Performer';
+  if (score >= 30) return 'Challenger';
+  return 'Laggard';
+};
+
+const getShareOfVoice = (brandMentions: number, allMentions: Record<string, number>): number => {
+  const total = Object.values(allMentions).reduce((s, v) => s + v, 0);
+  if (total === 0) return 0;
+  return Math.min(Math.round((brandMentions / total) * 100), 100);
+};
+
+const getCompetitiveGap = (brandScore: number, topScore: number): number => {
+  if (topScore === 0) return 0;
+  return Math.round(((topScore - brandScore) / topScore) * 100);
+};
+
+const getRankQualityIndex = (llmData: Record<string, LlmDataItem>): number => {
+  const entries = Object.values(llmData);
+  if (entries.length === 0) return 0;
+  const avgRank = entries.reduce((s, e) => s + (e.average_rank || 0), 0) / entries.length;
+  if (avgRank <= 0) return 0;
+  // Scale: rank 1 = 100, rank 5 = 20, rank 10 = 0
+  return Math.max(0, Math.min(100, Math.round(100 - (avgRank - 1) * 11)));
+};
+
+const getVisibilityConsistency = (llmData: Record<string, LlmDataItem>): number => {
+  const entries = Object.values(llmData);
+  if (entries.length <= 1) return 100;
+  const mentions = entries.map(e => e.mentions_count || 0);
+  const avg = mentions.reduce((s, v) => s + v, 0) / mentions.length;
+  if (avg === 0) return 0;
+  const variance = mentions.reduce((s, v) => s + Math.pow(v - avg, 2), 0) / mentions.length;
+  const cv = Math.sqrt(variance) / avg; // coefficient of variation
+  return Math.max(0, Math.min(100, Math.round((1 - cv) * 100)));
+};
+
+// ─── Enterprise Printable Report ─────────────────────────────
+const PrintableContent = (props: PrintableContentProps) => {
+  const {
+    brandName, brandWebsite, brandLogo, modelName, analysisDate,
+    analysisKeywords, brandInfo, executiveSummary, recommendations,
+    keywords, llmData, aiVisibility, mentionsData,
+    sourcesAndContentImpact, platformPresence, competitorSentiment,
+    sentiment, brandMentionRates, competitorData, keywordNames, sourcesData,
+  } = props;
+
+  // Computed
   const totalPrompts = keywords.reduce((sum, kw) => sum + (kw.prompts?.length || 0), 0);
+  const totalMentions = Object.values(llmData).reduce((sum, llm) => sum + (llm.mentions_count || 0), 0);
   const sortedBrands = [...brandInfo].sort((a, b) => b.geo_score - a.geo_score);
   const models = modelName?.split(",").map(m => m.trim()).filter(Boolean) || [];
   const llmModels = Object.keys(llmData);
-  const allBrandNames = brandInfo.map(b => b.brand);
-  const intentResults = computeIntentData(keywords.flatMap(kw => kw.prompts.map(p => ({ query: p.query || "", brands_per_llm: p.brands_per_llm || {}, category: p.category }))), allBrandNames, llmModels, brandName);
+  const visibilityTier = getVisibilityTier(aiVisibility?.score || 0);
+  const shareOfVoice = getShareOfVoice(mentionsData?.brandMentions || 0, mentionsData?.allBrandMentions || {});
+  const competitiveGap = getCompetitiveGap(aiVisibility?.score || 0, sortedBrands[0]?.geo_score || 0);
+  const rankQuality = getRankQualityIndex(llmData);
+  const visConsistency = getVisibilityConsistency(llmData);
+  const topCompetitor = sortedBrands.find(b => b.brand !== brandName);
 
+  // T1/T2/T3 distribution
+  let totalT1 = 0, totalT2 = 0, totalT3 = 0;
+  Object.values(llmData).forEach((llm: any) => {
+    totalT1 += llm.t1 || 0; totalT2 += llm.t2 || 0; totalT3 += llm.t3 || 0;
+  });
+  const tierTotal = totalT1 + totalT2 + totalT3;
+
+  // Intent data
+  const allPrompts: Prompt[] = keywords.flatMap(kw => kw.prompts.map(p => ({
+    query: p.query || "", brands_per_llm: p.brands_per_llm || {}, category: p.category,
+  })));
+  const allBrandNames = brandInfo.map(b => b.brand);
+  const intentResults = computeIntentData(allPrompts, allBrandNames, llmModels, brandName);
+
+  // Sorted competitor data
   const sortedCompetitorData = [...competitorData].sort((a, b) => {
-    const totalA = a.keywordScores.reduce((sum, sc) => sum + (Number(sc) || 0), 0);
-    const totalB = b.keywordScores.reduce((sum, sc) => sum + (Number(sc) || 0), 0);
+    const totalA = a.keywordScores.reduce((sum, s) => sum + (Number(s) || 0), 0);
+    const totalB = b.keywordScores.reduce((sum, s) => sum + (Number(s) || 0), 0);
     return totalB - totalA;
   });
-  const pIdx = sortedCompetitorData.findIndex(c => c.name === brandName);
-  if (pIdx !== -1) { sortedCompetitorData.push(sortedCompetitorData.splice(pIdx, 1)[0]); }
+  const primaryIdx = sortedCompetitorData.findIndex(c => c.name === brandName);
+  if (primaryIdx !== -1) {
+    const primary = sortedCompetitorData.splice(primaryIdx, 1)[0];
+    sortedCompetitorData.push(primary);
+  }
 
+  // Sorted sentiment
   const sortedSentiment = [...competitorSentiment];
-  const sIdx = sortedSentiment.findIndex(sc => sc.brand === brandName);
-  if (sIdx !== -1) { sortedSentiment.push(sortedSentiment.splice(sIdx, 1)[0]); }
+  const sentPrimaryIdx = sortedSentiment.findIndex(s => s.brand === brandName);
+  if (sentPrimaryIdx !== -1) {
+    const primary = sortedSentiment.splice(sentPrimaryIdx, 1)[0];
+    sortedSentiment.push(primary);
+  }
 
+  // Source authority
   const allBrandsForSources = competitorData.map(c => c.name);
-  const srcIdx = allBrandsForSources.findIndex(b => b === brandName);
-  if (srcIdx !== -1) { allBrandsForSources.push(allBrandsForSources.splice(srcIdx, 1)[0]); }
+  const srcPrimaryIdx = allBrandsForSources.findIndex(b => b === brandName);
+  if (srcPrimaryIdx !== -1) {
+    const primary = allBrandsForSources.splice(srcPrimaryIdx, 1)[0];
+    allBrandsForSources.push(primary);
+  }
 
   const sourceAuthorityData = Object.entries(sourcesData || {}).map(([sourceName, sourceData]: [string, any]) => {
     const row: any = { name: sourceName };
     if (sourceData?.mentions && typeof sourceData.mentions === 'object') {
-      allBrandsForSources.forEach(brand => { row[`${brand}Mentions`] = sourceData.mentions[brand]?.count || 0; });
+      allBrandsForSources.forEach(brand => {
+        row[`${brand}Mentions`] = sourceData.mentions[brand]?.count || 0;
+      });
     } else {
       allBrandsForSources.forEach(brand => { row[`${brand}Mentions`] = 0; });
     }
     return row;
   });
 
-  const getBrandScoreForKeyword = (keywordId: string) => brandInfo.find(b => b.brand === brandName)?.mention_breakdown?.[keywordId] || 0;
+  // Risk calculations
+  const brandData = brandInfo.find(b => b.brand === brandName);
+  const isInvisible = (aiVisibility?.score || 0) < 30;
+  const topThreat = topCompetitor && topCompetitor.geo_score > (brandData?.geo_score || 0) * 1.5;
+  const trustDeficit = sentiment?.dominant_sentiment?.toLowerCase() === 'negative';
+  const reviewAbsent = !Object.entries(sourcesAndContentImpact || {}).some(
+    ([name]) => name.toLowerCase().includes('review')
+  );
+  const zeroIntents = intentResults.filter(i => i.presencePct === 0);
+
+  // Keyword helpers
+  const getBrandScoreForKeyword = (keywordId: string) => {
+    const brand = brandInfo.find(b => b.brand === brandName);
+    return brand?.mention_breakdown?.[keywordId] || 0;
+  };
+
   const getBrandsForKeyword = (keywordId: string) => {
     const brandsWithMentions = brandInfo.filter(b => (b.mention_breakdown?.[keywordId] || 0) > 0);
-    const ourIdx = brandsWithMentions.findIndex(b => b.brand === brandName);
+    const ourBrandIndex = brandsWithMentions.findIndex(b => b.brand === brandName);
     let ourBrand = null;
-    if (ourIdx !== -1) ourBrand = brandsWithMentions.splice(ourIdx, 1)[0];
-    else ourBrand = brandInfo.find(b => b.brand === brandName);
+    if (ourBrandIndex !== -1) {
+      ourBrand = brandsWithMentions.splice(ourBrandIndex, 1)[0];
+    } else {
+      ourBrand = brandInfo.find(b => b.brand === brandName);
+    }
     brandsWithMentions.sort((a, b) => (b.mention_breakdown?.[keywordId] || 0) - (a.mention_breakdown?.[keywordId] || 0));
     if (ourBrand) brandsWithMentions.push(ourBrand);
     return brandsWithMentions;
   };
 
-  const highlightRow = (isBrand: boolean, idx: number) => ({
-    ...(idx % 2 === 1 ? s.altRow : {}),
-    backgroundColor: isBrand ? '#eff6ff' : (idx % 2 === 1 ? '#f9fafb' : '#fff'),
-    fontWeight: isBrand ? '600' : 'normal' as any,
-  });
+  // Opportunity index
+  const highLeverageIntents = intentResults.filter(i => i.presencePct < 40 && i.leaderPct > 50);
+  const fastWins = recommendations.filter(r => r.overall_effort === 'Low' && r.impact === 'High');
+  const modelGrowthAreas = Object.entries(llmData)
+    .filter(([, d]) => (d.mentions_count || 0) < totalMentions / llmModels.length * 0.5)
+    .map(([m]) => getModelDisplayName(m));
 
   return (
-    <div style={s.page}>
-      {/* ═══ COVER PAGE ═══ */}
-      <div style={{ textAlign: 'center', paddingTop: '160px', paddingBottom: '100px', pageBreakAfter: 'always' as const, borderBottom: '3px solid #2563eb' }}>
-        {brandLogo && <div style={{ marginBottom: '24px' }}><img src={brandLogo} alt={brandName} style={{ width: '72px', height: '72px', objectFit: 'contain', margin: '0 auto' }} /></div>}
-        <h1 style={{ fontSize: '38px', fontWeight: '700', marginBottom: '16px', color: '#1e40af', letterSpacing: '-0.5px' }}>AI Visibility Analysis Report</h1>
-        <h2 style={{ fontSize: '28px', fontWeight: '600', color: '#374151', marginBottom: '10px' }}>{brandName}</h2>
-        <p style={{ fontSize: '15px', color: '#6b7280', marginBottom: '32px' }}>{brandWebsite}</p>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
-          {models.map((model, i) => <span key={i} style={{ ...s.badge, backgroundColor: '#e0e7ff', color: '#3730a3', fontSize: '10px', padding: '4px 10px' }}>{getModelDisplayName(model)}</span>)}
+    <div style={S.page}>
+      {/* ══════════════════════════════════════════════════════
+          1. COVER PAGE
+         ══════════════════════════════════════════════════════ */}
+      <div style={S.coverPage}>
+        <div style={S.coverWatermark}>CONFIDENTIAL</div>
+        <div style={S.coverTitle}>GeoRankers Intelligence</div>
+        {brandLogo && (
+          <div style={{ marginBottom: '24px' }}>
+            <img src={brandLogo} alt={brandName}
+              style={{ width: '72px', height: '72px', objectFit: 'contain', borderRadius: '12px', backgroundColor: 'rgba(255,255,255,0.15)', padding: '8px' }} />
+          </div>
+        )}
+        <div style={S.coverBrandName}>{brandName}</div>
+        <div style={S.coverReportTitle}>
+          AI Search & LLM Visibility Intelligence Report
         </div>
-        <p style={{ fontSize: '13px', color: '#9ca3af', fontStyle: 'italic' }}>
-          Report Generated: {analysisDate || new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-        </p>
-      </div>
-
-      {/* ═══ TABLE OF CONTENTS ═══ */}
-      <div style={{ pageBreakAfter: 'always' as const }}>
-        <h2 style={s.sectionHeader}>Table of Contents</h2>
-        <div style={{ paddingLeft: '12px', lineHeight: '1.6', fontSize: '9pt' }}>
-          <p><strong>1. Brand Overview</strong></p>
-          <p style={{ paddingLeft: '16px' }}>1.1 Brand Information &nbsp;•&nbsp; 1.2 Key Metrics Summary &nbsp;•&nbsp; 1.3 LLM Platform Performance</p>
-          <p style={{ paddingLeft: '16px' }}>1.4 Platform Presence &nbsp;•&nbsp; 1.5 Brand Presence by Buyer Intent</p>
-          <p><strong>2. Executive Summary</strong></p>
-          <p style={{ paddingLeft: '16px' }}>2.1 Brand Score & Positioning &nbsp;•&nbsp; 2.2 Strengths & Weaknesses &nbsp;•&nbsp; 2.3 Competitor Positioning &nbsp;•&nbsp; 2.4 Prioritized Actions</p>
-          <p><strong>3. AI Prompts & Query Analysis</strong></p>
-          <p style={{ paddingLeft: '16px' }}>3.1 Keywords & Prompts Breakdown &nbsp;•&nbsp; 3.2 Brand Mentions by Keyword &nbsp;•&nbsp; 3.3 Model-Wise Prompt Analysis</p>
-          <p><strong>4. Competitive Analysis</strong></p>
-          <p style={{ paddingLeft: '16px' }}>4.1 Competitive Landscape &nbsp;•&nbsp; 4.2 Brand Response Rates &nbsp;•&nbsp; 4.3 Keyword Performance Matrix &nbsp;•&nbsp; 4.4 AI Brand Perception &nbsp;•&nbsp; 4.5 Source Authority Map</p>
-          <p><strong>5. Sources & Content Impact</strong></p>
-          <p style={{ paddingLeft: '16px' }}>5.1 Source Category Breakdown &nbsp;•&nbsp; 5.2 Brand Mentions by Source</p>
-          <p><strong>6. Brand Sentiment Analysis</strong></p>
-          <p style={{ paddingLeft: '16px' }}>6.1 Primary Brand Sentiment &nbsp;•&nbsp; 6.2 Competitor Sentiment Analysis</p>
-          <p><strong>7. Strategic Recommendations</strong></p>
-          <p style={{ paddingLeft: '16px' }}>7.1 Prioritized Action Items &nbsp;•&nbsp; 7.2 Implementation Roadmap</p>
-          <p><strong>8. Appendix</strong></p>
+        <div style={{ marginBottom: '12px' }}>
+          {models.map((model, idx) => (
+            <span key={idx} style={S.coverModelBadge}>{getModelDisplayName(model)}</span>
+          ))}
+        </div>
+        <div style={S.coverMeta}>{brandWebsite}</div>
+        <div style={S.coverMeta}>
+          {analysisDate || new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+        </div>
+        <div style={S.coverMeta}>
+          {analysisKeywords.length} Keywords · {totalPrompts} Prompts · {llmModels.length} AI Models
+        </div>
+        <div style={S.coverFooter}>
+          © {new Date().getFullYear()} GeoRankers · AI Search Intelligence Platform
         </div>
       </div>
 
-      {/* ═══ SECTION 1: BRAND OVERVIEW ═══ */}
-      <div>
-        <h2 style={s.sectionHeader}>1. Brand Overview</h2>
-
-        <h3 style={s.subsectionHeader}>1.1 Brand Information</h3>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px', backgroundColor: '#f9fafb', borderRadius: '4px', border: '1px solid #e5e7eb', marginBottom: '10px' }}>
-          {brandLogo && <img src={brandLogo} alt={brandName} style={{ width: '48px', height: '48px', objectFit: 'contain', borderRadius: '6px', backgroundColor: 'white', padding: '3px' }} />}
-          <div style={{ flex: 1 }}>
-            <h3 style={{ margin: '0 0 4px 0', fontSize: '16px', fontWeight: '600' }}>{brandName}</h3>
-            <p style={{ margin: '0 0 4px 0', color: '#6b7280', fontSize: '10px' }}>{brandWebsite}</p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-              {analysisKeywords.map((kw, i) => <span key={i} style={{ ...s.badge, backgroundColor: '#e5e7eb', color: '#374151', margin: 0 }}>{kw}</span>)}
-            </div>
+      {/* ══════════════════════════════════════════════════════
+          TABLE OF CONTENTS
+         ══════════════════════════════════════════════════════ */}
+      <div style={{ ...S.pageBreak, pageBreakBefore: 'auto' }}>
+        <div style={S.sectionHeader}>Table of Contents</div>
+        <div style={S.sectionDivider} />
+        <div style={{ ...S.sansSerif, fontSize: '10.5pt', lineHeight: '2.2', color: COLORS.slate }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: `1px solid ${COLORS.gray300}`, padding: '4px 0' }}>
+            <span><strong>1.</strong> Executive Summary</span>
           </div>
-          <div style={{ textAlign: 'right' }}>
-            <p style={{ margin: '0 0 2px 0', fontSize: '8px', color: '#6b7280' }}>Analysis Date</p>
-            <p style={{ margin: '0 0 4px 0', fontSize: '10px', fontWeight: '600' }}>{analysisDate}</p>
-            <div style={{ display: 'flex', gap: '4px', justifyContent: 'flex-end' }}>
-              {models.map((model, i) => <span key={i} style={{ ...s.badge, backgroundColor: '#e0e7ff', color: '#3730a3', margin: 0 }}>{getModelDisplayName(model)}</span>)}
-            </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: `1px solid ${COLORS.gray300}`, padding: '4px 0' }}>
+            <span><strong>2.</strong> AI Visibility Scorecard</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: `1px solid ${COLORS.gray300}`, padding: '4px 0' }}>
+            <span><strong>3.</strong> Competitive Intelligence Matrix</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: `1px solid ${COLORS.gray300}`, padding: '4px 0' }}>
+            <span><strong>4.</strong> LLM-Specific Performance Breakdown</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: `1px solid ${COLORS.gray300}`, padding: '4px 0' }}>
+            <span><strong>5.</strong> Intent-Level Analysis</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: `1px solid ${COLORS.gray300}`, padding: '4px 0' }}>
+            <span><strong>6.</strong> Source Authority & Ecosystem Analysis</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: `1px solid ${COLORS.gray300}`, padding: '4px 0' }}>
+            <span><strong>7.</strong> Narrative Positioning Analysis</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: `1px solid ${COLORS.gray300}`, padding: '4px 0' }}>
+            <span><strong>8.</strong> AI Prompts & Query Analysis</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: `1px solid ${COLORS.gray300}`, padding: '4px 0' }}>
+            <span><strong>9.</strong> Strategic Action Plan</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: `1px solid ${COLORS.gray300}`, padding: '4px 0' }}>
+            <span><strong>10.</strong> Risk & Exposure Assessment</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: `1px solid ${COLORS.gray300}`, padding: '4px 0' }}>
+            <span><strong>11.</strong> Opportunity Index</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}>
+            <span><strong>12.</strong> Methodology & Appendix</span>
+          </div>
+        </div>
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          2. EXECUTIVE SUMMARY
+         ══════════════════════════════════════════════════════ */}
+      <div style={S.sectionPage}>
+        <div style={S.sectionHeader}>1. Executive Summary</div>
+        <div style={S.sectionSubtitle}>Board-level strategic overview of {brandName}'s AI search visibility position</div>
+        <div style={S.sectionDivider} />
+
+        {/* Visibility Tier Callout */}
+        <div style={{
+          ...S.calloutCard,
+          borderLeftColor: visibilityTier === 'Leader' ? COLORS.green : visibilityTier === 'Strong Performer' ? COLORS.blueLight : visibilityTier === 'Challenger' ? COLORS.amber : COLORS.red,
+          backgroundColor: visibilityTier === 'Leader' ? COLORS.greenBg : visibilityTier === 'Strong Performer' ? COLORS.bluePale : visibilityTier === 'Challenger' ? COLORS.amberBg : COLORS.redBg,
+          textAlign: 'center' as const,
+          padding: '28px',
+        }}>
+          <div style={{ ...S.sansSerif, fontSize: '11px', color: COLORS.slateLight, textTransform: 'uppercase' as const, letterSpacing: '2px', marginBottom: '8px' }}>
+            Overall Visibility Classification
+          </div>
+          <div style={{ fontSize: '32px', fontWeight: '700' as const, color: COLORS.navy, marginBottom: '8px', fontFamily: "'Segoe UI', sans-serif" }}>
+            {visibilityTier}
+          </div>
+          <div style={{ fontSize: '14px', color: COLORS.slateLight }}>
+            AI Visibility Score: <strong style={{ color: COLORS.blue }}>{aiVisibility?.score || 0}</strong> · 
+            Position #{aiVisibility?.brandPosition || '-'} of {aiVisibility?.totalBrands || '-'} brands analyzed
           </div>
         </div>
 
-        <h3 style={s.subsectionHeader}>1.2 Key Metrics Summary</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '8px', marginBottom: '10px' }}>
-          <div style={s.metricCard}>
-            <div style={s.metricValue}>{aiVisibility?.score || 0}</div>
-            <div style={s.metricLabel}>AI Visibility Score</div>
-            <span style={tierBadge(aiVisibility?.tier)}>{aiVisibility?.tier || 'N/A'} Tier</span>
+        {/* Strategic Diagnosis */}
+        {executiveSummary?.brand_score_and_tier && (
+          <div style={{ ...S.card, marginTop: '16px' }}>
+            <div style={{ ...S.subsubsection, marginTop: 0, color: COLORS.navy }}>Strategic Diagnosis</div>
+            <p style={S.text}>{executiveSummary.brand_score_and_tier}</p>
           </div>
-          <div style={s.metricCard}>
-            <div style={s.metricValue}>{mentionsData?.brandMentions || 0}</div>
-            <div style={s.metricLabel}>Total Mentions</div>
-            <span style={tierBadge(mentionsData?.tier)}>{mentionsData?.tier || 'N/A'} Tier</span>
+        )}
+
+        {/* 3 Critical Risks + 3 Opportunities side by side */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '16px' }}>
+          <div style={{ ...S.card, borderLeft: `4px solid ${COLORS.red}` }}>
+            <div style={{ ...S.subsubsection, marginTop: 0, color: COLORS.red }}>Critical Risks</div>
+            <ul style={{ paddingLeft: '18px', margin: 0 }}>
+              {(executiveSummary?.weaknesses || []).slice(0, 3).map((w, i) => (
+                <li key={i} style={{ ...S.text, marginBottom: '6px', fontSize: '9.5pt' }}>{w}</li>
+              ))}
+              {(!executiveSummary?.weaknesses || executiveSummary.weaknesses.length === 0) && (
+                <li style={S.text}>No critical weaknesses identified in current analysis.</li>
+              )}
+            </ul>
           </div>
-          <div style={s.metricCard}>
-            <div style={s.metricValue}>{totalPrompts}</div>
-            <div style={s.metricLabel}>Prompts Analyzed</div>
-            <span style={{ ...s.badge, backgroundColor: '#e0e7ff', color: '#3730a3' }}>{keywords.length} Keywords</span>
-          </div>
-          <div style={s.metricCard}>
-            <div style={s.metricValue}>{Object.keys(llmData).length}</div>
-            <div style={s.metricLabel}>LLM Platforms</div>
-            <span style={tierBadge(sentiment?.dominant_sentiment)}>{sentiment?.dominant_sentiment}</span>
+          <div style={{ ...S.card, borderLeft: `4px solid ${COLORS.green}` }}>
+            <div style={{ ...S.subsubsection, marginTop: 0, color: COLORS.green }}>Growth Opportunities</div>
+            <ul style={{ paddingLeft: '18px', margin: 0 }}>
+              {(executiveSummary?.strengths || []).slice(0, 3).map((s, i) => (
+                <li key={i} style={{ ...S.text, marginBottom: '6px', fontSize: '9.5pt' }}>{s}</li>
+              ))}
+              {(!executiveSummary?.strengths || executiveSummary.strengths.length === 0) && (
+                <li style={S.text}>Analysis did not surface specific growth opportunities.</li>
+              )}
+            </ul>
           </div>
         </div>
 
-        {aiVisibility?.positionBreakdown && (
-          <div style={{ ...s.card, marginBottom: '10px' }}>
-            <h4 style={s.subsubsectionHeader}>Ranking Distribution</h4>
-            <div style={{ display: 'flex', gap: '16px', justifyContent: 'space-around', marginTop: '4px' }}>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '18px', fontWeight: '700', color: '#16a34a' }}>{aiVisibility.positionBreakdown.topPosition}%</div>
-                <div style={{ fontSize: '7.5pt', color: '#6b7280' }}>Top (#1)</div>
+        {/* Competitive Position Snapshot */}
+        {executiveSummary?.competitor_positioning && (
+          <div style={{ ...S.card, marginTop: '16px' }}>
+            <div style={{ ...S.subsubsection, marginTop: 0, color: COLORS.navy }}>Competitive Position Snapshot</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginTop: '8px' }}>
+              <div style={{ textAlign: 'center' as const }}>
+                <div style={{ ...S.sansSerif, fontSize: '10px', color: COLORS.green, fontWeight: '600', marginBottom: '4px', textTransform: 'uppercase' as const }}>Leaders</div>
+                {(executiveSummary.competitor_positioning.leaders || []).map((l, i) => (
+                  <div key={i} style={{ ...S.sansSerif, fontSize: '11px', color: COLORS.slate, marginBottom: '2px' }}>{l.name}</div>
+                ))}
+                {(!executiveSummary.competitor_positioning.leaders || executiveSummary.competitor_positioning.leaders.length === 0) && (
+                  <div style={{ ...S.sansSerif, fontSize: '11px', color: COLORS.slatePale }}>—</div>
+                )}
               </div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '18px', fontWeight: '700', color: '#ca8a04' }}>{aiVisibility.positionBreakdown.midPosition}%</div>
-                <div style={{ fontSize: '7.5pt', color: '#6b7280' }}>Mid (2-4)</div>
+              <div style={{ textAlign: 'center' as const }}>
+                <div style={{ ...S.sansSerif, fontSize: '10px', color: COLORS.amber, fontWeight: '600', marginBottom: '4px', textTransform: 'uppercase' as const }}>Challengers</div>
+                {(executiveSummary.competitor_positioning.mid_tier || []).map((m, i) => (
+                  <div key={i} style={{ ...S.sansSerif, fontSize: '11px', color: COLORS.slate, marginBottom: '2px' }}>{m.name}</div>
+                ))}
+                {(!executiveSummary.competitor_positioning.mid_tier || executiveSummary.competitor_positioning.mid_tier.length === 0) && (
+                  <div style={{ ...S.sansSerif, fontSize: '11px', color: COLORS.slatePale }}>—</div>
+                )}
               </div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '18px', fontWeight: '700', color: '#dc2626' }}>{aiVisibility.positionBreakdown.lowPosition}%</div>
-                <div style={{ fontSize: '7.5pt', color: '#6b7280' }}>Low (5+)</div>
+              <div style={{ textAlign: 'center' as const }}>
+                <div style={{ ...S.sansSerif, fontSize: '10px', color: COLORS.red, fontWeight: '600', marginBottom: '4px', textTransform: 'uppercase' as const }}>Laggards</div>
+                {(executiveSummary.competitor_positioning.laggards || []).map((l, i) => (
+                  <div key={i} style={{ ...S.sansSerif, fontSize: '11px', color: COLORS.slate, marginBottom: '2px' }}>{l.name}</div>
+                ))}
+                {(!executiveSummary.competitor_positioning.laggards || executiveSummary.competitor_positioning.laggards.length === 0) && (
+                  <div style={{ ...S.sansSerif, fontSize: '11px', color: COLORS.slatePale }}>—</div>
+                )}
               </div>
             </div>
           </div>
         )}
 
-        <h3 style={s.subsectionHeader}>1.3 LLM Platform Performance</h3>
-        <table style={s.table}>
-          <thead><tr>
-            <th style={s.th}>Platform</th>
-            <th style={s.th}>Mentions</th>
-            <th style={s.th}>Prompts</th>
-            <th style={s.th}>Avg Rank</th>
-            <th style={s.th}>Sources</th>
-          </tr></thead>
-          <tbody>
-            {Object.entries(llmData).map(([llm, data], i) => (
-              <tr key={i} style={i % 2 === 1 ? s.altRow : {}}>
-                <td style={{ ...s.td, fontWeight: '600' }}>{getModelDisplayName(llm)}</td>
-                <td style={s.td}>{data.mentions_count}</td>
-                <td style={s.td}>{totalPrompts}</td>
-                <td style={s.td}>{data.average_rank > 0 ? `#${data.average_rank.toFixed(1)}` : 'N/A'}</td>
-                <td style={s.td}>{data.sources}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        <h3 style={s.subsectionHeader}>1.4 Platform Presence</h3>
-        {Object.keys(platformPresence).length > 0 ? (
-          <table style={s.table}>
-            <thead><tr>
-              <th style={s.th}>Platform</th>
-              <th style={s.th}>Status</th>
-              <th style={s.th}>URL</th>
-            </tr></thead>
-            <tbody>
-              {Object.entries(platformPresence).map(([platform, url], i) => (
-                <tr key={i} style={i % 2 === 1 ? s.altRow : {}}>
-                  <td style={{ ...s.td, fontWeight: '600', textTransform: 'capitalize' }}>{platform.replace('_', ' ')}</td>
-                  <td style={s.td}><span style={url ? tierBadge('high') : tierBadge('low')}>{url ? 'Active' : 'Not Found'}</span></td>
-                  <td style={{ ...s.td, fontSize: '7.5pt', wordBreak: 'break-all' as const }}>{url || '-'}</td>
-                </tr>
+        {/* Immediate Priority Actions */}
+        {executiveSummary?.prioritized_actions && executiveSummary.prioritized_actions.length > 0 && (
+          <div style={{ ...S.calloutCard, marginTop: '16px' }}>
+            <div style={{ ...S.subsubsection, marginTop: 0, color: COLORS.blue }}>Immediate Priority Actions</div>
+            <ol style={{ paddingLeft: '20px', margin: 0 }}>
+              {executiveSummary.prioritized_actions.slice(0, 5).map((action, idx) => (
+                <li key={idx} style={{ ...S.text, marginBottom: '8px' }}>{action}</li>
               ))}
+            </ol>
+          </div>
+        )}
+
+        {executiveSummary?.conclusion && (
+          <div style={{ ...S.card, marginTop: '16px', backgroundColor: COLORS.gray200 }}>
+            <div style={{ ...S.subsubsection, marginTop: 0 }}>Strategic Conclusion</div>
+            <p style={{ ...S.text, fontStyle: 'italic' as const }}>{executiveSummary.conclusion}</p>
+          </div>
+        )}
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          3. AI VISIBILITY SCORECARD
+         ══════════════════════════════════════════════════════ */}
+      <div style={S.sectionPage}>
+        <div style={S.sectionHeader}>2. AI Visibility Scorecard</div>
+        <div style={S.sectionSubtitle}>Comprehensive visibility metrics derived from {totalPrompts} AI prompts across {llmModels.length} models</div>
+        <div style={S.sectionDivider} />
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '14px', marginBottom: '20px' }}>
+          <div style={S.kpiBlock}>
+            <div style={S.kpiValue}>{aiVisibility?.score || 0}</div>
+            <div style={S.kpiLabel}>AI Visibility Score</div>
+            <div style={{ marginTop: '6px' }}><span style={tierBadge(aiVisibility?.tier || '')}>{aiVisibility?.tier || 'N/A'}</span></div>
+          </div>
+          <div style={S.kpiBlock}>
+            <div style={S.kpiValue}>{totalMentions}</div>
+            <div style={S.kpiLabel}>Total AI Mentions</div>
+            <div style={S.kpiSub}>across all platforms</div>
+          </div>
+          <div style={S.kpiBlock}>
+            <div style={S.kpiValue}>{shareOfVoice}%</div>
+            <div style={S.kpiLabel}>Share of Voice</div>
+            <div style={S.kpiSub}>vs. {brandInfo.length} competitors</div>
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '14px', marginBottom: '20px' }}>
+          <div style={S.kpiBlock}>
+            <div style={S.kpiValue}>{rankQuality}</div>
+            <div style={S.kpiLabel}>Rank Quality Index</div>
+            <div style={S.kpiSub}>higher = better positions</div>
+          </div>
+          <div style={S.kpiBlock}>
+            <div style={S.kpiValue}>{visConsistency}%</div>
+            <div style={S.kpiLabel}>Visibility Consistency</div>
+            <div style={S.kpiSub}>cross-model stability</div>
+          </div>
+          <div style={S.kpiBlock}>
+            <div style={{ ...S.kpiValue, fontSize: '20px' }}>
+              {competitiveGap > 0 ? `-${competitiveGap}%` : 'Leading'}
+            </div>
+            <div style={S.kpiLabel}>Competitive Gap</div>
+            <div style={S.kpiSub}>vs. top competitor</div>
+          </div>
+        </div>
+
+        {/* Tier Distribution */}
+        {tierTotal > 0 && (
+          <div style={S.card}>
+            <div style={{ ...S.subsubsection, marginTop: 0 }}>Ranking Tier Distribution</div>
+            <div style={{ display: 'flex', gap: '20px', justifyContent: 'space-around', marginTop: '12px' }}>
+              <div style={{ textAlign: 'center' as const }}>
+                <div style={{ ...S.sansSerif, fontSize: '26px', fontWeight: '700', color: COLORS.green }}>{tierTotal > 0 ? Math.round((totalT1 / tierTotal) * 100) : 0}%</div>
+                <div style={{ ...S.kpiLabel, color: COLORS.green }}>T1 (#1 Position)</div>
+                <div style={S.kpiSub}>{totalT1} appearances</div>
+              </div>
+              <div style={{ textAlign: 'center' as const }}>
+                <div style={{ ...S.sansSerif, fontSize: '26px', fontWeight: '700', color: COLORS.amber }}>{tierTotal > 0 ? Math.round((totalT2 / tierTotal) * 100) : 0}%</div>
+                <div style={{ ...S.kpiLabel, color: COLORS.amber }}>T2 (Rank 2-4)</div>
+                <div style={S.kpiSub}>{totalT2} appearances</div>
+              </div>
+              <div style={{ textAlign: 'center' as const }}>
+                <div style={{ ...S.sansSerif, fontSize: '26px', fontWeight: '700', color: COLORS.red }}>{tierTotal > 0 ? Math.round((totalT3 / tierTotal) * 100) : 0}%</div>
+                <div style={{ ...S.kpiLabel, color: COLORS.red }}>T3 (Rank 5+)</div>
+                <div style={S.kpiSub}>{totalT3} appearances</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* LLM Coverage Gap */}
+        <div style={{ ...S.card, marginTop: '16px' }}>
+          <div style={{ ...S.subsubsection, marginTop: 0 }}>LLM Coverage Analysis</div>
+          <table style={S.table}>
+            <thead>
+              <tr>
+                <th style={S.th}>AI Model</th>
+                <th style={{ ...S.th, textAlign: 'center' as const }}>Mentions</th>
+                <th style={{ ...S.th, textAlign: 'center' as const }}>Avg. Rank</th>
+                <th style={{ ...S.th, textAlign: 'center' as const }}>Sources</th>
+                <th style={{ ...S.th, textAlign: 'center' as const }}>Coverage</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Object.entries(llmData).map(([llm, data], idx) => {
+                const maxMentions = Math.max(...Object.values(llmData).map(d => d.mentions_count || 0), 1);
+                const coverage = Math.round(((data.mentions_count || 0) / maxMentions) * 100);
+                return (
+                  <tr key={idx} style={idx % 2 === 1 ? S.tdAlt : {}}>
+                    <td style={{ ...S.td, fontWeight: '600' }}>{getModelDisplayName(llm)}</td>
+                    <td style={{ ...S.td, textAlign: 'center' }}>{data.mentions_count}</td>
+                    <td style={{ ...S.td, textAlign: 'center' }}>{data.average_rank > 0 ? `#${data.average_rank.toFixed(1)}` : 'N/A'}</td>
+                    <td style={{ ...S.td, textAlign: 'center' }}>{data.sources}</td>
+                    <td style={{ ...S.td, textAlign: 'center' }}>
+                      <span style={tierBadge(coverage >= 70 ? 'high' : coverage >= 40 ? 'medium' : 'low')}>{coverage}%</span>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
-        ) : <p style={{ color: '#6b7280' }}>No platform presence data available.</p>}
+        </div>
+      </div>
 
-        <h3 style={s.subsectionHeader}>1.5 Brand Presence by Buyer Intent</h3>
-        <table style={s.table}>
-          <thead><tr>
-            <th style={s.th}>Intent</th>
-            <th style={s.th}>Your Visibility</th>
-            <th style={{ ...s.th, textAlign: 'center' }}>Strength</th>
-            <th style={s.th}>Leader</th>
-            <th style={{ ...s.th, textAlign: 'center' }}>Leader %</th>
-          </tr></thead>
+      {/* ══════════════════════════════════════════════════════
+          4. COMPETITIVE INTELLIGENCE MATRIX
+         ══════════════════════════════════════════════════════ */}
+      <div style={S.sectionPage}>
+        <div style={S.sectionHeader}>3. Competitive Intelligence Matrix</div>
+        <div style={S.sectionSubtitle}>Comprehensive competitive positioning analysis across {brandInfo.length} brands</div>
+        <div style={S.sectionDivider} />
+
+        {/* Competitive Ranking Table */}
+        <div style={S.subsection}>Competitive Ranking Table</div>
+        <table style={S.table}>
+          <thead>
+            <tr>
+              <th style={S.th}>Rank</th>
+              <th style={S.th}>Brand</th>
+              <th style={{ ...S.th, textAlign: 'center' as const }}>Visibility Score</th>
+              <th style={{ ...S.th, textAlign: 'center' as const }}>Mention Score</th>
+              <th style={{ ...S.th, textAlign: 'center' as const }}>Tier</th>
+              <th style={{ ...S.th, textAlign: 'center' as const }}>Outlook</th>
+              <th style={{ ...S.th, textAlign: 'center' as const }}>Threat Level</th>
+            </tr>
+          </thead>
           <tbody>
-            {intentResults.map((r, i) => (
-              <tr key={i} style={i % 2 === 1 ? s.altRow : {}}>
-                <td style={{ ...s.td, fontWeight: '600' }}>{r.intent}</td>
-                <td style={s.td}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <div style={{ flex: 1, height: '10px', backgroundColor: '#e5e7eb', borderRadius: '3px', overflow: 'hidden' }}>
-                      <div style={{ width: `${Math.min(r.presencePct, 100)}%`, height: '100%', backgroundColor: r.presencePct >= 40 ? '#16a34a' : r.presencePct >= 20 ? '#ca8a04' : '#dc2626', borderRadius: '3px' }} />
-                    </div>
-                    <span style={{ fontSize: '8pt', fontWeight: '600', minWidth: '28px' }}>{r.presencePct}%</span>
+            {sortedBrands.map((brand, idx) => {
+              const isCurrent = brand.brand === brandName;
+              const threatLevel = brand.brand === brandName ? '—' :
+                brand.geo_score > (brandData?.geo_score || 0) * 1.5 ? 'Critical' :
+                brand.geo_score > (brandData?.geo_score || 0) ? 'High' :
+                brand.geo_score > (brandData?.geo_score || 0) * 0.5 ? 'Medium' : 'Low';
+              return (
+                <tr key={idx} style={{
+                  ...(idx % 2 === 1 ? S.tdAlt : {}),
+                  backgroundColor: isCurrent ? COLORS.bluePale : (idx % 2 === 1 ? COLORS.gray100 : COLORS.white),
+                  fontWeight: isCurrent ? '600' : 'normal',
+                }}>
+                  <td style={{ ...S.td, textAlign: 'center', fontWeight: '700' }}>{idx + 1}</td>
+                  <td style={S.td}>{brand.brand}</td>
+                  <td style={{ ...S.td, textAlign: 'center' }}>{brand.geo_score}</td>
+                  <td style={{ ...S.td, textAlign: 'center' }}>{brand.mention_score}</td>
+                  <td style={{ ...S.td, textAlign: 'center' }}><span style={tierBadge(brand.geo_tier)}>{brand.geo_tier}</span></td>
+                  <td style={{ ...S.td, textAlign: 'center' }}><span style={tierBadge(brand.outlook)}>{brand.outlook}</span></td>
+                  <td style={{ ...S.td, textAlign: 'center' }}>
+                    {threatLevel !== '—' ? <span style={{ ...S.badge, color: severityColor(threatLevel), backgroundColor: 'transparent', fontWeight: '700' }}>{threatLevel}</span> : '—'}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+
+        {/* Keyword Performance Matrix */}
+        <div style={S.subsection}>Keyword Performance Matrix</div>
+        <p style={{ ...S.sansSerif, color: COLORS.slateLight, marginBottom: '12px', fontSize: '10pt' }}>Brand mention frequency across analyzed keyword categories</p>
+        <table style={S.table}>
+          <thead>
+            <tr>
+              <th style={S.th}>Brand</th>
+              {keywordNames.map((kw, idx) => (
+                <th key={idx} style={{ ...S.th, textAlign: 'center', fontSize: '8.5pt' }}>{kw}</th>
+              ))}
+              <th style={{ ...S.th, textAlign: 'center' }}>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sortedCompetitorData.map((c, idx) => {
+              const isPrimary = c.name === brandName;
+              const total = c.keywordScores.reduce((sum, s) => sum + (Number(s) || 0), 0);
+              return (
+                <tr key={idx} style={{
+                  backgroundColor: isPrimary ? COLORS.bluePale : (idx % 2 === 1 ? COLORS.gray100 : COLORS.white),
+                  fontWeight: isPrimary ? '600' : 'normal',
+                }}>
+                  <td style={S.td}>{c.name}</td>
+                  {c.keywordScores.map((score, sIdx) => (
+                    <td key={sIdx} style={{ ...S.td, textAlign: 'center' }}>{score}</td>
+                  ))}
+                  <td style={{ ...S.td, textAlign: 'center' }}>
+                    <span style={{
+                      display: 'inline-block', padding: '4px 12px', borderRadius: '4px', fontWeight: '700',
+                      backgroundColor: isPrimary ? COLORS.navy : COLORS.gray200,
+                      color: isPrimary ? COLORS.white : COLORS.navy,
+                      fontSize: '11px',
+                    }}>{total}</span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+
+        {/* Brand Response Rates */}
+        <div style={S.subsection}>Brand AI Response Rate</div>
+        <table style={S.table}>
+          <thead>
+            <tr>
+              <th style={S.th}>Rank</th>
+              <th style={S.th}>Brand</th>
+              <th style={{ ...S.th, textAlign: 'center' }}>Response Rate</th>
+              <th style={S.th}>Dominance</th>
+            </tr>
+          </thead>
+          <tbody>
+            {brandMentionRates.map((item, idx) => (
+              <tr key={idx} style={{
+                backgroundColor: item.isTestBrand ? COLORS.bluePale : (idx % 2 === 1 ? COLORS.gray100 : COLORS.white),
+                fontWeight: item.isTestBrand ? '600' : 'normal',
+              }}>
+                <td style={{ ...S.td, textAlign: 'center' }}>{idx + 1}</td>
+                <td style={S.td}>{item.brand}</td>
+                <td style={{ ...S.td, textAlign: 'center', fontWeight: '700', color: COLORS.blue }}>{item.responseRate}%</td>
+                <td style={S.td}>
+                  <div style={{ width: '100%', height: '14px', backgroundColor: COLORS.gray300, borderRadius: '7px', overflow: 'hidden' }}>
+                    <div style={{ width: `${Math.min(item.responseRate, 100)}%`, height: '100%', backgroundColor: item.isTestBrand ? COLORS.blue : COLORS.amber, borderRadius: '7px' }} />
                   </div>
                 </td>
-                <td style={{ ...s.td, textAlign: 'center' }}><span style={tierBadge(r.status)}>{r.status}</span></td>
-                <td style={s.td}>{r.leader}</td>
-                <td style={{ ...s.td, textAlign: 'center' }}>{r.leaderPct}%</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
-      {/* ═══ SECTION 2: EXECUTIVE SUMMARY ═══ */}
-      <div>
-        <h2 style={s.sectionHeader}>2. Executive Summary</h2>
+      {/* ══════════════════════════════════════════════════════
+          5. LLM-SPECIFIC PERFORMANCE BREAKDOWN
+         ══════════════════════════════════════════════════════ */}
+      <div style={S.sectionPage}>
+        <div style={S.sectionHeader}>4. LLM-Specific Performance Breakdown</div>
+        <div style={S.sectionSubtitle}>Individual AI model analysis with strategic interpretation and dependence risk</div>
+        <div style={S.sectionDivider} />
 
-        <h3 style={s.subsectionHeader}>2.1 Brand Score & Positioning</h3>
-        {executiveSummary?.brand_score_and_tier && <div style={s.card}><p style={{ lineHeight: '1.5' }}>{executiveSummary.brand_score_and_tier}</p></div>}
-        {executiveSummary?.conclusion && <div style={s.card}><h4 style={s.subsubsectionHeader}>Strategic Conclusion</h4><p style={{ lineHeight: '1.5' }}>{executiveSummary.conclusion}</p></div>}
+        {Object.entries(llmData).map(([llm, data], idx) => {
+          const maxMentions = Math.max(...Object.values(llmData).map(d => d.mentions_count || 0), 1);
+          const penetration = Math.round(((data.mentions_count || 0) / maxMentions) * 100);
+          const tierPenetration = ((data.t1 || 0) + (data.t2 || 0)) > 0 ? 
+            Math.round(((data.t1 || 0) / ((data.t1 || 0) + (data.t2 || 0) + (data.t3 || 0))) * 100) : 0;
+          const visGap = 100 - penetration;
 
-        <h3 style={s.subsectionHeader}>2.2 Strengths & Weaknesses</h3>
-        {executiveSummary?.strengths && executiveSummary.strengths.length > 0 && (
-          <div style={s.card}>
-            <h4 style={{ ...s.subsubsectionHeader, color: '#16a34a' }}>✓ Key Strengths</h4>
-            <ul style={s.list}>{executiveSummary.strengths.map((item, i) => <li key={i} style={s.listItem}>{item}</li>)}</ul>
+          return (
+            <div key={idx} style={{ ...S.card, marginBottom: '18px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ ...S.subsection, marginTop: 0, marginBottom: 0 }}>{getModelDisplayName(llm)}</div>
+                <span style={tierBadge(penetration >= 60 ? 'high' : penetration >= 30 ? 'medium' : 'low')}>
+                  {penetration >= 60 ? 'Strong' : penetration >= 30 ? 'Moderate' : 'Weak'} Coverage
+                </span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '12px', marginTop: '14px' }}>
+                <div style={{ textAlign: 'center' as const }}>
+                  <div style={{ ...S.sansSerif, fontSize: '22px', fontWeight: '700', color: COLORS.blue }}>{data.mentions_count}</div>
+                  <div style={S.kpiLabel}>Mentions</div>
+                </div>
+                <div style={{ textAlign: 'center' as const }}>
+                  <div style={{ ...S.sansSerif, fontSize: '22px', fontWeight: '700', color: COLORS.navy }}>{data.average_rank > 0 ? `#${data.average_rank.toFixed(1)}` : 'N/A'}</div>
+                  <div style={S.kpiLabel}>Avg Rank</div>
+                </div>
+                <div style={{ textAlign: 'center' as const }}>
+                  <div style={{ ...S.sansSerif, fontSize: '22px', fontWeight: '700', color: COLORS.green }}>{tierPenetration}%</div>
+                  <div style={S.kpiLabel}>T1 Penetration</div>
+                </div>
+                <div style={{ textAlign: 'center' as const }}>
+                  <div style={{ ...S.sansSerif, fontSize: '22px', fontWeight: '700', color: visGap > 50 ? COLORS.red : COLORS.amber }}>{visGap}%</div>
+                  <div style={S.kpiLabel}>Visibility Gap</div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+
+        {/* Model Dependence Risk */}
+        <div style={{ ...S.calloutCard, borderLeftColor: COLORS.amber, backgroundColor: COLORS.amberBg }}>
+          <div style={{ ...S.subsubsection, marginTop: 0, color: COLORS.gold }}>Model Dependence Risk Assessment</div>
+          <p style={S.text}>
+            {visConsistency >= 70
+              ? `${brandName} demonstrates balanced visibility across AI models (${visConsistency}% consistency). This indicates low model-dependence risk — the brand's AI presence is not overly reliant on any single platform.`
+              : visConsistency >= 40
+              ? `${brandName} shows moderate variation in visibility across AI models (${visConsistency}% consistency). Certain models contribute disproportionately to overall brand presence, creating selective exposure risk.`
+              : `${brandName} shows significant inconsistency across AI models (${visConsistency}% consistency). The brand's visibility is heavily concentrated in ${
+                  Object.entries(llmData).sort(([, a], [, b]) => (b.mentions_count || 0) - (a.mentions_count || 0))[0]?.[0]
+                    ? getModelDisplayName(Object.entries(llmData).sort(([, a], [, b]) => (b.mentions_count || 0) - (a.mentions_count || 0))[0][0])
+                    : 'a single model'
+                }, creating high platform-dependence risk.`
+            }
+          </p>
+        </div>
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          6. INTENT-LEVEL ANALYSIS
+         ══════════════════════════════════════════════════════ */}
+      <div style={S.sectionPage}>
+        <div style={S.sectionHeader}>5. Intent-Level Analysis</div>
+        <div style={S.sectionSubtitle}>Visibility segmented by buyer journey stage — Discovery, Comparison, Pricing, Use Case, Trust</div>
+        <div style={S.sectionDivider} />
+
+        <table style={S.table}>
+          <thead>
+            <tr>
+              <th style={S.th}>Intent Category</th>
+              <th style={{ ...S.th, textAlign: 'center' }}>Your Visibility</th>
+              <th style={{ ...S.th, textAlign: 'center' }}>Strength</th>
+              <th style={S.th}>Dominant Brand</th>
+              <th style={{ ...S.th, textAlign: 'center' }}>Leader %</th>
+              <th style={{ ...S.th, textAlign: 'center' }}>Risk Level</th>
+            </tr>
+          </thead>
+          <tbody>
+            {intentResults.map((result, idx) => {
+              const riskLevel = result.presencePct === 0 ? 'Critical' :
+                result.presencePct < 20 ? 'High' :
+                result.presencePct < 40 ? 'Medium' : 'Low';
+              return (
+                <tr key={idx} style={idx % 2 === 1 ? S.tdAlt : {}}>
+                  <td style={{ ...S.td, fontWeight: '600' }}>{result.intent}</td>
+                  <td style={{ ...S.td, textAlign: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div style={{ flex: 1, height: '12px', backgroundColor: COLORS.gray300, borderRadius: '6px', overflow: 'hidden' }}>
+                        <div style={{
+                          width: `${Math.min(result.presencePct, 100)}%`, height: '100%',
+                          backgroundColor: result.presencePct >= 40 ? COLORS.green : result.presencePct >= 20 ? COLORS.amber : COLORS.red,
+                          borderRadius: '6px',
+                        }} />
+                      </div>
+                      <span style={{ ...S.sansSerif, fontSize: '11px', fontWeight: '700', minWidth: '35px' }}>{result.presencePct}%</span>
+                    </div>
+                  </td>
+                  <td style={{ ...S.td, textAlign: 'center' }}><span style={tierBadge(result.status)}>{result.status}</span></td>
+                  <td style={S.td}>{result.leader}</td>
+                  <td style={{ ...S.td, textAlign: 'center', fontWeight: '600' }}>{result.leaderPct}%</td>
+                  <td style={{ ...S.td, textAlign: 'center' }}>
+                    <span style={{ ...S.badge, color: severityColor(riskLevel), backgroundColor: 'transparent', fontWeight: '700' }}>{riskLevel}</span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+
+        {/* Strategic Implications */}
+        {intentResults.some(i => i.presencePct < 20) && (
+          <div style={{ ...S.calloutCard, marginTop: '16px' }}>
+            <div style={{ ...S.subsubsection, marginTop: 0, color: COLORS.blue }}>Strategic Implications</div>
+            <p style={S.text}>
+              {brandName} has critical visibility gaps in {intentResults.filter(i => i.presencePct < 20).map(i => i.intent).join(', ')} intent categories. 
+              These represent high-value buyer journey stages where competitors dominate the AI narrative. 
+              Addressing these gaps should be prioritized in the 90-day roadmap.
+            </p>
           </div>
         )}
-        {executiveSummary?.weaknesses && executiveSummary.weaknesses.length > 0 && (
-          <div style={s.card}>
-            <h4 style={{ ...s.subsubsectionHeader, color: '#dc2626' }}>✗ Areas for Improvement</h4>
-            <ul style={s.list}>{executiveSummary.weaknesses.map((item, i) => <li key={i} style={s.listItem}>{item}</li>)}</ul>
-          </div>
-        )}
+      </div>
 
-        <h3 style={s.subsectionHeader}>2.3 Competitor Positioning</h3>
-        {executiveSummary?.competitor_positioning && (
+      {/* ══════════════════════════════════════════════════════
+          7. SOURCE AUTHORITY & ECOSYSTEM ANALYSIS
+         ══════════════════════════════════════════════════════ */}
+      <div style={S.sectionPage}>
+        <div style={S.sectionHeader}>6. Source Authority & Ecosystem Analysis</div>
+        <div style={S.sectionSubtitle}>Analysis of content channels driving AI brand recommendations and competitive ecosystem positioning</div>
+        <div style={S.sectionDivider} />
+
+        {sourceAuthorityData.length > 0 && (
           <>
-            {executiveSummary.competitor_positioning.leaders && executiveSummary.competitor_positioning.leaders.length > 0 && (
-              <div style={s.card}>
-                <h4 style={{ ...s.subsubsectionHeader, color: '#16a34a' }}>🏆 Market Leaders</h4>
-                {executiveSummary.competitor_positioning.leaders.map((item, i) => (
-                  <div key={i} style={{ marginBottom: '6px', paddingLeft: '8px', borderLeft: '2px solid #16a34a' }}>
-                    <p style={{ fontWeight: '600', marginBottom: '2px', fontSize: '9pt' }}>{item.name}</p>
-                    <p style={{ color: '#4b5563', fontSize: '8.5pt' }}>{item.summary}</p>
-                  </div>
+            <div style={S.subsection}>Source Authority Map</div>
+            <table style={S.table}>
+              <thead>
+                <tr>
+                  <th style={S.th}>Source Type</th>
+                  {allBrandsForSources.map(brand => (
+                    <th key={brand} style={{
+                      ...S.th, textAlign: 'center', fontSize: '8.5pt',
+                      backgroundColor: brand === brandName ? '#1e3a8a' : COLORS.navy,
+                    }}>{brand}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {sourceAuthorityData.map((source: any, idx: number) => (
+                  <tr key={idx} style={idx % 2 === 1 ? S.tdAlt : {}}>
+                    <td style={{ ...S.td, fontWeight: '600' }}>{source.name}</td>
+                    {allBrandsForSources.map(brand => {
+                      const mentions = source[`${brand}Mentions`] || 0;
+                      const isPrimary = brand === brandName;
+                      return (
+                        <td key={brand} style={{ ...S.td, textAlign: 'center', backgroundColor: isPrimary ? COLORS.bluePale : undefined }}>
+                          <span style={{
+                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                            width: '28px', height: '28px', borderRadius: '50%', fontSize: '11px', fontWeight: '700',
+                            backgroundColor: mentions > 0 ? (isPrimary ? '#dbeafe' : COLORS.greenBg) : COLORS.redBg,
+                            color: mentions > 0 ? (isPrimary ? COLORS.blue : COLORS.green) : COLORS.red,
+                          }}>{mentions}</span>
+                        </td>
+                      );
+                    })}
+                  </tr>
                 ))}
-              </div>
-            )}
-            {executiveSummary.competitor_positioning.mid_tier && executiveSummary.competitor_positioning.mid_tier.length > 0 && (
-              <div style={s.card}>
-                <h4 style={{ ...s.subsubsectionHeader, color: '#ca8a04' }}>⚡ Mid-Tier Performers</h4>
-                {executiveSummary.competitor_positioning.mid_tier.map((item, i) => (
-                  <div key={i} style={{ marginBottom: '6px', paddingLeft: '8px', borderLeft: '2px solid #ca8a04' }}>
-                    <p style={{ fontWeight: '600', marginBottom: '2px', fontSize: '9pt' }}>{item.name}</p>
-                    <p style={{ color: '#4b5563', fontSize: '8.5pt' }}>{item.summary}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-            {executiveSummary.competitor_positioning.laggards && executiveSummary.competitor_positioning.laggards.length > 0 && (
-              <div style={s.card}>
-                <h4 style={{ ...s.subsubsectionHeader, color: '#dc2626' }}>📊 Emerging Players</h4>
-                {executiveSummary.competitor_positioning.laggards.map((item, i) => (
-                  <div key={i} style={{ marginBottom: '6px', paddingLeft: '8px', borderLeft: '2px solid #dc2626' }}>
-                    <p style={{ fontWeight: '600', marginBottom: '2px', fontSize: '9pt' }}>{item.name}</p>
-                    <p style={{ color: '#4b5563', fontSize: '8.5pt' }}>{item.summary}</p>
-                  </div>
-                ))}
-              </div>
-            )}
+              </tbody>
+            </table>
           </>
         )}
 
-        {executiveSummary?.prioritized_actions && executiveSummary.prioritized_actions.length > 0 && (
-          <>
-            <h3 style={s.subsectionHeader}>2.4 Prioritized Actions</h3>
-            <div style={s.card}>
-              <ol style={{ paddingLeft: '18px', margin: '0' }}>
-                {executiveSummary.prioritized_actions.map((action, i) => <li key={i} style={{ marginBottom: '4px', lineHeight: '1.5' }}>{action}</li>)}
-              </ol>
+        {/* Ecosystem Risk Assessment */}
+        <div style={{ ...S.card, marginTop: '16px' }}>
+          <div style={{ ...S.subsubsection, marginTop: 0 }}>Ecosystem Risk Indicators</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '8px' }}>
+            <div style={{ ...S.riskCard, borderLeftColor: reviewAbsent ? COLORS.red : COLORS.green, backgroundColor: reviewAbsent ? COLORS.redBg : COLORS.greenBg }}>
+              <div style={{ ...S.sansSerif, fontSize: '11px', fontWeight: '700', color: reviewAbsent ? COLORS.red : COLORS.green }}>
+                Review Site Visibility: {reviewAbsent ? 'AT RISK' : 'COVERED'}
+              </div>
+              <div style={{ ...S.sansSerif, fontSize: '10px', color: COLORS.slateLight, marginTop: '4px' }}>
+                {reviewAbsent ? 'No review site citations detected — AI models may lack third-party validation signals.' : 'Review platforms contributing to AI brand mentions.'}
+              </div>
             </div>
+            <div style={{ ...S.riskCard, borderLeftColor: Object.keys(platformPresence).length < 3 ? COLORS.amber : COLORS.green, backgroundColor: Object.keys(platformPresence).length < 3 ? COLORS.amberBg : COLORS.greenBg }}>
+              <div style={{ ...S.sansSerif, fontSize: '11px', fontWeight: '700', color: Object.keys(platformPresence).length < 3 ? COLORS.amber : COLORS.green }}>
+                Platform Presence: {Object.keys(platformPresence).length} platforms
+              </div>
+              <div style={{ ...S.sansSerif, fontSize: '10px', color: COLORS.slateLight, marginTop: '4px' }}>
+                {Object.keys(platformPresence).length < 3 ? 'Limited platform footprint may reduce AI citation breadth.' : 'Healthy multi-platform presence supports AI visibility.'}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Detailed Source Breakdown */}
+        {sourcesAndContentImpact && Object.keys(sourcesAndContentImpact).length > 0 && (
+          <>
+            <div style={S.subsection}>Detailed Source & Content Impact</div>
+            {Object.entries(sourcesAndContentImpact).map(([sourceName, sourceData]: [string, any], idx) => (
+              <div key={idx} style={{ ...S.card, pageBreakInside: 'avoid', marginBottom: '16px' }}>
+                <div style={{ ...S.subsubsection, marginTop: 0 }}>{sourceName}</div>
+
+                {sourceData.pages_used && sourceData.pages_used.length > 0 && (
+                  <div style={{ marginBottom: '12px' }}>
+                    <div style={{ ...S.sansSerif, fontSize: '10px', color: COLORS.slateLight, fontWeight: '600', marginBottom: '4px' }}>
+                      Referenced URLs ({sourceData.pages_used.length})
+                    </div>
+                    {sourceData.pages_used.slice(0, 5).map((url: string, uIdx: number) => (
+                      <div key={uIdx} style={{ ...S.sansSerif, fontSize: '9pt', color: COLORS.blue, wordBreak: 'break-all' as const, marginBottom: '2px' }}>{url}</div>
+                    ))}
+                    {sourceData.pages_used.length > 5 && (
+                      <div style={{ ...S.sansSerif, fontSize: '9pt', color: COLORS.slatePale }}>+{sourceData.pages_used.length - 5} more sources</div>
+                    )}
+                  </div>
+                )}
+
+                {sourceData.mentions && Object.keys(sourceData.mentions).length > 0 && (
+                  <table style={{ ...S.table, marginBottom: 0 }}>
+                    <thead>
+                      <tr>
+                        <th style={S.th}>Brand</th>
+                        <th style={{ ...S.th, textAlign: 'center' }}>Citations</th>
+                        <th style={{ ...S.th, textAlign: 'center' }}>Impact Score</th>
+                        <th style={S.th}>Insight</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Object.entries(sourceData.mentions)
+                        .sort(([, a]: [string, any], [, b]: [string, any]) => b.count - a.count)
+                        .map(([brand, mentionData]: [string, any], mIdx: number) => {
+                          const isCurrent = brand === brandName;
+                          return (
+                            <tr key={mIdx} style={{
+                              backgroundColor: isCurrent ? COLORS.bluePale : (mIdx % 2 === 1 ? COLORS.gray100 : COLORS.white),
+                              fontWeight: isCurrent ? '600' : 'normal',
+                            }}>
+                              <td style={S.td}>{brand}</td>
+                              <td style={{ ...S.td, textAlign: 'center' }}>{mentionData.count}</td>
+                              <td style={{ ...S.td, textAlign: 'center' }}>{Math.round(mentionData.score * 100)}%</td>
+                              <td style={{ ...S.td, fontSize: '9pt' }}>{mentionData.insight}</td>
+                            </tr>
+                          );
+                        })}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            ))}
           </>
         )}
       </div>
 
-      {/* ═══ SECTION 3: AI PROMPTS & QUERY ANALYSIS ═══ */}
-      <div>
-        <h2 style={s.sectionHeader}>3. AI Prompts & Query Analysis</h2>
+      {/* ══════════════════════════════════════════════════════
+          8. NARRATIVE POSITIONING ANALYSIS
+         ══════════════════════════════════════════════════════ */}
+      <div style={S.sectionPage}>
+        <div style={S.sectionHeader}>7. Narrative Positioning Analysis</div>
+        <div style={S.sectionSubtitle}>How AI models perceive, frame, and communicate each brand's market identity</div>
+        <div style={S.sectionDivider} />
 
-        <div style={{ ...s.card, marginBottom: '8px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-around', textAlign: 'center' }}>
-            <div><div style={{ fontSize: '18px', fontWeight: '700', color: '#1e40af' }}>{keywords.length}</div><div style={{ fontSize: '7.5pt', color: '#6b7280' }}>Keywords</div></div>
-            <div><div style={{ fontSize: '18px', fontWeight: '700', color: '#1e40af' }}>{totalPrompts}</div><div style={{ fontSize: '7.5pt', color: '#6b7280' }}>Total Prompts</div></div>
+        {/* Primary brand narrative */}
+        {brandData && (
+          <div style={{ ...S.calloutCard, marginBottom: '20px' }}>
+            <div style={{ ...S.subsection, marginTop: 0, marginBottom: '8px', color: COLORS.blue }}>
+              {brandName} — AI Brand Perception
+            </div>
+            <p style={{ ...S.text, marginBottom: '12px' }}>{brandData.summary}</p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div>
+                <div style={{ ...S.sansSerif, fontSize: '10px', color: COLORS.slateLight, fontWeight: '600', marginBottom: '4px' }}>MARKET POSITIONING</div>
+                <div style={{ ...S.sansSerif, fontSize: '11px', color: COLORS.navy }}>{brandData.geo_tier} Tier · Score {brandData.geo_score}</div>
+              </div>
+              <div>
+                <div style={{ ...S.sansSerif, fontSize: '10px', color: COLORS.slateLight, fontWeight: '600', marginBottom: '4px' }}>AI SENTIMENT</div>
+                <span style={tierBadge(brandData.outlook)}>{brandData.outlook}</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* All brand narratives */}
+        <div style={S.subsection}>Competitor Narrative Profiles</div>
+        <table style={S.table}>
+          <thead>
+            <tr>
+              <th style={S.th}>Brand</th>
+              <th style={S.th}>AI Narrative Summary</th>
+              <th style={{ ...S.th, textAlign: 'center', width: '100px' }}>Outlook</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sortedSentiment.map((item, idx) => {
+              const isPrimary = item.brand === brandName;
+              return (
+                <tr key={idx} style={{
+                  backgroundColor: isPrimary ? COLORS.bluePale : (idx % 2 === 1 ? COLORS.gray100 : COLORS.white),
+                  fontWeight: isPrimary ? '600' : 'normal',
+                }}>
+                  <td style={{ ...S.td, fontWeight: '600' }}>{item.brand}</td>
+                  <td style={{ ...S.td, fontSize: '9.5pt' }}>{item.summary}</td>
+                  <td style={{ ...S.td, textAlign: 'center' }}><span style={tierBadge(item.outlook)}>{item.outlook}</span></td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          9. AI PROMPTS & QUERY ANALYSIS
+         ══════════════════════════════════════════════════════ */}
+      <div style={S.sectionPage}>
+        <div style={S.sectionHeader}>8. AI Prompts & Query Analysis</div>
+        <div style={S.sectionSubtitle}>Detailed breakdown of {totalPrompts} prompts across {keywords.length} keyword categories</div>
+        <div style={S.sectionDivider} />
+
+        {/* Summary KPIs */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '14px', marginBottom: '20px' }}>
+          <div style={S.kpiBlock}>
+            <div style={S.kpiValue}>{keywords.length}</div>
+            <div style={S.kpiLabel}>Keywords</div>
+          </div>
+          <div style={S.kpiBlock}>
+            <div style={S.kpiValue}>{totalPrompts}</div>
+            <div style={S.kpiLabel}>Total Prompts</div>
+          </div>
+          <div style={S.kpiBlock}>
+            <div style={S.kpiValue}>{llmModels.length}</div>
+            <div style={S.kpiLabel}>AI Models Tested</div>
           </div>
         </div>
 
-        <h3 style={s.subsectionHeader}>3.1 Keywords & Prompts Breakdown</h3>
         {keywords.map((kw, idx) => {
           const brandScore = getBrandScoreForKeyword(kw.id);
           const brandsToDisplay = getBrandsForKeyword(kw.id);
+
           return (
-            <div key={idx} style={{ ...s.card, marginBottom: '8px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+            <div key={idx} style={{ ...S.card, pageBreakInside: 'avoid', marginBottom: '18px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                 <div>
-                  <h4 style={{ ...s.subsubsectionHeader, marginTop: 0, marginBottom: '1px' }}>Keyword {idx + 1}: {kw.name}</h4>
-                  <p style={{ fontSize: '7.5pt', color: '#6b7280', margin: 0 }}>{kw.prompts?.length || 0} prompts</p>
+                  <div style={{ ...S.subsection, marginTop: 0, marginBottom: '2px', fontSize: '14px' }}>Keyword: {kw.name}</div>
+                  <div style={{ ...S.sansSerif, fontSize: '10px', color: COLORS.slateLight }}>{kw.prompts?.length || 0} prompts analyzed</div>
                 </div>
-                <div style={{ textAlign: 'center' }}>
-                  <span style={{
+                <div style={{ textAlign: 'center' as const }}>
+                  <div style={{
                     display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                    width: '28px', height: '28px', borderRadius: '50%', fontSize: '11px', fontWeight: '700',
-                    backgroundColor: brandScore >= 3 ? '#d1fae5' : brandScore >= 1 ? '#fef3c7' : '#fee2e2',
-                    color: brandScore >= 3 ? '#065f46' : brandScore >= 1 ? '#92400e' : '#991b1b',
-                  }}>{brandScore}</span>
+                    width: '40px', height: '40px', borderRadius: '50%', fontSize: '16px', fontWeight: '700',
+                    backgroundColor: brandScore >= 3 ? COLORS.greenBg : brandScore >= 1 ? COLORS.amberBg : COLORS.redBg,
+                    color: brandScore >= 3 ? COLORS.green : brandScore >= 1 ? COLORS.amber : COLORS.red,
+                    border: `2px solid ${brandScore >= 3 ? COLORS.greenBorder : brandScore >= 1 ? COLORS.amberBorder : COLORS.redBorder}`,
+                  }}>{brandScore}</div>
+                  <div style={{ ...S.sansSerif, fontSize: '9px', color: COLORS.slatePale, marginTop: '4px' }}>Your Mentions</div>
                 </div>
               </div>
 
-              <h5 style={{ fontSize: '8pt', fontWeight: '600', marginBottom: '3px', color: '#374151' }}>📝 AI Prompts</h5>
-              <table style={{ ...s.table, fontSize: '7.5pt', marginBottom: '6px' }}>
-                <thead><tr>
-                  <th style={{ ...s.th, width: '28px' }}>#</th>
-                  <th style={s.th}>Search Prompt</th>
-                  {kw.prompts[0]?.category && <th style={s.th}>Intent</th>}
-                </tr></thead>
+              {/* Prompts Table */}
+              <table style={{ ...S.table, fontSize: '9pt', marginBottom: '12px' }}>
+                <thead>
+                  <tr>
+                    <th style={{ ...S.th, width: '36px' }}>#</th>
+                    <th style={S.th}>AI Search Prompt</th>
+                    {kw.prompts[0]?.category && <th style={{ ...S.th, width: '100px' }}>Intent</th>}
+                  </tr>
+                </thead>
                 <tbody>
-                  {kw.prompts.map((prompt, pI) => (
-                    <tr key={pI} style={pI % 2 === 1 ? s.altRow : {}}>
-                      <td style={{ ...s.td, textAlign: 'center' }}>{pI + 1}</td>
-                      <td style={s.td}>{prompt.query}</td>
-                      {kw.prompts[0]?.category && <td style={s.td}>{prompt.category || '-'}</td>}
+                  {kw.prompts.map((prompt, pIdx) => (
+                    <tr key={pIdx} style={pIdx % 2 === 1 ? S.tdAlt : {}}>
+                      <td style={{ ...S.td, textAlign: 'center' }}>{pIdx + 1}</td>
+                      <td style={S.td}>{prompt.query}</td>
+                      {kw.prompts[0]?.category && <td style={S.td}>{prompt.category || '-'}</td>}
                     </tr>
                   ))}
                 </tbody>
               </table>
 
-              <h5 style={{ fontSize: '8pt', fontWeight: '600', marginBottom: '3px', color: '#374151' }}>🏆 Brand Mentions for "{kw.name}"</h5>
-              <table style={{ ...s.table, fontSize: '7.5pt' }}>
-                <thead><tr>
-                  <th style={s.th}>Brand</th>
-                  <th style={{ ...s.th, width: '70px', textAlign: 'center' }}>Mentions</th>
-                  <th style={{ ...s.th, width: '80px', textAlign: 'center' }}>Performance</th>
-                </tr></thead>
+              {/* Brand Mentions for this keyword */}
+              <div style={{ ...S.sansSerif, fontSize: '10px', fontWeight: '600', color: COLORS.slate, marginBottom: '6px' }}>Brand Mentions for "{kw.name}"</div>
+              <table style={{ ...S.table, fontSize: '9pt' }}>
+                <thead>
+                  <tr>
+                    <th style={S.th}>Brand</th>
+                    <th style={{ ...S.th, width: '80px', textAlign: 'center' }}>Mentions</th>
+                    <th style={{ ...S.th, width: '100px', textAlign: 'center' }}>Performance</th>
+                  </tr>
+                </thead>
                 <tbody>
-                  {brandsToDisplay.map((brand, bI) => {
+                  {brandsToDisplay.map((brand, bIdx) => {
                     const score = brand.mention_breakdown?.[kw.id] || 0;
                     const isBrand = brand.brand === brandName;
                     return (
-                      <tr key={bI} style={highlightRow(isBrand, bI)}>
-                        <td style={s.td}>{brand.brand}</td>
-                        <td style={{ ...s.td, textAlign: 'center' }}>{score}</td>
-                        <td style={{ ...s.td, textAlign: 'center' }}>
-                          <span style={score >= 3 ? tierBadge('high') : score >= 1 ? tierBadge('medium') : tierBadge('low')}>
+                      <tr key={bIdx} style={{
+                        backgroundColor: isBrand ? COLORS.bluePale : (bIdx % 2 === 1 ? COLORS.gray100 : COLORS.white),
+                        fontWeight: isBrand ? '600' : 'normal',
+                      }}>
+                        <td style={S.td}>{brand.brand}</td>
+                        <td style={{ ...S.td, textAlign: 'center' }}>{score}</td>
+                        <td style={{ ...S.td, textAlign: 'center' }}>
+                          <span style={tierBadge(score >= 3 ? 'high' : score >= 1 ? 'medium' : 'low')}>
                             {score >= 3 ? 'Strong' : score >= 1 ? 'Moderate' : 'Weak'}
                           </span>
                         </td>
@@ -612,32 +1499,44 @@ const PrintableContent = ({
           );
         })}
 
-        <h3 style={s.subsectionHeader}>3.3 Model-Wise Prompt Analysis</h3>
-        <p style={{ color: '#6b7280', marginBottom: '6px', fontSize: '8pt' }}>Which brands each AI model recommends per prompt</p>
+        {/* Model-Wise Prompt Analysis */}
+        <div style={S.subsection}>Model-Wise Prompt Analysis</div>
+        <p style={{ ...S.sansSerif, color: COLORS.slateLight, marginBottom: '12px', fontSize: '10pt' }}>Which brands each AI model recommends per prompt</p>
         {keywords.map((kw, kwIdx) => (
-          <div key={kwIdx} style={{ ...s.card, marginBottom: '8px' }}>
-            <h4 style={{ ...s.subsubsectionHeader, marginTop: 0 }}>Keyword: {kw.name}</h4>
-            <table style={{ ...s.table, fontSize: '7pt' }}>
-              <thead><tr>
-                <th style={{ ...s.th, width: '28px' }}>#</th>
-                <th style={s.th}>Prompt</th>
-                {llmModels.map(model => <th key={model} style={{ ...s.th, textAlign: 'center', fontSize: '7pt' }}>{getModelDisplayName(model)}</th>)}
-              </tr></thead>
+          <div key={kwIdx} style={{ ...S.card, pageBreakInside: 'avoid', marginBottom: '16px' }}>
+            <div style={{ ...S.subsubsection, marginTop: 0 }}>Keyword: {kw.name}</div>
+            <table style={{ ...S.table, fontSize: '8.5pt' }}>
+              <thead>
+                <tr>
+                  <th style={{ ...S.th, width: '36px' }}>#</th>
+                  <th style={S.th}>Prompt</th>
+                  {llmModels.map(model => (
+                    <th key={model} style={{ ...S.th, textAlign: 'center', fontSize: '8.5pt' }}>{getModelDisplayName(model)}</th>
+                  ))}
+                </tr>
+              </thead>
               <tbody>
-                {kw.prompts.map((prompt, pI) => (
-                  <tr key={pI} style={pI % 2 === 1 ? s.altRow : {}}>
-                    <td style={{ ...s.td, textAlign: 'center' }}>{pI + 1}</td>
-                    <td style={{ ...s.td, maxWidth: '160px' }}>{prompt.query}</td>
+                {kw.prompts.map((prompt, pIdx) => (
+                  <tr key={pIdx} style={pIdx % 2 === 1 ? S.tdAlt : {}}>
+                    <td style={{ ...S.td, textAlign: 'center' }}>{pIdx + 1}</td>
+                    <td style={{ ...S.td, maxWidth: '200px' }}>{prompt.query}</td>
                     {llmModels.map(model => {
                       const brands = prompt.brands_per_llm?.[model] || [];
                       const hasBrand = brands.includes(brandName);
                       return (
-                        <td key={model} style={{ ...s.td, textAlign: 'center', fontSize: '7pt', backgroundColor: hasBrand ? '#eff6ff' : undefined }}>
+                        <td key={model} style={{
+                          ...S.td, textAlign: 'center', fontSize: '8pt',
+                          backgroundColor: hasBrand ? COLORS.bluePale : undefined,
+                        }}>
                           {brands.length > 0 ? brands.map((b, i) => (
-                            <span key={i} style={{ display: 'block', fontWeight: b === brandName ? '700' : 'normal', color: b === brandName ? '#1e40af' : '#4b5563' }}>
+                            <span key={i} style={{
+                              display: 'block',
+                              fontWeight: b === brandName ? '700' : 'normal',
+                              color: b === brandName ? COLORS.blue : COLORS.slate,
+                            }}>
                               {i + 1}. {b}
                             </span>
-                          )) : <span style={{ color: '#9ca3af' }}>-</span>}
+                          )) : <span style={{ color: COLORS.slatePale }}>—</span>}
                         </td>
                       );
                     })}
@@ -649,272 +1548,86 @@ const PrintableContent = ({
         ))}
       </div>
 
-      {/* ═══ SECTION 4: COMPETITIVE ANALYSIS ═══ */}
-      <div>
-        <h2 style={s.sectionHeader}>4. Competitive Analysis</h2>
-
-        <h3 style={s.subsectionHeader}>4.1 Competitive Landscape</h3>
-        <table style={s.table}>
-          <thead><tr>
-            <th style={s.th}>Rank</th><th style={s.th}>Brand</th><th style={s.th}>Visibility</th><th style={s.th}>Tier</th><th style={s.th}>Mentions</th><th style={s.th}>Mention Tier</th><th style={s.th}>Outlook</th>
-          </tr></thead>
-          <tbody>
-            {sortedBrands.map((brand, i) => (
-              <tr key={i} style={highlightRow(brand.brand === brandName, i)}>
-                <td style={s.td}>{i + 1}</td>
-                <td style={s.td}>{brand.brand}</td>
-                <td style={s.td}>{brand.geo_score}</td>
-                <td style={s.td}><span style={tierBadge(brand.geo_tier)}>{brand.geo_tier}</span></td>
-                <td style={s.td}>{brand.mention_score}</td>
-                <td style={s.td}><span style={tierBadge(brand.mention_tier)}>{brand.mention_tier}</span></td>
-                <td style={s.td}><span style={outlookBadge(brand.outlook)}>{brand.outlook}</span></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        <h3 style={s.subsectionHeader}>4.2 Brand Response Rates</h3>
-        <table style={s.table}>
-          <thead><tr>
-            <th style={s.th}>Rank</th><th style={s.th}>Brand</th><th style={s.th}>Response Rate</th><th style={s.th}>Performance</th>
-          </tr></thead>
-          <tbody>
-            {brandMentionRates.map((item, i) => (
-              <tr key={i} style={highlightRow(item.isTestBrand, i)}>
-                <td style={s.td}>{i + 1}</td>
-                <td style={s.td}>{item.brand}</td>
-                <td style={s.td}>{item.responseRate}%</td>
-                <td style={s.td}>
-                  <div style={{ width: '100%', height: '12px', backgroundColor: '#e5e7eb', borderRadius: '3px', overflow: 'hidden' }}>
-                    <div style={{ width: `${item.responseRate}%`, height: '100%', backgroundColor: item.isTestBrand ? '#2563eb' : '#f59e0b', borderRadius: '3px' }} />
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        <h3 style={s.subsectionHeader}>4.3 Keyword Performance Matrix</h3>
-        <table style={s.table}>
-          <thead><tr>
-            <th style={s.th}>Brand</th>
-            {keywordNames.map((kw, i) => <th key={i} style={{ ...s.th, textAlign: 'center', fontSize: '7pt' }}>{kw}</th>)}
-            <th style={{ ...s.th, textAlign: 'center' }}>Total</th>
-          </tr></thead>
-          <tbody>
-            {sortedCompetitorData.map((c, i) => {
-              const isPrimary = c.name === brandName;
-              const total = c.keywordScores.reduce((sum, sc) => sum + (Number(sc) || 0), 0);
-              return (
-                <tr key={i} style={highlightRow(isPrimary, i)}>
-                  <td style={s.td}>{c.name}</td>
-                  {c.keywordScores.map((score, si) => <td key={si} style={{ ...s.td, textAlign: 'center' }}>{score}</td>)}
-                  <td style={{ ...s.td, textAlign: 'center' }}>
-                    <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '4px', fontWeight: '600', backgroundColor: isPrimary ? '#1e40af' : '#f3f4f6', color: isPrimary ? '#fff' : '#1f2937' }}>{total}</span>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-
-        <h3 style={s.subsectionHeader}>4.4 AI Brand Perception</h3>
-        <table style={s.table}>
-          <thead><tr>
-            <th style={s.th}>Brand</th><th style={s.th}>Sentiment Summary</th><th style={{ ...s.th, width: '80px', textAlign: 'center' }}>Outlook</th>
-          </tr></thead>
-          <tbody>
-            {sortedSentiment.map((item, i) => (
-              <tr key={i} style={highlightRow(item.brand === brandName, i)}>
-                <td style={s.td}>{item.brand}</td>
-                <td style={{ ...s.td, fontSize: '8pt' }}>{item.summary}</td>
-                <td style={{ ...s.td, textAlign: 'center' }}><span style={outlookBadge(item.outlook)}>{item.outlook}</span></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        {sourceAuthorityData.length > 0 && (
-          <>
-            <h3 style={s.subsectionHeader}>4.5 Source Authority Map</h3>
-            <table style={s.table}>
-              <thead><tr>
-                <th style={s.th}>Source</th>
-                {allBrandsForSources.map(brand => (
-                  <th key={brand} style={{ ...s.th, textAlign: 'center', fontSize: '7pt', backgroundColor: brand === brandName ? '#1e3a8a' : '#1e40af' }}>{brand}</th>
-                ))}
-              </tr></thead>
-              <tbody>
-                {sourceAuthorityData.map((source: any, i: number) => (
-                  <tr key={i} style={i % 2 === 1 ? s.altRow : {}}>
-                    <td style={{ ...s.td, fontWeight: '600' }}>{source.name}</td>
-                    {allBrandsForSources.map(brand => {
-                      const mentions = source[`${brand}Mentions`] || 0;
-                      const isPrimary = brand === brandName;
-                      return (
-                        <td key={brand} style={{ ...s.td, textAlign: 'center', backgroundColor: isPrimary ? '#eff6ff' : undefined }}>
-                          <span style={{
-                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                            width: '20px', height: '20px', borderRadius: '50%', fontSize: '8pt', fontWeight: '700',
-                            backgroundColor: mentions > 0 ? (isPrimary ? '#dbeafe' : '#dcfce7') : '#fee2e2',
-                            color: mentions > 0 ? (isPrimary ? '#1e40af' : '#166534') : '#991b1b',
-                          }}>{mentions}</span>
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </>
-        )}
-      </div>
-
-      {/* ═══ SECTION 5: SOURCES & CONTENT IMPACT ═══ */}
-      {sourcesAndContentImpact && Object.keys(sourcesAndContentImpact).length > 0 && (
-        <div>
-          <h2 style={s.sectionHeader}>5. Sources & Content Impact</h2>
-          {Object.entries(sourcesAndContentImpact).map(([sourceName, sourceData]: [string, any], idx) => (
-            <div key={idx} style={{ ...s.card, pageBreakInside: 'avoid', marginBottom: '8px' }}>
-              <h3 style={{ ...s.subsectionHeader, marginTop: 0 }}>{sourceName}</h3>
-              {sourceData.pages_used && sourceData.pages_used.length > 0 && (
-                <div style={{ marginBottom: '6px' }}>
-                  <h4 style={{ ...s.subsubsectionHeader, fontSize: '9px' }}>🔗 Referenced Sources ({sourceData.pages_used.length})</h4>
-                  <table style={{ ...s.table, fontSize: '7pt' }}>
-                    <thead><tr><th style={{ ...s.th, width: '28px' }}>#</th><th style={s.th}>URL</th></tr></thead>
-                    <tbody>
-                      {sourceData.pages_used.map((url: string, ui: number) => (
-                        <tr key={ui} style={ui % 2 === 1 ? s.altRow : {}}>
-                          <td style={{ ...s.td, textAlign: 'center' }}>{ui + 1}</td>
-                          <td style={{ ...s.td, wordBreak: 'break-all' as const }}>{url}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-              {sourceData.mentions && Object.keys(sourceData.mentions).length > 0 && (
-                <>
-                  <h4 style={{ ...s.subsubsectionHeader, fontSize: '9px' }}>📊 Brand Mentions</h4>
-                  <table style={s.table}>
-                    <thead><tr>
-                      <th style={s.th}>Brand</th><th style={s.th}>Count</th><th style={s.th}>Impact</th><th style={s.th}>Insight</th>
-                    </tr></thead>
-                    <tbody>
-                      {Object.entries(sourceData.mentions)
-                        .sort(([, a]: [string, any], [, b]: [string, any]) => b.count - a.count)
-                        .map(([brand, mentionData]: [string, any], mI: number) => (
-                          <tr key={mI} style={highlightRow(brand === brandName, mI)}>
-                            <td style={s.td}>{brand}</td>
-                            <td style={s.td}>{mentionData.count}</td>
-                            <td style={s.td}>{Math.round(mentionData.score * 100)}%</td>
-                            <td style={{ ...s.td, fontSize: '7.5pt' }}>{mentionData.insight}</td>
-                          </tr>
-                        ))}
-                    </tbody>
-                  </table>
-                </>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* ═══ SECTION 6: BRAND SENTIMENT ANALYSIS ═══ */}
-      <div>
-        <h2 style={s.sectionHeader}>6. Brand Sentiment Analysis</h2>
-
-        <h3 style={s.subsectionHeader}>6.1 Primary Brand Sentiment</h3>
-        <div style={s.card}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
-            {brandLogo && <img src={brandLogo} alt={brandName} style={{ width: '36px', height: '36px', objectFit: 'contain', borderRadius: '50%', backgroundColor: 'white' }} />}
-            <div>
-              <h4 style={{ margin: '0 0 4px 0', fontSize: '14px' }}>{brandName}</h4>
-              <span style={tierBadge(sentiment?.dominant_sentiment)}>{sentiment?.dominant_sentiment || 'N/A'}</span>
-            </div>
-          </div>
-          <p style={{ color: '#4b5563', lineHeight: '1.5', fontSize: '8.5pt' }}>{sentiment?.summary || 'No sentiment data available.'}</p>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px', marginBottom: '8px' }}>
-          {['Positive', 'Neutral', 'Negative'].map(sentimentType => {
-            const matchingBrands = competitorSentiment.filter(c => c.outlook === sentimentType);
-            const colors: Record<string, { bg: string; border: string }> = {
-              'Positive': { bg: '#d1fae5', border: '#16a34a' },
-              'Neutral': { bg: '#fef3c7', border: '#ca8a04' },
-              'Negative': { bg: '#fee2e2', border: '#dc2626' }
-            };
-            return (
-              <div key={sentimentType} style={{ ...s.card, backgroundColor: colors[sentimentType].bg, borderColor: colors[sentimentType].border, textAlign: 'center' }}>
-                <div style={{ fontSize: '18px', fontWeight: '700', color: colors[sentimentType].border }}>{matchingBrands.length}</div>
-                <div style={{ fontSize: '8pt', fontWeight: '600' }}>{sentimentType}</div>
-                <div style={{ fontSize: '7pt', color: '#6b7280' }}>{matchingBrands.map(b => b.brand).join(', ') || 'None'}</div>
-              </div>
-            );
-          })}
-        </div>
-
-        <h3 style={s.subsectionHeader}>6.2 Competitor Sentiment</h3>
-        <table style={s.table}>
-          <thead><tr>
-            <th style={s.th}>Brand</th><th style={s.th}>Summary</th><th style={{ ...s.th, width: '80px', textAlign: 'center' }}>Outlook</th>
-          </tr></thead>
-          <tbody>
-            {competitorSentiment.map((item, i) => (
-              <tr key={i} style={highlightRow(item.brand === brandName, i)}>
-                <td style={s.td}>{item.brand}</td>
-                <td style={{ ...s.td, fontSize: '8pt' }}>{item.summary}</td>
-                <td style={{ ...s.td, textAlign: 'center' }}><span style={outlookBadge(item.outlook)}>{item.outlook}</span></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* ═══ SECTION 7: RECOMMENDATIONS ═══ */}
+      {/* ══════════════════════════════════════════════════════
+          10. STRATEGIC ACTION PLAN
+         ══════════════════════════════════════════════════════ */}
       {recommendations && recommendations.length > 0 && (
-        <div>
-          <h2 style={s.sectionHeader}>7. Strategic Recommendations</h2>
+        <div style={S.sectionPage}>
+          <div style={S.sectionHeader}>9. Strategic Action Plan</div>
+          <div style={S.sectionSubtitle}>Prioritized roadmap with effort-impact analysis and execution framework</div>
+          <div style={S.sectionDivider} />
 
-          <div style={{ ...s.card, marginBottom: '8px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-around', textAlign: 'center' }}>
-              <div><div style={{ fontSize: '18px', fontWeight: '700', color: '#1e40af' }}>{recommendations.length}</div><div style={{ fontSize: '7.5pt', color: '#6b7280' }}>Recommendations</div></div>
-              <div><div style={{ fontSize: '18px', fontWeight: '700', color: '#16a34a' }}>{recommendations.filter(r => r.impact?.toLowerCase() === 'high').length}</div><div style={{ fontSize: '7.5pt', color: '#6b7280' }}>High Impact</div></div>
-              <div><div style={{ fontSize: '18px', fontWeight: '700', color: '#ca8a04' }}>{recommendations.filter(r => r.overall_effort?.toLowerCase() === 'low').length}</div><div style={{ fontSize: '7.5pt', color: '#6b7280' }}>Quick Wins</div></div>
+          {/* Priority Matrix */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '14px', marginBottom: '20px' }}>
+            <div style={{ ...S.kpiBlock, borderLeft: `4px solid ${COLORS.green}` }}>
+              <div style={{ ...S.kpiValue, color: COLORS.green }}>{recommendations.filter(r => r.impact === 'High').length}</div>
+              <div style={S.kpiLabel}>High Impact</div>
+            </div>
+            <div style={{ ...S.kpiBlock, borderLeft: `4px solid ${COLORS.amber}` }}>
+              <div style={{ ...S.kpiValue, color: COLORS.amber }}>{recommendations.filter(r => r.impact === 'Medium').length}</div>
+              <div style={S.kpiLabel}>Medium Impact</div>
+            </div>
+            <div style={{ ...S.kpiBlock, borderLeft: `4px solid ${COLORS.blue}` }}>
+              <div style={{ ...S.kpiValue, color: COLORS.blue }}>{fastWins.length}</div>
+              <div style={S.kpiLabel}>Quick Wins</div>
+              <div style={S.kpiSub}>Low effort, high impact</div>
             </div>
           </div>
 
-          <h3 style={s.subsectionHeader}>7.1 Prioritized Action Items</h3>
-          {recommendations.map((rec, i) => (
-            <div key={i} style={{ ...s.card, marginBottom: '6px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
-                <h4 style={{ ...s.subsubsectionHeader, marginTop: 0, flex: 1 }}>#{i + 1} — {rec.overall_insight}</h4>
-                <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
-                  <span style={tierBadge(rec.impact)}>Impact: {rec.impact}</span>
-                  <span style={tierBadge(rec.overall_effort === 'Low' ? 'high' : rec.overall_effort === 'High' ? 'low' : 'medium')}>Effort: {rec.overall_effort}</span>
-                </div>
+          {/* Recommendations */}
+          {recommendations.map((rec: any, idx: number) => (
+            <div key={idx} style={{ ...S.card, pageBreakInside: 'avoid', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '12px', flexWrap: 'wrap' as const, alignItems: 'center' }}>
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  width: '28px', height: '28px', borderRadius: '50%',
+                  backgroundColor: COLORS.navy, color: COLORS.white, fontWeight: '700', fontSize: '12px',
+                  fontFamily: "'Segoe UI', sans-serif",
+                }}>{idx + 1}</span>
+                <span style={{ ...S.sansSerif, fontSize: '13px', fontWeight: '700', color: COLORS.navy }}>Recommendation {idx + 1}</span>
+                <span style={tierBadge(rec.impact === 'High' ? 'high' : rec.impact === 'Medium' ? 'medium' : 'low')}>Impact: {rec.impact}</span>
+                <span style={tierBadge(rec.overall_effort === 'Low' ? 'high' : rec.overall_effort === 'Medium' ? 'medium' : 'low')}>Effort: {rec.overall_effort}</span>
               </div>
 
-              {rec.insight?.summary && <p style={{ fontSize: '8pt', color: '#4b5563', lineHeight: '1.4', marginBottom: '4px' }}>{rec.insight.summary}</p>}
-              {rec.suggested_action && <div style={{ marginBottom: '4px' }}><h5 style={{ fontSize: '8pt', fontWeight: '600', marginBottom: '2px', color: '#374151' }}>✅ Action</h5><p style={{ fontSize: '8pt', color: '#1f2937' }}>{rec.suggested_action}</p></div>}
+              <div style={{ marginBottom: '10px' }}>
+                <div style={{ ...S.sansSerif, fontSize: '10px', fontWeight: '600', color: COLORS.slateLight, marginBottom: '4px', textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>Strategic Insight</div>
+                <p style={{ ...S.text, fontSize: '9.5pt' }}>{rec.insight?.summary || rec.overall_insight}</p>
+              </div>
+
+              {rec.suggested_action && (
+                <div style={{ marginBottom: '10px' }}>
+                  <div style={{ ...S.sansSerif, fontSize: '10px', fontWeight: '600', color: COLORS.slateLight, marginBottom: '4px', textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>Recommended Action</div>
+                  <p style={{ ...S.text, fontSize: '9.5pt' }}>{rec.suggested_action}</p>
+                </div>
+              )}
 
               {rec.suggested_action_v1 && typeof rec.suggested_action_v1 === 'object' && Object.keys(rec.suggested_action_v1).length > 0 && (
-                <div style={{ padding: '8px', backgroundColor: '#eff6ff', borderRadius: '4px', border: '1px solid #bfdbfe' }}>
-                  <h5 style={{ fontSize: '8pt', fontWeight: '600', marginBottom: '4px', color: '#1e40af' }}>🎯 Action Plan</h5>
-                  {rec.suggested_action_v1.strategy && <p style={{ fontSize: '8pt', fontWeight: '600', color: '#1f2937', lineHeight: '1.4', marginBottom: '4px' }}>{rec.suggested_action_v1.strategy}</p>}
-                  {rec.suggested_action_v1.start_here && <div style={{ marginBottom: '4px' }}><h6 style={{ fontSize: '7.5pt', fontWeight: '600', color: '#1e40af', marginBottom: '2px' }}>▶ Start Here</h6><p style={{ fontSize: '8pt', color: '#4b5563' }}>{rec.suggested_action_v1.start_here}</p></div>}
+                <div style={{ padding: '14px', backgroundColor: COLORS.bluePale, borderRadius: '6px', border: `1px solid ${COLORS.blueBorder}` }}>
+                  <div style={{ ...S.sansSerif, fontSize: '10px', fontWeight: '600', color: COLORS.blue, marginBottom: '10px', textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>Execution Plan</div>
+
+                  {rec.suggested_action_v1.strategy && (
+                    <p style={{ ...S.text, fontWeight: '600', marginBottom: '8px' }}>{rec.suggested_action_v1.strategy}</p>
+                  )}
+                  {rec.suggested_action_v1.start_here && (
+                    <div style={{ marginBottom: '8px' }}>
+                      <div style={{ ...S.sansSerif, fontSize: '10px', fontWeight: '600', color: COLORS.blue, marginBottom: '2px' }}>▶ Start Here</div>
+                      <p style={{ ...S.text, fontSize: '9.5pt' }}>{rec.suggested_action_v1.start_here}</p>
+                    </div>
+                  )}
                   {Array.isArray(rec.suggested_action_v1.how_to_execute) && rec.suggested_action_v1.how_to_execute.length > 0 && (
-                    <div style={{ marginBottom: '4px' }}>
-                      <h6 style={{ fontSize: '7.5pt', fontWeight: '600', color: '#1e40af', marginBottom: '2px' }}>📋 Steps</h6>
-                      <ol style={{ paddingLeft: '16px', margin: '0' }}>
-                        {rec.suggested_action_v1.how_to_execute.map((step: string, si: number) => <li key={si} style={{ marginBottom: '2px', fontSize: '8pt', color: '#4b5563' }}>{step}</li>)}
+                    <div style={{ marginBottom: '8px' }}>
+                      <div style={{ ...S.sansSerif, fontSize: '10px', fontWeight: '600', color: COLORS.blue, marginBottom: '2px' }}>Steps to Execute</div>
+                      <ol style={{ paddingLeft: '20px', margin: '0' }}>
+                        {rec.suggested_action_v1.how_to_execute.map((step: string, stepIdx: number) => (
+                          <li key={stepIdx} style={{ ...S.text, marginBottom: '4px', fontSize: '9.5pt' }}>{step}</li>
+                        ))}
                       </ol>
                     </div>
                   )}
                   {rec.suggested_action_v1.success_signal && (
-                    <div style={{ borderTop: '1px solid #bfdbfe', paddingTop: '4px' }}>
-                      <h6 style={{ fontSize: '7.5pt', fontWeight: '600', color: '#1e40af', marginBottom: '2px' }}>✨ Success Signal</h6>
-                      <p style={{ fontSize: '8pt', color: '#4b5563', fontStyle: 'italic' }}>{rec.suggested_action_v1.success_signal}</p>
+                    <div style={{ borderTop: `1px solid ${COLORS.blueBorder}`, paddingTop: '8px' }}>
+                      <div style={{ ...S.sansSerif, fontSize: '10px', fontWeight: '600', color: COLORS.blue, marginBottom: '2px' }}>✓ Success Signal</div>
+                      <p style={{ ...S.text, fontSize: '9.5pt', fontStyle: 'italic' as const }}>{rec.suggested_action_v1.success_signal}</p>
                     </div>
                   )}
                 </div>
@@ -922,61 +1635,297 @@ const PrintableContent = ({
             </div>
           ))}
 
+          {/* 90-Day Roadmap */}
           {executiveSummary?.prioritized_actions && executiveSummary.prioritized_actions.length > 0 && (
-            <>
-              <h3 style={s.subsectionHeader}>7.2 Implementation Roadmap</h3>
-              <div style={s.card}>
-                <ol style={{ paddingLeft: '18px', margin: '0' }}>
-                  {executiveSummary.prioritized_actions.map((action, i) => <li key={i} style={{ marginBottom: '4px', lineHeight: '1.5' }}>{action}</li>)}
-                </ol>
+            <div style={{ ...S.calloutCard, marginTop: '16px' }}>
+              <div style={{ ...S.subsubsection, marginTop: 0, color: COLORS.blue }}>90-Day Priority Roadmap</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginTop: '8px' }}>
+                <div>
+                  <div style={{ ...S.sansSerif, fontSize: '10px', fontWeight: '700', color: COLORS.green, marginBottom: '6px', textTransform: 'uppercase' as const }}>Days 1-30: Foundation</div>
+                  {executiveSummary.prioritized_actions.slice(0, Math.ceil(executiveSummary.prioritized_actions.length / 3)).map((a, i) => (
+                    <div key={i} style={{ ...S.sansSerif, fontSize: '9.5pt', color: COLORS.slate, marginBottom: '4px', paddingLeft: '8px', borderLeft: `2px solid ${COLORS.green}` }}>{a}</div>
+                  ))}
+                </div>
+                <div>
+                  <div style={{ ...S.sansSerif, fontSize: '10px', fontWeight: '700', color: COLORS.amber, marginBottom: '6px', textTransform: 'uppercase' as const }}>Days 31-60: Acceleration</div>
+                  {executiveSummary.prioritized_actions.slice(Math.ceil(executiveSummary.prioritized_actions.length / 3), Math.ceil(executiveSummary.prioritized_actions.length * 2 / 3)).map((a, i) => (
+                    <div key={i} style={{ ...S.sansSerif, fontSize: '9.5pt', color: COLORS.slate, marginBottom: '4px', paddingLeft: '8px', borderLeft: `2px solid ${COLORS.amber}` }}>{a}</div>
+                  ))}
+                </div>
+                <div>
+                  <div style={{ ...S.sansSerif, fontSize: '10px', fontWeight: '700', color: COLORS.blue, marginBottom: '6px', textTransform: 'uppercase' as const }}>Days 61-90: Scale</div>
+                  {executiveSummary.prioritized_actions.slice(Math.ceil(executiveSummary.prioritized_actions.length * 2 / 3)).map((a, i) => (
+                    <div key={i} style={{ ...S.sansSerif, fontSize: '9.5pt', color: COLORS.slate, marginBottom: '4px', paddingLeft: '8px', borderLeft: `2px solid ${COLORS.blue}` }}>{a}</div>
+                  ))}
+                </div>
               </div>
-            </>
+            </div>
           )}
         </div>
       )}
 
-      {/* ═══ SECTION 8: APPENDIX ═══ */}
-      <div>
-        <h2 style={s.sectionHeader}>8. Appendix</h2>
+      {/* ══════════════════════════════════════════════════════
+          11. RISK & EXPOSURE ASSESSMENT
+         ══════════════════════════════════════════════════════ */}
+      <div style={S.sectionPage}>
+        <div style={S.sectionHeader}>10. Risk & Exposure Assessment</div>
+        <div style={S.sectionSubtitle}>Enterprise risk evaluation across AI search visibility dimensions</div>
+        <div style={S.sectionDivider} />
 
-        <h3 style={s.subsectionHeader}>8.1 Competitor Brand Summaries</h3>
-        {sortedBrands.map((brand, i) => (
-          <div key={i} style={{ ...s.card, pageBreakInside: 'avoid' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-              <h4 style={{ ...s.subsubsectionHeader, margin: 0 }}>{brand.brand}</h4>
-              <span style={outlookBadge(brand.outlook)}>{brand.outlook}</span>
+        {[
+          {
+            title: 'AI Invisibility Risk',
+            severity: isInvisible ? 'Critical' : aiVisibility?.score < 50 ? 'Medium' : 'Low',
+            desc: isInvisible
+              ? `${brandName} scores below 30 on AI visibility — effectively invisible in most AI-generated responses. Immediate intervention required.`
+              : `${brandName} maintains ${aiVisibility?.tier?.toLowerCase()} visibility across AI platforms with a score of ${aiVisibility?.score}.`,
+          },
+          {
+            title: 'Competitive Encroachment Risk',
+            severity: topThreat ? 'High' : competitiveGap > 30 ? 'Medium' : 'Low',
+            desc: topThreat
+              ? `${topCompetitor?.brand} dominates with ${topCompetitor?.geo_score} vs. your ${brandData?.geo_score || 0}, creating significant competitive displacement risk in AI recommendations.`
+              : `Competitive gap is ${competitiveGap}% — ${competitiveGap < 15 ? 'manageable and within striking distance' : 'present but addressable with targeted action'}.`,
+          },
+          {
+            title: 'Trust Deficit Risk',
+            severity: trustDeficit ? 'High' : sentiment?.dominant_sentiment === 'Neutral' ? 'Medium' : 'Low',
+            desc: trustDeficit
+              ? `AI models currently frame ${brandName} with negative sentiment. This directly impacts conversion from AI-recommended traffic.`
+              : `Brand sentiment is ${sentiment?.dominant_sentiment?.toLowerCase() || 'neutral'} — ${sentiment?.dominant_sentiment === 'Positive' ? 'a strong trust signal in AI narratives' : 'not yet a competitive differentiator'}.`,
+          },
+          {
+            title: 'Review Ecosystem Absence Risk',
+            severity: reviewAbsent ? 'High' : 'Low',
+            desc: reviewAbsent
+              ? `No review platform citations detected. AI models heavily weight third-party validation — absence creates a significant authority gap.`
+              : `Review platform citations present, supporting AI model confidence in brand recommendations.`,
+          },
+          {
+            title: 'Enterprise Query Failure Risk',
+            severity: zeroIntents.length >= 3 ? 'Critical' : zeroIntents.length >= 1 ? 'Medium' : 'Low',
+            desc: zeroIntents.length > 0
+              ? `Zero visibility in ${zeroIntents.map(i => i.intent).join(', ')} intent categories — ${zeroIntents.length >= 3 ? 'representing a systemic visibility failure' : 'creating gaps in buyer journey coverage'}.`
+              : `Brand maintains presence across all measured intent categories.`,
+          },
+        ].map((risk, idx) => (
+          <div key={idx} style={{
+            ...S.riskCard,
+            borderLeftColor: severityColor(risk.severity),
+            backgroundColor: risk.severity === 'Critical' ? COLORS.redBg : risk.severity === 'High' ? '#fff7ed' : COLORS.gray100,
+            marginBottom: '14px',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+              <div style={{ ...S.sansSerif, fontSize: '13px', fontWeight: '700', color: COLORS.navy }}>{risk.title}</div>
+              <span style={{ ...S.badge, color: severityColor(risk.severity), backgroundColor: 'transparent', fontWeight: '700', fontSize: '11px' }}>
+                {risk.severity}
+              </span>
             </div>
-            <div style={{ display: 'flex', gap: '12px', marginBottom: '4px', flexWrap: 'wrap', fontSize: '8pt' }}>
-              <span><strong>Visibility:</strong> {brand.geo_score}</span>
-              <span><strong>Mentions:</strong> {brand.mention_score}</span>
-              <span style={tierBadge(brand.geo_tier)}>{brand.geo_tier} Tier</span>
-            </div>
-            <p style={{ fontSize: '8pt', lineHeight: '1.5', color: '#4b5563', margin: 0 }}>{brand.summary}</p>
+            <p style={{ ...S.text, fontSize: '9.5pt', margin: 0 }}>{risk.desc}</p>
           </div>
         ))}
-
-        <h3 style={s.subsectionHeader}>8.2 Methodology Notes</h3>
-        <div style={s.card}>
-          <h4 style={s.subsubsectionHeader}>Data Collection</h4>
-          <p style={{ marginBottom: '6px', fontSize: '8pt' }}>
-            Analysis conducted by querying {Object.keys(llmData).map(getModelDisplayName).join(', ')} across {keywords.length} keywords with {totalPrompts} prompts.
-          </p>
-          <h4 style={s.subsubsectionHeader}>Scoring</h4>
-          <p style={{ marginBottom: '6px', fontSize: '8pt' }}>
-            <strong>AI Visibility Score:</strong> Based on ranking positions, weighted by mention frequency and source authority.
-            <strong> Tier Classification:</strong> High, Medium, or Low based on relative performance.
-          </p>
-          <h4 style={s.subsubsectionHeader}>Limitations</h4>
-          <p style={{ margin: 0, fontSize: '8pt' }}>
-            Snapshot in time. Results may vary with different query formulations.
-          </p>
-        </div>
       </div>
 
-      {/* Footer */}
-      <div style={{ marginTop: '16px', paddingTop: '10px', borderTop: '1.5px solid #e5e7eb', textAlign: 'center', color: '#9ca3af', fontSize: '8pt' }}>
-        <p style={{ marginBottom: '4px', fontWeight: '600' }}>Generated by GeoRankers AI Visibility Analysis Platform</p>
-        <p style={{ margin: 0 }}>{new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+      {/* ══════════════════════════════════════════════════════
+          12. OPPORTUNITY INDEX
+         ══════════════════════════════════════════════════════ */}
+      <div style={S.sectionPage}>
+        <div style={S.sectionHeader}>11. Opportunity Index</div>
+        <div style={S.sectionSubtitle}>Strategic growth vectors and high-leverage opportunities identified from analysis data</div>
+        <div style={S.sectionDivider} />
+
+        {/* Fastest Wins */}
+        {fastWins.length > 0 && (
+          <div style={{ ...S.card, borderLeft: `4px solid ${COLORS.green}` }}>
+            <div style={{ ...S.subsection, marginTop: 0, marginBottom: '8px', color: COLORS.green }}>Fastest Win Opportunities</div>
+            {fastWins.map((fw, i) => (
+              <div key={i} style={{ marginBottom: '8px', paddingLeft: '12px', borderLeft: `2px solid ${COLORS.greenBorder}` }}>
+                <p style={{ ...S.text, fontSize: '9.5pt', margin: 0 }}>{fw.insight?.summary || fw.overall_insight}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* High Leverage Intent Areas */}
+        {highLeverageIntents.length > 0 && (
+          <div style={{ ...S.card, borderLeft: `4px solid ${COLORS.blue}`, marginTop: '14px' }}>
+            <div style={{ ...S.subsection, marginTop: 0, marginBottom: '8px', color: COLORS.blue }}>High-Leverage Intent Categories</div>
+            <p style={{ ...S.text, fontSize: '9.5pt', marginBottom: '8px' }}>
+              These intent categories have low brand presence ({'<'}40%) but high competitor activity ({'>'}50%), representing the largest opportunity gaps:
+            </p>
+            {highLeverageIntents.map((intent, i) => (
+              <div key={i} style={{ ...S.sansSerif, fontSize: '11px', color: COLORS.navy, marginBottom: '4px' }}>
+                <strong>{intent.intent}</strong>: Your visibility {intent.presencePct}% vs. leader at {intent.leaderPct}% ({intent.leader})
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Model-Specific Growth */}
+        {modelGrowthAreas.length > 0 && (
+          <div style={{ ...S.card, borderLeft: `4px solid ${COLORS.amber}`, marginTop: '14px' }}>
+            <div style={{ ...S.subsection, marginTop: 0, marginBottom: '8px', color: COLORS.gold }}>Model-Specific Growth Areas</div>
+            <p style={{ ...S.text, fontSize: '9.5pt' }}>
+              {brandName} is under-represented on {modelGrowthAreas.join(', ')}. 
+              Targeted optimization for these models could significantly increase overall AI visibility with relatively low incremental effort.
+            </p>
+          </div>
+        )}
+
+        {/* Underserved Keywords */}
+        {keywords.some(kw => getBrandScoreForKeyword(kw.id) === 0) && (
+          <div style={{ ...S.card, borderLeft: `4px solid ${COLORS.red}`, marginTop: '14px' }}>
+            <div style={{ ...S.subsection, marginTop: 0, marginBottom: '8px', color: COLORS.red }}>Zero-Visibility Keywords</div>
+            <p style={{ ...S.text, fontSize: '9.5pt', marginBottom: '8px' }}>
+              The following keywords returned zero mentions for {brandName} — representing immediate optimization targets:
+            </p>
+            {keywords.filter(kw => getBrandScoreForKeyword(kw.id) === 0).map((kw, i) => (
+              <div key={i} style={{ ...S.sansSerif, fontSize: '11px', color: COLORS.red, marginBottom: '2px' }}>• {kw.name}</div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          13. METHODOLOGY & APPENDIX
+         ══════════════════════════════════════════════════════ */}
+      <div style={S.sectionPage}>
+        <div style={S.sectionHeader}>12. Methodology & Appendix</div>
+        <div style={S.sectionSubtitle}>Data collection, scoring methodology, and analytical framework</div>
+        <div style={S.sectionDivider} />
+
+        <div style={S.card}>
+          <div style={{ ...S.subsection, marginTop: 0 }}>Data Collection Protocol</div>
+          <p style={S.text}>
+            This intelligence report was generated by systematically querying {llmModels.length} AI language models 
+            ({Object.keys(llmData).map(getModelDisplayName).join(', ')}) across {keywords.length} keyword categories 
+            using {totalPrompts} unique prompts designed to simulate real user search behavior across different buyer intent stages.
+          </p>
+        </div>
+
+        <div style={S.card}>
+          <div style={{ ...S.subsection, marginTop: 0 }}>Scoring Methodology</div>
+          <p style={S.text}>
+            <strong>AI Visibility Score:</strong> Composite metric calculated from brand ranking positions across all queries, 
+            weighted by mention frequency, position tier (T1/T2/T3), and cross-model consistency.
+          </p>
+          <p style={S.text}>
+            <strong>Share of Voice:</strong> Percentage of total brand mentions attributed to the analyzed brand across all 
+            competitors ({shareOfVoice}% for {brandName}).
+          </p>
+          <p style={S.text}>
+            <strong>Rank Quality Index:</strong> Normalized score (0-100) derived from average ranking position across all AI responses. 
+            Higher scores indicate more frequent top-position appearances.
+          </p>
+          <p style={S.text}>
+            <strong>Visibility Consistency:</strong> Measures cross-model stability using coefficient of variation. 
+            Score of 100% indicates identical performance across all AI platforms.
+          </p>
+          <p style={S.text}>
+            <strong>Competitive Gap:</strong> Percentage difference between the analyzed brand's visibility score and the 
+            highest-scoring competitor.
+          </p>
+        </div>
+
+        <div style={S.card}>
+          <div style={{ ...S.subsection, marginTop: 0 }}>Tier Classification</div>
+          <table style={{ ...S.table, marginBottom: 0 }}>
+            <thead>
+              <tr>
+                <th style={S.th}>Classification</th>
+                <th style={S.th}>Score Range</th>
+                <th style={S.th}>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style={S.td}><span style={tierBadge('Leader')}>Leader</span></td>
+                <td style={S.td}>70+</td>
+                <td style={S.td}>Dominant position in AI-generated recommendations</td>
+              </tr>
+              <tr style={S.tdAlt}>
+                <td style={S.td}><span style={tierBadge('Strong Performer')}>Strong Performer</span></td>
+                <td style={S.td}>50-69</td>
+                <td style={S.td}>Consistent presence with room for optimization</td>
+              </tr>
+              <tr>
+                <td style={S.td}><span style={tierBadge('Challenger')}>Challenger</span></td>
+                <td style={S.td}>30-49</td>
+                <td style={S.td}>Emerging presence requiring strategic intervention</td>
+              </tr>
+              <tr style={S.tdAlt}>
+                <td style={S.td}><span style={tierBadge('Laggard')}>Laggard</span></td>
+                <td style={S.td}>&lt;30</td>
+                <td style={S.td}>Minimal visibility — significant investment needed</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style={S.card}>
+          <div style={{ ...S.subsection, marginTop: 0 }}>LLM Testing Protocol</div>
+          <p style={S.text}>
+            Each AI model was queried independently using standardized prompt templates. Responses were parsed to identify 
+            brand mentions, ranking positions, and source citations. Results represent a snapshot of AI model behavior at the 
+            time of analysis and may vary with model updates or different query formulations.
+          </p>
+        </div>
+
+        <div style={S.card}>
+          <div style={{ ...S.subsection, marginTop: 0 }}>Source Attribution</div>
+          <p style={S.text}>
+            Source analysis identifies content platforms and websites that AI models reference when generating brand-related 
+            responses. Source authority is inferred from citation frequency and cross-model reference patterns. 
+            {Object.keys(sourcesAndContentImpact || {}).length} source categories were analyzed.
+          </p>
+        </div>
+
+        {/* Confidentiality Notice */}
+        <div style={{
+          marginTop: '24px', padding: '20px', backgroundColor: COLORS.gray200,
+          borderRadius: '8px', border: `1px solid ${COLORS.gray300}`, textAlign: 'center' as const,
+        }}>
+          <div style={{ ...S.sansSerif, fontSize: '11px', fontWeight: '700', color: COLORS.navy, marginBottom: '8px', textTransform: 'uppercase' as const, letterSpacing: '2px' }}>
+            Confidentiality Notice
+          </div>
+          <p style={{ ...S.sansSerif, fontSize: '9.5pt', color: COLORS.slateLight, lineHeight: '1.6', margin: 0 }}>
+            This report contains proprietary competitive intelligence and is intended solely for the use of {brandName} and its authorized representatives. 
+            Distribution, reproduction, or disclosure to third parties without written consent from GeoRankers is strictly prohibited. 
+            The analysis methodology, scoring frameworks, and derived insights constitute the intellectual property of GeoRankers AI Search Intelligence Platform.
+          </p>
+        </div>
+
+        {/* Brand Summaries Appendix */}
+        <div style={{ ...S.subsection, marginTop: '28px' }}>Appendix: Brand Intelligence Summaries</div>
+        {sortedBrands.map((brand, idx) => (
+          <div key={idx} style={{ ...S.card, pageBreakInside: 'avoid' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <div style={{ ...S.sansSerif, fontSize: '13px', fontWeight: '700', color: COLORS.navy }}>{brand.brand}</div>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <span style={tierBadge(brand.geo_tier)}>{brand.geo_tier}</span>
+                <span style={tierBadge(brand.outlook)}>{brand.outlook}</span>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '20px', marginBottom: '8px', ...S.sansSerif, fontSize: '10px' }}>
+              <span>Visibility: <strong>{brand.geo_score}</strong></span>
+              <span>Mentions: <strong>{brand.mention_score}</strong></span>
+            </div>
+            <p style={{ ...S.text, fontSize: '9.5pt', margin: 0 }}>{brand.summary}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* ═══ FOOTER ═══ */}
+      <div style={S.footer}>
+        <div style={{ marginBottom: '6px', fontWeight: '600', fontSize: '10pt', color: COLORS.navy }}>
+          GeoRankers · AI Search & LLM Visibility Intelligence Platform
+        </div>
+        <div style={{ fontSize: '9pt', color: COLORS.slatePale }}>
+          Report generated {new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })} · © {new Date().getFullYear()} GeoRankers. All rights reserved.
+        </div>
+        <div style={{ fontSize: '8pt', color: COLORS.gray400, marginTop: '4px' }}>
+          AI Search Visibility is the new SEO — this is the enterprise intelligence layer.
+        </div>
       </div>
     </div>
   );
@@ -1008,11 +1957,19 @@ export const generateReport = (toast: (props: { title: string; description: stri
   const sourcesDataObj = getSourcesData();
 
   if (!brandName || brandInfo.length === 0) {
-    toast({ title: "No Data Available", description: "Please wait for the analysis to complete before generating a report.", variant: "destructive" });
+    toast({
+      title: "No Data Available",
+      description: "Please wait for the analysis to complete before generating a report.",
+      variant: "destructive",
+    });
     return false;
   }
 
-  toast({ title: "Generating Report", description: "Preparing your comprehensive report...", duration: 2000 });
+  toast({
+    title: "Generating Intelligence Report",
+    description: "Preparing your enterprise AI visibility intelligence report...",
+    duration: 2000,
+  });
 
   let printContainer = document.getElementById("print-report-container") as HTMLDivElement;
   if (!printContainer) {
@@ -1025,14 +1982,27 @@ export const generateReport = (toast: (props: { title: string; description: stri
   const root = createRoot(printContainer);
   root.render(
     <PrintableContent
-      brandName={brandName} brandWebsite={brandWebsite} brandLogo={brandLogo}
-      modelName={modelName} analysisDate={analysisDate} analysisKeywords={analysisKeywords}
-      brandInfo={brandInfo} executiveSummary={executiveSummary} recommendations={recommendations}
-      keywords={keywords} llmData={llmData} aiVisibility={aiVisibility}
-      mentionsData={mentionsData} sourcesAndContentImpact={sourcesAndContentImpact}
-      platformPresence={platformPresence} competitorSentiment={competitorSentiment}
-      sentiment={sentiment} brandMentionRates={brandMentionRates}
-      competitorData={competitorDataArr} keywordNames={keywordNames} sourcesData={sourcesDataObj}
+      brandName={brandName}
+      brandWebsite={brandWebsite}
+      brandLogo={brandLogo}
+      modelName={modelName}
+      analysisDate={analysisDate}
+      analysisKeywords={analysisKeywords}
+      brandInfo={brandInfo}
+      executiveSummary={executiveSummary}
+      recommendations={recommendations}
+      keywords={keywords}
+      llmData={llmData}
+      aiVisibility={aiVisibility}
+      mentionsData={mentionsData}
+      sourcesAndContentImpact={sourcesAndContentImpact}
+      platformPresence={platformPresence}
+      competitorSentiment={competitorSentiment}
+      sentiment={sentiment}
+      brandMentionRates={brandMentionRates}
+      competitorData={competitorDataArr}
+      keywordNames={keywordNames}
+      sourcesData={sourcesDataObj}
     />
   );
 
@@ -1052,6 +2022,10 @@ export const generateReport = (toast: (props: { title: string; description: stri
       #print-report-container { display: block !important; }
       header, nav, .fixed, button, .sidebar, [data-sidebar] { display: none !important; }
       * { box-shadow: none !important; transition: none !important; animation: none !important; }
+      table { page-break-inside: auto !important; }
+      tr { page-break-inside: avoid !important; }
+      thead { display: table-header-group !important; }
+      tfoot { display: table-footer-group !important; }
     }
     @media screen {
       #print-report-container { display: none !important; }
