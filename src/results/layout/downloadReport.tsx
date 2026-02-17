@@ -699,7 +699,7 @@ const PrintableContent = (props: PrintableContentProps) => {
       {/* ══════════════════════════════════════════════════════
           TABLE OF CONTENTS
          ══════════════════════════════════════════════════════ */}
-      <div style={{ ...S.pageBreak, pageBreakBefore: 'auto' }}>
+      <div style={{ ...S.pageBreak, pageBreakBefore: 'auto', pageBreakAfter: 'always' as const }}>
         <div style={S.sectionHeader}>Table of Contents</div>
         <div style={S.sectionDivider} />
         <div style={{ ...S.sansSerif, fontSize: '10.5pt', lineHeight: '2.2', color: COLORS.slate }}>
@@ -2016,8 +2016,9 @@ export const generateReport = (toast: (props: { title: string; description: stri
 
   styleSheet.textContent = `
     @media print {
-      @page { size: A4; margin: 10mm 12mm; }
-      body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      @page { size: A4; margin: 10mm 12mm; margin-top: 8mm; margin-bottom: 8mm; }
+      @page { @top-left { content: none; } @top-right { content: none; } @bottom-left { content: none; } @bottom-right { content: none; } }
+      body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; margin: 0 !important; }
       body > *:not(#print-report-container) { display: none !important; }
       #print-report-container { display: block !important; }
       header, nav, .fixed, button, .sidebar, [data-sidebar] { display: none !important; }
