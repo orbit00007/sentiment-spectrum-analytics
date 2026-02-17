@@ -338,10 +338,10 @@ const S = {
     lineHeight: '1.5',
   },
   sectionDivider: {
-    width: '60px',
+    width: '50px',
     height: '3px',
     backgroundColor: COLORS.blue,
-    marginBottom: '20px',
+    marginBottom: '12px',
     borderRadius: '2px',
   },
 
@@ -390,8 +390,8 @@ const S = {
   kpiGrid: {
     display: 'grid',
     gridTemplateColumns: '1fr 1fr 1fr',
-    gap: '14px',
-    marginBottom: '20px',
+    gap: '10px',
+    marginBottom: '14px',
   },
   kpiBlock: {
     padding: '12px 10px',
@@ -1288,7 +1288,7 @@ const PrintableContent = (props: PrintableContentProps) => {
           <>
             <div style={S.subsection}>Detailed Source & Content Impact</div>
             {Object.entries(sourcesAndContentImpact).map(([sourceName, sourceData]: [string, any], idx) => (
-              <div key={idx} style={{ ...S.card, pageBreakInside: 'avoid', marginBottom: '16px' }}>
+              <div key={idx} style={{ ...S.card, marginBottom: '12px' }}>
                 <div style={{ ...S.subsubsection, marginTop: 0 }}>{sourceName}</div>
 
                 {sourceData.pages_used && sourceData.pages_used.length > 0 && (
@@ -1426,7 +1426,7 @@ const PrintableContent = (props: PrintableContentProps) => {
           const brandsToDisplay = getBrandsForKeyword(kw.id);
 
           return (
-            <div key={idx} style={{ ...S.card, pageBreakInside: 'avoid', marginBottom: '18px' }}>
+            <div key={idx} style={{ ...S.card, marginBottom: '14px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                 <div>
                   <div style={{ ...S.subsection, marginTop: 0, marginBottom: '2px', fontSize: '14px' }}>Keyword: {kw.name}</div>
@@ -1503,7 +1503,7 @@ const PrintableContent = (props: PrintableContentProps) => {
         <div style={S.subsection}>Model-Wise Prompt Analysis</div>
         <p style={{ ...S.sansSerif, color: COLORS.slateLight, marginBottom: '12px', fontSize: '10pt' }}>Which brands each AI model recommends per prompt</p>
         {keywords.map((kw, kwIdx) => (
-          <div key={kwIdx} style={{ ...S.card, pageBreakInside: 'avoid', marginBottom: '16px' }}>
+          <div key={kwIdx} style={{ ...S.card, marginBottom: '12px' }}>
             <div style={{ ...S.subsubsection, marginTop: 0 }}>Keyword: {kw.name}</div>
             <table style={{ ...S.table, fontSize: '8.5pt' }}>
               <thead>
@@ -1576,7 +1576,7 @@ const PrintableContent = (props: PrintableContentProps) => {
 
           {/* Recommendations */}
           {recommendations.map((rec: any, idx: number) => (
-            <div key={idx} style={{ ...S.card, pageBreakInside: 'avoid', marginBottom: '16px' }}>
+            <div key={idx} style={{ ...S.card, marginBottom: '12px' }}>
               <div style={{ display: 'flex', gap: '10px', marginBottom: '12px', flexWrap: 'wrap' as const, alignItems: 'center' }}>
                 <span style={{
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
@@ -1898,7 +1898,7 @@ const PrintableContent = (props: PrintableContentProps) => {
         {/* Brand Summaries Appendix */}
         <div style={{ ...S.subsection, marginTop: '28px' }}>Appendix: Brand Intelligence Summaries</div>
         {sortedBrands.map((brand, idx) => (
-          <div key={idx} style={{ ...S.card, pageBreakInside: 'avoid' }}>
+          <div key={idx} style={{ ...S.card }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
               <div style={{ ...S.sansSerif, fontSize: '13px', fontWeight: '700', color: COLORS.navy }}>{brand.brand}</div>
               <div style={{ display: 'flex', gap: '6px' }}>
