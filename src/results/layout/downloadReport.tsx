@@ -251,8 +251,8 @@ const S = {
     alignItems: 'center' as const,
     textAlign: 'center' as const,
     pageBreakAfter: 'always' as const,
-    background: `linear-gradient(135deg, ${COLORS.navy} 0%, #1e3a5f 50%, ${COLORS.blue} 100%)`,
-    color: COLORS.white,
+    background: `rgba(255,255,255,0.35)`,
+    color: 'rgba(0,0,0,1)',
     padding: '60px 40px',
     position: 'relative' as const,
   },
@@ -260,24 +260,24 @@ const S = {
     position: 'absolute' as const,
     top: '30px',
     right: '40px',
-    fontSize: '10px',
+    fontSize: '15px',
     letterSpacing: '3px',
     textTransform: 'uppercase' as const,
-    color: 'rgba(255,255,255,0.35)',
+    color: 'rgba(0,0,0,0.6)',
     fontFamily: "'Segoe UI', sans-serif",
     fontWeight: '600' as const,
   },
   coverTitle: {
-    fontSize: '14px',
+    fontSize: '20px',
     fontWeight: '600' as const,
     letterSpacing: '4px',
     textTransform: 'uppercase' as const,
-    color: 'rgba(255,255,255,0.7)',
+    color: 'rgba(0,0,0,0.7)',
     marginBottom: '24px',
     fontFamily: "'Segoe UI', sans-serif",
   },
   coverBrandName: {
-    fontSize: '42px',
+    fontSize: '44px',
     fontWeight: '700' as const,
     letterSpacing: '-1px',
     marginBottom: '12px',
@@ -286,14 +286,14 @@ const S = {
   coverReportTitle: {
     fontSize: '20px',
     fontWeight: '400' as const,
-    color: 'rgba(255,255,255,0.85)',
+    color: 'rgba(0,0,0,0.85)',
     marginBottom: '40px',
     maxWidth: '500px',
     lineHeight: '1.4',
   },
   coverMeta: {
-    fontSize: '11px',
-    color: 'rgba(255,255,255,0.6)',
+    fontSize: '20px',
+    color: 'rgba(0,0,0,0.6)',
     fontFamily: "'Segoe UI', sans-serif",
     marginBottom: '6px',
   },
@@ -301,19 +301,19 @@ const S = {
     display: 'inline-block',
     padding: '5px 14px',
     borderRadius: '20px',
-    fontSize: '11px',
+    fontSize: '20px',
     fontWeight: '600' as const,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    color: COLORS.white,
+    backgroundColor: `${COLORS.bluePale}`,
+    color: 'black',
     margin: '4px',
     fontFamily: "'Segoe UI', sans-serif",
-    border: '1px solid rgba(255,255,255,0.2)',
+    border: '1px solid rgba(0,0,0,0.4)',
   },
   coverFooter: {
     position: 'absolute' as const,
     bottom: '40px',
-    fontSize: '11px',
-    color: 'rgba(255,255,255,0.4)',
+    fontSize: '20px',
+    color: 'rgba(0,0,0,0.7)',
     fontFamily: "'Segoe UI', sans-serif",
   },
 
@@ -667,7 +667,6 @@ const PrintableContent = (props: PrintableContentProps) => {
           1. COVER PAGE
          ══════════════════════════════════════════════════════ */}
       <div style={S.coverPage}>
-        <div style={S.coverWatermark}>CONFIDENTIAL</div>
         <div style={S.coverTitle}>GeoRankers Intelligence</div>
         {brandLogo && (
           <div style={{ marginBottom: '24px' }}>
