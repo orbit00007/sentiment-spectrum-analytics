@@ -5,9 +5,11 @@ import {
   Target,
   TrendingUp,
   Zap,
-  Play, 
+  Play,
   ChevronDown,
   CheckCircle,
+  Sparkles,
+  ArrowRight,
 } from "lucide-react";
 
 const RecommendationsContent = () => {
@@ -18,385 +20,259 @@ const RecommendationsContent = () => {
 
   const getEffortConfig = (effort: string) => {
     switch (effort) {
-      case "High":
-        return {
-          bg: "bg-red-500/10",
-          text: "text-red-500",
-          border: "border-red-500/20",
-        };
-      case "Medium":
-        return {
-          bg: "bg-amber-500/10",
-          text: "text-amber-500",
-          border: "border-amber-500/20",
-        };
-      case "Low":
-        return {
-          bg: "bg-green-500/10",
-          text: "text-green-500",
-          border: "border-green-500/20",
-        };
-      default:
-        return {
-          bg: "bg-muted",
-          text: "text-muted-foreground",
-          border: "border-border",
-        };
+      case "High": return { bg: "bg-red-500/10", text: "text-red-500", border: "border-red-500/20", label: "Hard" };
+      case "Medium": return { bg: "bg-amber-500/10", text: "text-amber-500", border: "border-amber-500/20", label: "Moderate" };
+      case "Low": return { bg: "bg-green-500/10", text: "text-green-500", border: "border-green-500/20", label: "Easy" };
+      default: return { bg: "bg-muted", text: "text-muted-foreground", border: "border-border", label: effort };
     }
   };
 
   const getImpactConfig = (impact: string) => {
     switch (impact) {
-      case "High":
-        return {
-          bg: "bg-green-500/10",
-          text: "text-green-500",
-          border: "border-green-500/20",
-        };
-      case "Medium":
-        return {
-          bg: "bg-amber-500/10",
-          text: "text-amber-500",
-          border: "border-amber-500/20",
-        };
-      case "Low":
-        return {
-          bg: "bg-red-500/10",
-          text: "text-red-500",
-          border: "border-red-500/20",
-        };
-      default:
-        return {
-          bg: "bg-muted",
-          text: "text-muted-foreground",
-          border: "border-border",
-        };
+      case "High": return { bg: "bg-green-500/10", text: "text-green-500", border: "border-green-500/20" };
+      case "Medium": return { bg: "bg-amber-500/10", text: "text-amber-500", border: "border-amber-500/20" };
+      case "Low": return { bg: "bg-red-500/10", text: "text-red-500", border: "border-red-500/20" };
+      default: return { bg: "bg-muted", text: "text-muted-foreground", border: "border-border" };
     }
   };
 
+  const getImpactBarWidth = (impact: string) => {
+    switch (impact) {
+      case "High": return "75%";
+      case "Medium": return "50%";
+      case "Low": return "25%";
+      default: return "0%";
+    }
+  };
+
+  const getImpactBarColor = (impact: string) => {
+    switch (impact) {
+      case "High": return "bg-green-500";
+      case "Medium": return "bg-amber-500";
+      case "Low": return "bg-red-500";
+      default: return "bg-muted";
+    }
+  };
+
+  const getPriorityBadge = (impact: string, effort: string) => {
+    if (impact === "High" && effort === "Low") return { label: "Critical", color: "bg-red-500 text-white" };
+    if (impact === "High") return { label: "High", color: "bg-orange-500/10 text-orange-600 border border-orange-500/20" };
+    if (impact === "Medium") return { label: "Medium", color: "bg-amber-500/10 text-amber-600 border border-amber-500/20" };
+    return null;
+  };
+
+  const getCategoryTag = (insight: string) => {
+    const lower = insight.toLowerCase();
+    if (lower.includes("content") || lower.includes("page") || lower.includes("blog")) return "CONTENT";
+    if (lower.includes("technical") || lower.includes("schema") || lower.includes("canonical")) return "TECHNICAL";
+    if (lower.includes("authority") || lower.includes("source") || lower.includes("citation")) return "AUTHORITY";
+    if (lower.includes("visibility") || lower.includes("mention") || lower.includes("rank")) return "VISIBILITY";
+    return "STRATEGY";
+  };
+
   const highImpact = recommendations.filter((r: any) => r.impact === "High");
-  const mediumImpact = recommendations.filter(
-    (r: any) => r.impact === "Medium"
-  );
+  const mediumImpact = recommendations.filter((r: any) => r.impact === "Medium");
   const quickWins = recommendations.filter((r: any) => r.overall_effort === "Low" && r.impact === "High");
 
-  // Filter recommendations based on active filter
   const filteredRecommendations = () => {
     switch (activeFilter) {
-      case "high":
-        return highImpact;
-      case "medium":
-        return mediumImpact;
-      case "quick":
-        return quickWins;
-      default:
-        return recommendations;
+      case "high": return highImpact;
+      case "medium": return mediumImpact;
+      case "quick": return quickWins;
+      default: return recommendations;
     }
   };
 
   const displayedRecommendations = filteredRecommendations();
 
   return (
-    <div className="p-3 md:p-6 space-y-4 md:space-y-6 w-full max-w-full overflow-x-hidden">
-      {/* Header with gradient */}
-      <div className="relative overflow-hidden rounded-xl md:rounded-2xl bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-transparent border border-amber-500/20 p-4 md:p-6">
-        <div className="absolute top-0 right-0 w-32 md:w-48 h-32 md:h-48 bg-amber-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div className="flex items-center gap-2 md:gap-3">
-            <div className="p-2 md:p-3 bg-amber-500/10 rounded-lg md:rounded-xl">
-              <Lightbulb className="w-5 h-5 md:w-6 md:h-6 text-amber-500" />
-            </div>
-            <div>
-              <h1 className="text-lg md:text-2xl font-bold text-foreground">
-                Strategic Recommendations
-              </h1>
-              <p className="text-xs md:text-sm text-muted-foreground">
-                Data-driven actions to boost {brandName}'s AI presence
-              </p>
-            </div>
-          </div>
-          <div className="text-center sm:text-right">
-            <div className="text-2xl md:text-3xl font-bold text-amber-500">
-              {displayedRecommendations.length}
-            </div>
-            <div className="text-[10px] md:text-xs text-muted-foreground">
-              {activeFilter === "all" ? "Action Items" : "Filtered Items"}
-            </div>
-          </div>
+    <div className="p-4 md:p-6 space-y-6 w-full max-w-full overflow-x-hidden">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground">Strategic Recommendations</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Our AI has analyzed your current GEO rankings and competitive landscape. These prioritized actions will yield the highest visibility ROI.
+          </p>
         </div>
       </div>
 
-      {/* Quick Stats - Now Clickable Filters */}
-      <div className="grid grid-cols-3 gap-2 md:gap-4">
-        <button
-          onClick={() => setActiveFilter(activeFilter === "high" ? "all" : "high")}
-          className={`transition-all rounded-lg md:rounded-xl border p-3 md:p-5 text-left ${
-            activeFilter === "high"
-              ? "bg-green-500/30 border-green-500/50 shadow-lg scale-105"
-              : "bg-green-500/10 border-green-500/20 hover:bg-green-500/15"
-          }`}
-        >
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-1 md:gap-3">
-            <div className="flex items-center gap-1.5 md:gap-3">
-              <Zap className="w-4 h-4 md:w-5 md:h-5 text-green-500" />
-              <span className="text-[10px] md:text-sm font-medium text-foreground">
-                High Impact
-              </span>
-            </div>
-            <span className="text-xl md:text-2xl font-bold text-green-500">
-              {highImpact.length}
-            </span>
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="bg-primary/5 border border-primary/20 rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Sparkles className="w-4 h-4 text-primary" />
+            <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Total Actions</span>
           </div>
-        </button>
-        <button
-          onClick={() => setActiveFilter(activeFilter === "medium" ? "all" : "medium")}
-          className={`transition-all rounded-lg md:rounded-xl border p-3 md:p-5 text-left ${
-            activeFilter === "medium"
-              ? "bg-amber-500/30 border-amber-500/50 shadow-lg scale-105"
-              : "bg-amber-500/10 border-amber-500/20 hover:bg-amber-500/15"
-          }`}
-        >
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-1 md:gap-3">
-            <div className="flex items-center gap-1.5 md:gap-3">
-              <TrendingUp className="w-4 h-4 md:w-5 md:h-5 text-amber-500" />
-              <span className="text-[10px] md:text-sm font-medium text-foreground">
-                Medium Impact
-              </span>
-            </div>
-            <span className="text-xl md:text-2xl font-bold text-amber-500">
-              {mediumImpact.length}
-            </span>
+          <span className="text-3xl font-bold text-foreground">{recommendations.length}</span>
+        </div>
+        <div className="bg-card border border-border rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <TrendingUp className="w-4 h-4 text-green-500" />
+            <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium">High Impact</span>
           </div>
-        </button>
-        <button
-          onClick={() => setActiveFilter(activeFilter === "quick" ? "all" : "quick")}
-          className={`relative group transition-all rounded-lg md:rounded-xl border p-3 md:p-5 text-left ${
-            activeFilter === "quick"
-              ? "bg-primary/30 border-primary/50 shadow-lg scale-105"
-              : "bg-muted border-border hover:bg-muted/80"
-          }`}
-        >
-          {/* Tooltip */}
-          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-popover text-popover-foreground text-xs rounded-lg shadow-lg border border-border opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
-            Low effort, high value actions
-            <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-popover"></div>
+          <span className="text-3xl font-bold text-green-500">{highImpact.length}</span>
+        </div>
+        <div className="bg-card border border-border rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Zap className="w-4 h-4 text-amber-500" />
+            <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Quick Wins</span>
           </div>
-          
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-1 md:gap-3">
-            <div className="flex items-center gap-1.5 md:gap-3">
-              <CheckCircle className={`w-4 h-4 md:w-5 md:h-5 ${activeFilter === "quick" ? "text-primary" : "text-muted-foreground"}`} />
-              <span className="text-[10px] md:text-sm font-medium text-foreground">
-                Quick Wins
-              </span>
-            </div>
-            <span className="text-xl md:text-2xl font-bold text-muted-foreground">
-              {quickWins.length}
-            </span>
+          <span className="text-3xl font-bold text-amber-500">{quickWins.length}</span>
+        </div>
+        <div className="bg-card border border-border rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Target className="w-4 h-4 text-muted-foreground" />
+            <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Strategic Goals</span>
           </div>
-        </button>
+          <span className="text-3xl font-bold text-foreground">{mediumImpact.length + highImpact.length}</span>
+        </div>
       </div>
 
-      {/* Active Filter Indicator */}
-      {activeFilter !== "all" && (
-        <div className="flex items-center justify-between bg-primary/10 border border-primary/20 rounded-lg px-4 py-2">
-          <span className="text-sm text-foreground">
-            Showing {activeFilter === "high" ? "High Impact" : activeFilter === "medium" ? "Medium Impact" : "Quick Wins"} recommendations
-          </span>
+      {/* Filter Tabs */}
+      <div className="flex items-center gap-2 border-b border-border pb-3">
+        {[
+          { key: "all", label: "all" },
+          { key: "high", label: "high impact" },
+          { key: "quick", label: "quick wins" },
+          { key: "medium", label: "medium" },
+        ].map((filter) => (
           <button
-            onClick={() => setActiveFilter("all")}
-            className="text-xs text-primary hover:underline font-medium"
+            key={filter.key}
+            onClick={() => setActiveFilter(filter.key as any)}
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+              activeFilter === filter.key
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted"
+            }`}
           >
-            Clear filter
+            {filter.label}
           </button>
+        ))}
+        <div className="ml-auto text-xs text-muted-foreground">
+          Sorted by: Priority & Estimated Impact
         </div>
-      )}
+      </div>
 
       {/* Recommendations List */}
-      <div className="space-y-3 md:space-y-4">
+      <div className="space-y-4">
         {displayedRecommendations.map((rec: any, index: number) => {
           const effortConfig = getEffortConfig(rec.overall_effort);
           const impactConfig = getImpactConfig(rec.impact);
-          const hasSuggestedActionV1 =
-            rec.suggested_action_v1 &&
-            typeof rec.suggested_action_v1 === "object" &&
-            Object.keys(rec.suggested_action_v1).length > 0;
-          const insightSummary =
-            rec.insight?.summary || rec.overall_insight || "";
+          const priorityBadge = getPriorityBadge(rec.impact, rec.overall_effort);
+          const categoryTag = getCategoryTag(rec.overall_insight || "");
+          const hasSuggestedActionV1 = rec.suggested_action_v1 && typeof rec.suggested_action_v1 === "object" && Object.keys(rec.suggested_action_v1).length > 0;
+          const insightSummary = rec.insight?.summary || rec.overall_insight || "";
           const isHowToExpanded = !!expandedHowTo[index];
 
-          // Determine circle color based on active filter
-          let circleConfig = impactConfig;
-          if (activeFilter === "quick") {
-            circleConfig = {
-              bg: "bg-muted",
-              text: "text-muted-foreground",
-              border: "border-border"
-            };
-          }
-
           return (
-            <div
-              key={index}
-              className="bg-card rounded-xl border border-border overflow-hidden hover:shadow-md transition-all group"
-            >
-              {/* Header */}
-              <div className="p-3 md:p-6 pb-2 md:pb-4">
-                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 md:gap-4 mb-3 md:mb-4">
-                  <div className="flex items-start gap-2 md:gap-4 flex-1">
-                    <div
-                      className={`flex-shrink-0 w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center ${circleConfig.bg} ${circleConfig.text} font-bold text-sm md:text-base`}
-                    >
-                      {index + 1}
+            <div key={index} className="bg-card rounded-xl border-l-4 border border-border overflow-hidden" style={{ borderLeftColor: rec.impact === "High" ? "hsl(var(--primary))" : rec.impact === "Medium" ? "#f59e0b" : "hsl(var(--border))" }}>
+              <div className="p-5">
+                {/* Top row: Priority + Category */}
+                <div className="flex items-center gap-2 mb-3">
+                  {priorityBadge && (
+                    <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${priorityBadge.color}`}>
+                      {priorityBadge.label}
+                    </span>
+                  )}
+                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+                    {categoryTag}
+                  </span>
+                </div>
+
+                {/* Title / Insight */}
+                <h3 className="text-base font-semibold text-foreground mb-3">{insightSummary}</h3>
+
+                {/* AI Insight Quote */}
+                {hasSuggestedActionV1 && rec.suggested_action_v1?.strategy && (
+                  <div className="bg-primary/5 border border-primary/15 rounded-lg p-4 mb-4">
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <Sparkles className="w-3.5 h-3.5 text-primary" />
+                      <span className="text-[10px] font-semibold text-primary uppercase tracking-wider">AI INSIGHT</span>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5 md:gap-2 mb-1 md:mb-2">
-                        <Lightbulb className="w-3 h-3 md:w-4 md:h-4 text-amber-400" />
-                        <span className="text-[10px] md:text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                          Insight
-                        </span>
-                      </div>
-                      <p className="text-xs md:text-base text-foreground leading-relaxed">
-                        {insightSummary}
-                      </p>
+                    <p className="text-sm text-foreground italic leading-relaxed">
+                      "{rec.suggested_action_v1.strategy}"
+                    </p>
+                  </div>
+                )}
+
+                {/* Impact Bar + Effort */}
+                <div className="flex items-center gap-6 mb-4">
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+                      <span>↗ Estimated Impact</span>
+                      <span className={impactConfig.text}>{rec.impact}</span>
+                    </div>
+                    <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                      <div className={`h-full rounded-full transition-all duration-500 ${getImpactBarColor(rec.impact)}`} style={{ width: getImpactBarWidth(rec.impact) }} />
                     </div>
                   </div>
-                  <div className="flex gap-2 flex-shrink-0 ml-10 md:ml-0">
-                    <div
-                      className={`w-20 md:w-24 h-12 md:h-14 flex flex-col justify-center rounded-lg ${effortConfig.bg} border ${effortConfig.border}`}
-                    >
-                      <span className="text-[8px] md:text-xs text-muted-foreground text-center">
-                        Effort
-                      </span>
-                      <span
-                        className={`text-[10px] md:text-sm font-semibold text-center ${effortConfig.text}`}
-                      >
-                        {rec.overall_effort}
-                      </span>
-                    </div>
-
-                    <div
-                      className={`w-20 md:w-24 h-12 md:h-14 flex flex-col justify-center rounded-lg ${impactConfig.bg} border ${impactConfig.border}`}
-                    >
-                      <span className="text-[8px] md:text-xs text-muted-foreground text-center">
-                        Impact
-                      </span>
-                      <span
-                        className={`text-[10px] md:text-sm font-semibold text-center ${impactConfig.text}`}
-                      >
-                        {rec.impact}
-                      </span>
-                    </div>
+                  <div className="text-center">
+                    <span className="text-xs text-muted-foreground block">⊙ Effort Level</span>
+                    <span className={`text-xs font-semibold ${effortConfig.text}`}>{effortConfig.label}</span>
                   </div>
                 </div>
+
+                {/* Suggested Action */}
+                {hasSuggestedActionV1 && (
+                  <div className="space-y-3">
+                    {rec.suggested_action_v1?.start_here && (
+                      <div className="flex items-start gap-2 p-3 bg-muted/30 rounded-lg border border-border">
+                        <Target className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                        <div>
+                          <span className="text-xs font-medium text-muted-foreground">Recommended action:</span>
+                          <p className="text-sm text-foreground mt-0.5">{rec.suggested_action_v1.start_here}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* How to execute */}
+                    {Array.isArray(rec.suggested_action_v1?.how_to_execute) && (
+                      <div>
+                        <button
+                          type="button"
+                          className="flex items-center gap-2 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+                          onClick={() => setExpandedHowTo((prev) => ({ ...prev, [index]: !prev[index] }))}
+                        >
+                          <ChevronDown className={`w-4 h-4 transition-transform ${isHowToExpanded ? "rotate-180" : ""}`} />
+                          How to execute
+                        </button>
+                        {isHowToExpanded && (
+                          <ol className="mt-3 space-y-2 pl-1">
+                            {rec.suggested_action_v1.how_to_execute.map((step: string, stepIndex: number) => (
+                              <li key={stepIndex} className="flex gap-3 text-sm text-foreground">
+                                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-medium">
+                                  {stepIndex + 1}
+                                </span>
+                                <span className="leading-relaxed">{step}</span>
+                              </li>
+                            ))}
+                          </ol>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Success signal */}
+                    {rec.suggested_action_v1?.success_signal && (
+                      <div className="pt-2 border-t border-border/50">
+                        <p className="text-xs font-medium text-muted-foreground mb-1">Success signal</p>
+                        <p className="text-xs italic text-muted-foreground">{rec.suggested_action_v1.success_signal}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Fallback for old format */}
+                {!hasSuggestedActionV1 && rec.suggested_action && (
+                  <div className="flex items-start gap-2 p-3 bg-muted/30 rounded-lg border border-border">
+                    <Target className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                    <div>
+                      <span className="text-xs font-medium text-muted-foreground">Recommended action:</span>
+                      <p className="text-sm text-foreground mt-0.5">{rec.suggested_action}</p>
+                    </div>
+                  </div>
+                )}
               </div>
-
-              {/* Action */}
-              <div className="px-3 pb-3 md:px-6 md:pb-6">
-  {hasSuggestedActionV1 && (
-    <div className="rounded-xl bg-blue-50 border border-blue-100 px-6 py-5 space-y-5">
-
-      {/* Header */}
-      <div className="flex items-center gap-2">
-        <Target className="w-4 h-4 text-blue-600" />
-        <span className="text-xs font-semibold text-blue-600 uppercase tracking-wider">
-          Suggested action
-        </span>
-      </div>
-
-      {/* Main strategy */}
-      {rec.suggested_action_v1?.strategy && (
-        <p className="text-lg font-semibold text-foreground leading-snug">
-          {rec.suggested_action_v1.strategy}
-        </p>
-      )}
-
-      <div className="border-t border-blue-100" />
-
-      {/* Start here */}
-      {rec.suggested_action_v1?.start_here && (
-        <div className="space-y-2">
-          <button
-            type="button"
-            className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 cursor-pointer hover:text-blue-700 transition-colors"
-            onClick={() =>
-              setExpandedHowTo((prev) => ({
-                ...prev,
-                [index]: !prev[index],
-              }))
-            }
-          >
-            <Play className="w-4 h-4 stroke-[2] fill-none" />
-            Start here
-          </button>
-
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            {rec.suggested_action_v1.start_here}
-          </p>
-        </div>
-      )}
-
-      <div className="border-t border-blue-100" />
-
-      {/* How to execute */}
-      {Array.isArray(rec.suggested_action_v1?.how_to_execute) && (
-        <div>
-          <button
-            type="button"
-            className="w-full flex items-center gap-2 text-sm font-medium text-blue-600"
-            onClick={() =>
-              setExpandedHowTo((prev) => ({
-                ...prev,
-                [index]: !prev[index],
-              }))
-            }
-          >
-            <ChevronDown
-              className={`w-4 h-4 transition-transform ${
-                isHowToExpanded ? "rotate-180" : ""
-              }`}
-            />
-            How to execute
-          </button>
-
-          {isHowToExpanded && (
-            <ol className="mt-4 space-y-3">
-              {rec.suggested_action_v1.how_to_execute.map(
-                (step: string, stepIndex: number) => (
-                  <li
-                    key={stepIndex}
-                    className="flex gap-3 text-sm text-foreground"
-                  >
-                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-medium">
-                      {stepIndex + 1}
-                    </span>
-                    <span className="leading-relaxed">{step}</span>
-                  </li>
-                )
-              )}
-            </ol>
-          )}
-        </div>
-      )}
-
-      <div className="border-t border-blue-100" />
-
-      {/* Success signal */}
-      {rec.suggested_action_v1?.success_signal && (
-        <div>
-          <p className="text-sm font-medium text-blue-600 mb-1">
-            Success signal
-          </p>
-          <p className="text-sm italic text-muted-foreground leading-relaxed">
-            {rec.suggested_action_v1.success_signal}
-          </p>
-        </div>
-      )}
-    </div>
-  )}
-</div>
-
-
-
             </div>
           );
         })}
