@@ -14,6 +14,7 @@ import { PanelLeft } from "lucide-react";
 
 interface LayoutProps {
   children: React.ReactNode;
+  hideNav?: boolean;
 }
 
 // Chat bubble component - simplified
@@ -67,7 +68,7 @@ const ChatBubbleButton = ({
   );
 };
 
-export const Layout = ({ children }: LayoutProps) => {
+export const Layout = ({ children, hideNav }: LayoutProps) => {
   const [isMobileChatOpen, setIsMobileChatOpen] = useState(false);
   const productId = localStorage.getItem("product_id") || "";
 
@@ -98,7 +99,7 @@ export const Layout = ({ children }: LayoutProps) => {
       <SidebarInset className="flex-1 min-w-0 overflow-x-hidden">
         <div className="min-h-screen bg-background flex flex-col w-full overflow-x-hidden pt-[56px]">
           <Header />
-          <Navigation />
+          {!hideNav && <Navigation />}
           <main className="flex-1 overflow-x-hidden overflow-y-auto">
             {children}
           </main>

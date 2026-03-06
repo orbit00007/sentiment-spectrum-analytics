@@ -10,10 +10,6 @@ export default {
 	],
 	prefix: "",
 	theme: {
-		fontFamily: {
-			sans: ['"DM Sans"', 'system-ui', 'sans-serif'],
-			display: ['"Space Grotesk"', 'system-ui', 'sans-serif'],
-		},
 		container: {
 			center: true,
 			padding: '2rem',
@@ -69,6 +65,15 @@ export default {
 					DEFAULT: 'hsl(var(--medium-neutral))',
 					foreground: 'hsl(var(--medium-neutral-foreground))'
 				},
+				// Design system semantic colors
+				'ds-blue': 'hsl(var(--ds-blue))',
+				'ds-text': 'hsl(var(--ds-text-primary))',
+				'ds-text-muted': 'hsl(var(--ds-text-muted))',
+				'ds-bg-muted': 'hsl(var(--ds-bg-muted))',
+				'ds-border': 'hsl(var(--ds-border))',
+				'ds-success': 'hsl(var(--ds-success))',
+				'ds-warning': 'hsl(var(--ds-warning))',
+				'ds-danger': 'hsl(var(--ds-danger))',
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',
@@ -97,32 +102,25 @@ export default {
 			},
 			keyframes: {
 				'accordion-down': {
-					from: { height: '0' },
-					to: { height: 'var(--radix-accordion-content-height)' }
+					from: {
+						height: '0'
+					},
+					to: {
+						height: 'var(--radix-accordion-content-height)'
+					}
 				},
 				'accordion-up': {
-					from: { height: 'var(--radix-accordion-content-height)' },
-					to: { height: '0' }
-				},
-				'slide-up-fade': {
-					'0%': { opacity: '0', transform: 'translateY(24px)' },
-					'100%': { opacity: '1', transform: 'translateY(0)' }
-				},
-				'scale-fade-in': {
-					'0%': { opacity: '0', transform: 'scale(0.96)' },
-					'100%': { opacity: '1', transform: 'scale(1)' }
-				},
-				'count-up': {
-					'0%': { opacity: '0', transform: 'translateY(8px)' },
-					'100%': { opacity: '1', transform: 'translateY(0)' }
+					from: {
+						height: 'var(--radix-accordion-content-height)'
+					},
+					to: {
+						height: '0'
+					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out',
-				'slide-up-fade': 'slide-up-fade 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-				'scale-fade-in': 'scale-fade-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-				'count-up': 'count-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards'
+				'accordion-up': 'accordion-up 0.2s ease-out'
 			}
 		}
 	},

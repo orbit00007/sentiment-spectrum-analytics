@@ -2,6 +2,7 @@
 import axios, { AxiosResponse } from "axios";
 import { API_ENDPOINTS } from "./api";
 import { handleUnauthorized, isUnauthorizedError } from "./lib/authGuard";
+import { encryptPassword } from "./lib/encryption";
 
 /* =====================
    TYPES
@@ -14,6 +15,7 @@ export interface LoginRequest {
 export interface LoginResponse {
   access_token: string;
   refresh_token?: string;
+  sid?: string;
   user?: {
     id: string;
     email: string;
@@ -69,11 +71,16 @@ const API = axios.create({
   baseURL: import.meta.env.VITE_BASE_URL,
 });
 
-// Request interceptor - add auth token
+// Request interceptor - add auth token and session ID
 API.interceptors.request.use((config) => {
   const token = localStorage.getItem("access_token");
+  const sessionId = localStorage.getItem("session_id");
+  
   if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`;
+  }
+  if (sessionId && config.headers) {
+    config.headers["X-Session-ID"] = sessionId;
   }
   if (config.headers) {
     config.headers["Content-Type"] = "application/json";
@@ -103,11 +110,22 @@ API.interceptors.response.use(
    AUTH HELPERS
    ===================== */
 export const login = async (payload: LoginRequest): Promise<LoginResponse> => {
-  const res: AxiosResponse<LoginResponse> = await API.post(API_ENDPOINTS.login, payload);
+  // Encrypt the password before sending
+  const encryptedPayload = {
+    ...payload,
+    password: encryptPassword(payload.password)
+  };
+  
+  const res: AxiosResponse<LoginResponse> = await API.post(API_ENDPOINTS.login, encryptedPayload);
 
-  // Save the access token if present
+  // Save the access token and session ID if present
   if (res.data.access_token && res.data.access_token.trim() !== "") {
     localStorage.setItem("access_token", res.data.access_token);
+
+    // Store session ID
+    if (res.data.sid) {
+      localStorage.setItem("session_id", res.data.sid);
+    }
 
     const appId = res.data.user?.owned_applications?.[0]?.id;
     if (appId) {
@@ -124,9 +142,15 @@ export const register = async (
   payload: RegisterRequest
 ): Promise<RegisterResponse | null> => {
   try {
+    // Encrypt the password before sending
+    const encryptedPayload = {
+      ...payload,
+      password: encryptPassword(payload.password)
+    };
+    
     const res: AxiosResponse<RegisterResponse> = await API.post(
       API_ENDPOINTS.register,
-      payload
+      encryptedPayload
     );
 
     // Store tokens if registration successful
@@ -167,9 +191,10 @@ export const forgotPassword = async (email: string): Promise<any> => {
 
 export const resetPassword = async (token: string, newPassword: string): Promise<any> => {
   try {
+    // Encrypt the password before sending
     const res = await API.post(API_ENDPOINTS.resetPassword, { 
       token, 
-      new_password: newPassword 
+      new_password: encryptPassword(newPassword)
     });
     return res.data;
   } catch (error) {

@@ -1,277 +1,183 @@
-import { useState } from "react";
-import { getRecommendations, getBrandName } from "@/results/data/analyticsData";
+import { useMemo } from "react";
+import { getBrandName, getRecommendations } from "@/results/data/analyticsData";
 import {
   Lightbulb,
-  Target,
-  TrendingUp,
   Zap,
-  Play,
-  ChevronDown,
-  CheckCircle,
-  Sparkles,
-  ArrowRight,
+  TrendingUp,
+  ArrowUpRight,
+  CheckCircle2,
+  Target,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+
+const SectionHeader = ({ title, subtitle }: { title: string; subtitle: string }) => (
+  <div className="mt-8 mb-4">
+    <div className="ds-section-title">
+      <h2 className="text-lg font-bold text-ds-text">{title}</h2>
+    </div>
+    <p className="ds-section-subtitle">{subtitle}</p>
+  </div>
+);
+
+const getImpactNumberStyle = (impact: string) => {
+  if (impact === "High") return { bg: "#FEF2F2", border: "#F25454", text: "#F25454" };
+  if (impact === "Medium") return { bg: "#FFFBEB", border: "#F5BE20", text: "#D97706" };
+  return { bg: "#F0FDF4", border: "#22C55E", text: "#16A34A" };
+};
+
+const getInsightBg = (impact: string) => {
+  if (impact === "High") return { bg: "#FEF2F2", border: "#F25454" };
+  if (impact === "Medium") return { bg: "#FFFBEB", border: "#F5BE20" };
+  return { bg: "#F0FDF4", border: "#22C55E" };
+};
+
+const getBadgeClass = (level: string) => {
+  if (level === "High") return "ds-badge ds-badge-danger";
+  if (level === "Medium") return "ds-badge ds-badge-warning";
+  return "ds-badge ds-badge-positive";
+};
+
+const cleanPriorityLabel = (tier: string) => {
+  if (!tier) return "";
+  const t = tier.toLowerCase();
+  if (t === "high_impact") return "High Impact";
+  if (t === "medium_impact") return "Medium Impact";
+  if (t === "quick_win") return "Quick Win";
+  return tier;
+};
 
 const RecommendationsContent = () => {
   const brandName = getBrandName();
   const recommendations = getRecommendations();
-  const [activeFilter, setActiveFilter] = useState<"all" | "high" | "medium" | "quick">("all");
-  const [expandedHowTo, setExpandedHowTo] = useState<Record<number, boolean>>({});
+  const navigate = useNavigate();
 
-  const getEffortConfig = (effort: string) => {
-    switch (effort) {
-      case "High": return { bg: "bg-red-500/10", text: "text-red-500", border: "border-red-500/20", label: "Hard" };
-      case "Medium": return { bg: "bg-amber-500/10", text: "text-amber-500", border: "border-amber-500/20", label: "Moderate" };
-      case "Low": return { bg: "bg-green-500/10", text: "text-green-500", border: "border-green-500/20", label: "Easy" };
-      default: return { bg: "bg-muted", text: "text-muted-foreground", border: "border-border", label: effort };
-    }
-  };
-
-  const getImpactConfig = (impact: string) => {
-    switch (impact) {
-      case "High": return { bg: "bg-green-500/10", text: "text-green-500", border: "border-green-500/20" };
-      case "Medium": return { bg: "bg-amber-500/10", text: "text-amber-500", border: "border-amber-500/20" };
-      case "Low": return { bg: "bg-red-500/10", text: "text-red-500", border: "border-red-500/20" };
-      default: return { bg: "bg-muted", text: "text-muted-foreground", border: "border-border" };
-    }
-  };
-
-  const getImpactBarWidth = (impact: string) => {
-    switch (impact) {
-      case "High": return "75%";
-      case "Medium": return "50%";
-      case "Low": return "25%";
-      default: return "0%";
-    }
-  };
-
-  const getImpactBarColor = (impact: string) => {
-    switch (impact) {
-      case "High": return "bg-green-500";
-      case "Medium": return "bg-amber-500";
-      case "Low": return "bg-red-500";
-      default: return "bg-muted";
-    }
-  };
-
-  const getPriorityBadge = (impact: string, effort: string) => {
-    if (impact === "High" && effort === "Low") return { label: "Critical", color: "bg-red-500 text-white" };
-    if (impact === "High") return { label: "High", color: "bg-orange-500/10 text-orange-600 border border-orange-500/20" };
-    if (impact === "Medium") return { label: "Medium", color: "bg-amber-500/10 text-amber-600 border border-amber-500/20" };
-    return null;
-  };
-
-  const getCategoryTag = (insight: string) => {
-    const lower = insight.toLowerCase();
-    if (lower.includes("content") || lower.includes("page") || lower.includes("blog")) return "CONTENT";
-    if (lower.includes("technical") || lower.includes("schema") || lower.includes("canonical")) return "TECHNICAL";
-    if (lower.includes("authority") || lower.includes("source") || lower.includes("citation")) return "AUTHORITY";
-    if (lower.includes("visibility") || lower.includes("mention") || lower.includes("rank")) return "VISIBILITY";
-    return "STRATEGY";
-  };
-
-  const highImpact = recommendations.filter((r: any) => r.impact === "High");
-  const mediumImpact = recommendations.filter((r: any) => r.impact === "Medium");
-  const quickWins = recommendations.filter((r: any) => r.overall_effort === "Low" && r.impact === "High");
-
-  const filteredRecommendations = () => {
-    switch (activeFilter) {
-      case "high": return highImpact;
-      case "medium": return mediumImpact;
-      case "quick": return quickWins;
-      default: return recommendations;
-    }
-  };
-
-  const displayedRecommendations = filteredRecommendations();
+  const highImpact = useMemo(() => recommendations.filter((r: any) => r.impact === "High"), [recommendations]);
+  const mediumImpact = useMemo(() => recommendations.filter((r: any) => r.impact === "Medium"), [recommendations]);
+  const quickWins = useMemo(() => recommendations.filter((r: any) => r.overall_effort === "Low" && r.impact === "High"), [recommendations]);
 
   return (
-    <div className="p-4 md:p-6 space-y-6 w-full max-w-full overflow-x-hidden">
+    <div className="w-full mx-auto px-5 md:px-10 py-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground">Strategic Recommendations</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Our AI has analyzed your current GEO rankings and competitive landscape. These prioritized actions will yield the highest visibility ROI.
-          </p>
+      <div className="ds-card !rounded-2xl !px-6 !py-5">
+        <div className="flex items-start justify-between gap-8">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 mb-1.5">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center border flex-shrink-0" style={{ background: '#FFF9EE', borderColor: '#F0D8AB' }}>
+                <Lightbulb className="w-4 h-4 text-ds-warning" />
+              </div>
+              <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-ds-text-muted">Action Plan</span>
+            </div>
+            <div className="flex items-center gap-3 flex-wrap">
+              <h1 className="text-[32px] md:text-[48px] leading-[1.02] font-semibold tracking-[-0.02em] text-ds-text">Strategic Recommendations</h1>
+              <span className="ds-badge ds-badge-info text-[14px] font-bold translate-y-[-4px]">{recommendations.length} Action Items</span>
+            </div>
+            <p className="text-[13px] text-ds-text-muted leading-relaxed mt-2 max-w-2xl">
+              Targeted optimizations for {brandName}'s AI search visibility
+            </p>
+          </div>
         </div>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="bg-primary/5 border border-primary/20 rounded-xl p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Sparkles className="w-4 h-4 text-primary" />
-            <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Total Actions</span>
-          </div>
-          <span className="text-3xl font-bold text-foreground">{recommendations.length}</span>
-        </div>
-        <div className="bg-card border border-border rounded-xl p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <TrendingUp className="w-4 h-4 text-green-500" />
-            <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium">High Impact</span>
-          </div>
-          <span className="text-3xl font-bold text-green-500">{highImpact.length}</span>
-        </div>
-        <div className="bg-card border border-border rounded-xl p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Zap className="w-4 h-4 text-amber-500" />
-            <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Quick Wins</span>
-          </div>
-          <span className="text-3xl font-bold text-amber-500">{quickWins.length}</span>
-        </div>
-        <div className="bg-card border border-border rounded-xl p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Target className="w-4 h-4 text-muted-foreground" />
-            <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Strategic Goals</span>
-          </div>
-          <span className="text-3xl font-bold text-foreground">{mediumImpact.length + highImpact.length}</span>
-        </div>
-      </div>
-
-      {/* Filter Tabs */}
-      <div className="flex items-center gap-2 border-b border-border pb-3">
+      {/* KPI Strip */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
         {[
-          { key: "all", label: "all" },
-          { key: "high", label: "high impact" },
-          { key: "quick", label: "quick wins" },
-          { key: "medium", label: "medium" },
-        ].map((filter) => (
-          <button
-            key={filter.key}
-            onClick={() => setActiveFilter(filter.key as any)}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-              activeFilter === filter.key
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted"
-            }`}
-          >
-            {filter.label}
-          </button>
+          { icon: Zap, label: "High Impact", value: highImpact.length, color: "#22C55E", bg: "#F0FDF4", border: "#BBF7D0" },
+          { icon: TrendingUp, label: "Strategic Growth", value: mediumImpact.length, color: "#D97706", bg: "#FFFBEB", border: "#FDE68A" },
+          { icon: Target, label: "Quick Wins", value: quickWins.length, color: "#4DA6FF", bg: "#EFF6FF", border: "#BFDBFE" },
+        ].map(({ icon: Icon, label, value, color, bg, border }) => (
+          <div key={label} className="ds-card" style={{ background: bg, borderColor: border }}>
+            <div className="flex items-center gap-2 mb-2">
+              <Icon className="w-4 h-4" style={{ color }} />
+              <span className="text-[13px] font-semibold uppercase tracking-wider" style={{ color }}>{label}</span>
+            </div>
+            <div className="text-[32px] font-bold text-ds-text leading-none">{value}</div>
+          </div>
         ))}
-        <div className="ml-auto text-xs text-muted-foreground">
-          Sorted by: Priority & Estimated Impact
-        </div>
       </div>
+
+      <div className="mt-8 mb-4 border-b border-border" />
+
+      <SectionHeader title="Actionable Insights" subtitle="Prioritized recommendations to improve your AI visibility" />
 
       {/* Recommendations List */}
-      <div className="space-y-4">
-        {displayedRecommendations.map((rec: any, index: number) => {
-          const effortConfig = getEffortConfig(rec.overall_effort);
-          const impactConfig = getImpactConfig(rec.impact);
-          const priorityBadge = getPriorityBadge(rec.impact, rec.overall_effort);
-          const categoryTag = getCategoryTag(rec.overall_insight || "");
-          const hasSuggestedActionV1 = rec.suggested_action_v1 && typeof rec.suggested_action_v1 === "object" && Object.keys(rec.suggested_action_v1).length > 0;
-          const insightSummary = rec.insight?.summary || rec.overall_insight || "";
-          const isHowToExpanded = !!expandedHowTo[index];
+      <div className="flex flex-col gap-6 mt-4">
+        {recommendations.map((rec: any, index: number) => {
+          const steps = Array.isArray(rec?.suggested_action_v1?.how_to_execute) && rec.suggested_action_v1.how_to_execute.length
+            ? rec.suggested_action_v1.how_to_execute
+            : rec?.suggested_action ? rec.suggested_action.split(".").map((s: string) => s.trim()).filter(Boolean).slice(0, 3) : [];
+          const successSignal = rec?.suggested_action_v1?.success_signal || null;
+          const strategyTitle = rec?.suggested_action_v1?.strategy || rec?.suggested_action || "";
+          const insightText = rec?.insight?.summary || rec?.overall_insight || "";
+          const numStyle = getImpactNumberStyle(rec.impact);
+          const insightStyle = getInsightBg(rec.impact);
 
           return (
-            <div key={index} className="bg-card rounded-xl border-l-4 border border-border overflow-hidden" style={{ borderLeftColor: rec.impact === "High" ? "hsl(var(--primary))" : rec.impact === "Medium" ? "#f59e0b" : "hsl(var(--border))" }}>
-              <div className="p-5">
-                {/* Top row: Priority + Category */}
-                <div className="flex items-center gap-2 mb-3">
-                  {priorityBadge && (
-                    <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${priorityBadge.color}`}>
-                      {priorityBadge.label}
-                    </span>
-                  )}
-                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-                    {categoryTag}
-                  </span>
+            <div key={index} className="ds-card overflow-hidden">
+              {/* Card Header */}
+              <div className="flex items-start gap-4 mb-4">
+                <div className="flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: numStyle.bg, border: `2px solid ${numStyle.border}` }}>
+                  <span className="text-[18px] font-bold" style={{ color: numStyle.text }}>{index + 1}</span>
                 </div>
-
-                {/* Title / Insight */}
-                <h3 className="text-base font-semibold text-foreground mb-3">{insightSummary}</h3>
-
-                {/* AI Insight Quote */}
-                {hasSuggestedActionV1 && rec.suggested_action_v1?.strategy && (
-                  <div className="bg-primary/5 border border-primary/15 rounded-lg p-4 mb-4">
-                    <div className="flex items-center gap-1.5 mb-2">
-                      <Sparkles className="w-3.5 h-3.5 text-primary" />
-                      <span className="text-[10px] font-semibold text-primary uppercase tracking-wider">AI INSIGHT</span>
-                    </div>
-                    <p className="text-sm text-foreground italic leading-relaxed">
-                      "{rec.suggested_action_v1.strategy}"
-                    </p>
-                  </div>
-                )}
-
-                {/* Impact Bar + Effort */}
-                <div className="flex items-center gap-6 mb-4">
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
-                      <span>↗ Estimated Impact</span>
-                      <span className={impactConfig.text}>{rec.impact}</span>
-                    </div>
-                    <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                      <div className={`h-full rounded-full transition-all duration-500 ${getImpactBarColor(rec.impact)}`} style={{ width: getImpactBarWidth(rec.impact) }} />
-                    </div>
-                  </div>
-                  <div className="text-center">
-                    <span className="text-xs text-muted-foreground block">⊙ Effort Level</span>
-                    <span className={`text-xs font-semibold ${effortConfig.text}`}>{effortConfig.label}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap mb-2">
+                    <span className="text-[10px] uppercase font-semibold text-ds-text-muted">Effort</span>
+                    <span className={getBadgeClass(rec.overall_effort)}>{rec.overall_effort}</span>
+                    <span className="text-[10px] uppercase font-semibold text-ds-text-muted ml-2">Impact</span>
+                    <span className={getBadgeClass(rec.impact)}>{rec.impact}</span>
                   </div>
                 </div>
+              </div>
 
-                {/* Suggested Action */}
-                {hasSuggestedActionV1 && (
-                  <div className="space-y-3">
-                    {rec.suggested_action_v1?.start_here && (
-                      <div className="flex items-start gap-2 p-3 bg-muted/30 rounded-lg border border-border">
-                        <Target className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-                        <div>
-                          <span className="text-xs font-medium text-muted-foreground">Recommended action:</span>
-                          <p className="text-sm text-foreground mt-0.5">{rec.suggested_action_v1.start_here}</p>
+              {/* Insight */}
+              {insightText && (
+                <div className="rounded-lg p-3 mb-4" style={{ background: insightStyle.bg, borderLeft: `3px solid ${insightStyle.border}` }}>
+                  <span className="text-[10px] uppercase font-semibold text-ds-text-muted block mb-1">Insight</span>
+                  <p className="text-[13px] text-ds-text font-medium leading-relaxed">{insightText}</p>
+                </div>
+              )}
+
+              <div className="border-t border-border pt-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <ArrowUpRight className="w-3.5 h-3.5 text-ds-blue" />
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-ds-blue">Suggested Action</span>
+                </div>
+                <p className="text-[18px] font-bold text-ds-text leading-[1.3] mb-3">{strategyTitle}</p>
+
+                {(steps.length > 0 || successSignal) && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {steps.length > 0 && (
+                      <div>
+                        <span className="text-[11px] font-semibold uppercase tracking-wider text-ds-text-muted mb-2 block">Execution Steps</span>
+                        <ol className="space-y-0">
+                          {steps.slice(0, 4).map((step: string, i: number) => (
+                            <li key={i} className="flex items-start gap-2 text-[14px] text-ds-text leading-relaxed py-2" style={{ borderBottom: i < steps.length - 1 ? '1px solid #E3EAF2' : 'none' }}>
+                              <span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-semibold text-white mt-0.5" style={{ background: '#4DA6FF' }}>{i + 1}</span>
+                              <span>{step}</span>
+                            </li>
+                          ))}
+                        </ol>
+                      </div>
+                    )}
+                    {successSignal && (
+                      <div>
+                        <span className="text-[11px] font-semibold uppercase tracking-wider text-ds-text-muted mb-2 block">Expected Outcome</span>
+                        <div className="rounded-lg p-3" style={{ background: '#F0FDF4', borderLeft: '3px solid #22C55E' }}>
+                          <div className="flex items-center gap-1.5 mb-1.5">
+                            <CheckCircle2 className="w-3.5 h-3.5" style={{ color: '#22C55E' }} />
+                            <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: '#22C55E' }}>Success Signal</span>
+                          </div>
+                          <p className="text-[13px] text-ds-text-muted italic leading-relaxed">{successSignal}</p>
                         </div>
                       </div>
                     )}
-
-                    {/* How to execute */}
-                    {Array.isArray(rec.suggested_action_v1?.how_to_execute) && (
-                      <div>
-                        <button
-                          type="button"
-                          className="flex items-center gap-2 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
-                          onClick={() => setExpandedHowTo((prev) => ({ ...prev, [index]: !prev[index] }))}
-                        >
-                          <ChevronDown className={`w-4 h-4 transition-transform ${isHowToExpanded ? "rotate-180" : ""}`} />
-                          How to execute
-                        </button>
-                        {isHowToExpanded && (
-                          <ol className="mt-3 space-y-2 pl-1">
-                            {rec.suggested_action_v1.how_to_execute.map((step: string, stepIndex: number) => (
-                              <li key={stepIndex} className="flex gap-3 text-sm text-foreground">
-                                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-medium">
-                                  {stepIndex + 1}
-                                </span>
-                                <span className="leading-relaxed">{step}</span>
-                              </li>
-                            ))}
-                          </ol>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Success signal */}
-                    {rec.suggested_action_v1?.success_signal && (
-                      <div className="pt-2 border-t border-border/50">
-                        <p className="text-xs font-medium text-muted-foreground mb-1">Success signal</p>
-                        <p className="text-xs italic text-muted-foreground">{rec.suggested_action_v1.success_signal}</p>
-                      </div>
-                    )}
                   </div>
                 )}
 
-                {/* Fallback for old format */}
-                {!hasSuggestedActionV1 && rec.suggested_action && (
-                  <div className="flex items-start gap-2 p-3 bg-muted/30 rounded-lg border border-border">
-                    <Target className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-                    <div>
-                      <span className="text-xs font-medium text-muted-foreground">Recommended action:</span>
-                      <p className="text-sm text-foreground mt-0.5">{rec.suggested_action}</p>
-                    </div>
-                  </div>
-                )}
+                <div className="flex justify-end mt-3">
+                  <button onClick={() => navigate('/results/prompts')} className="text-[12px] font-medium text-ds-blue hover:underline flex items-center gap-1">
+                    View related prompts <ArrowUpRight className="w-3 h-3" />
+                  </button>
+                </div>
               </div>
             </div>
           );

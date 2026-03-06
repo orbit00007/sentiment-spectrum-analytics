@@ -6,8 +6,9 @@ import {
   RegisterRequest,
   RegisterResponse,
 } from "@/apiHelpers";
-import { setCurrentUserEmail, clearCurrentUserEmail } from "@/results/data/analyticsData";
-import { setAnalysisUserEmail, clearAnalysisUserEmail } from "@/hooks/useAnalysisState";
+import { setCurrentUserId, clearCurrentUserId } from "@/results/data/analyticsData";
+import { setAnalysisUserId, clearAnalysisUserId } from "@/hooks/useAnalysisState";
+import { STORAGE_KEYS, getUserScopedKey } from "@/lib/storageKeys";
 
 /* =====================
    TYPES
@@ -71,6 +72,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const storedAppId = localStorage.getItem("application_id");
     const storedToken = localStorage.getItem("access_token");
+    const storedSessionId = localStorage.getItem("session_id");
     const storedFirstName = localStorage.getItem("first_name");
     const storedApplications = localStorage.getItem("applications");
     const storedProducts = localStorage.getItem("products");
@@ -87,14 +89,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setProducts(JSON.parse(storedProducts));
     }
     
-    // If we have a token, restore user state (user is logged in)
-    if (storedToken) {
+    // If we have a token and session ID, restore user state (user is logged in)
+    if (storedToken && storedSessionId) {
+      const storedUserId = localStorage.getItem("user_id") || "restored";
       setUser({ 
-        id: "restored", 
+        id: storedUserId, 
         email: "user@restored.com", 
         first_name: storedFirstName || "User", 
         last_name: "User" 
       });
+      
+      // Restore user ID scoping
+      if (storedUserId && storedUserId !== "restored") {
+        setCurrentUserId(storedUserId);
+        setAnalysisUserId(storedUserId);
+      }
     }
   }, []);
 
@@ -116,11 +125,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const extendedUser = res.user as ExtendedUser;
         setUser(extendedUser);
 
-        // Set user email for analytics data mapping and analysis state scoping
-        setCurrentUserEmail(email);
-        setAnalysisUserEmail(email);
+        const userId = extendedUser.id || "";
 
-        // Save first name to localStorage
+        // Set user ID for analytics data mapping and analysis state scoping
+        setCurrentUserId(userId);
+        setAnalysisUserId(userId);
+
+        // Save user ID and first name to localStorage
+        localStorage.setItem("user_id", userId);
         localStorage.setItem("first_name", extendedUser.first_name);
 
         // Store applications and products from response
@@ -137,6 +149,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
         setProducts(allProducts);
         localStorage.setItem("products", JSON.stringify(allProducts));
+
+        // Set first_analysis flag: "1" if no products exist yet (first time user)
+        const firstAnalysisKey = getUserScopedKey(STORAGE_KEYS.FIRST_ANALYSIS, userId);
+        const existingFlag = localStorage.getItem(firstAnalysisKey);
+        if (existingFlag === null) {
+          // First time seeing this user — check if they already have products
+          const isFirstAnalysis = allProducts.length === 0 ? "1" : "1";
+          // Always set to "1" on first encounter; it becomes "0" when View Dashboard is clicked
+          localStorage.setItem(firstAnalysisKey, isFirstAnalysis);
+          console.log(`🏁 [AUTH] First analysis flag set to ${isFirstAnalysis} for user ${userId}`);
+        }
 
         // Pick applicationId from response
         let appId: string | null = null;
@@ -206,24 +229,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
      LOGOUT - Clear session data but preserve analytics
      ===================== */
   const logout = () => {
-    // NOTE: Do NOT clear analysis state on logout - it should persist per email
-    // The analysis state is email-scoped in sessionStorage and should remain
-    // so when the user logs back in, they see their analysis is still running
-    
-    // Clear user email references (but keep email-scoped data)
-    clearAnalysisUserEmail();
-    clearCurrentUserEmail();
+    // Clear user ID references (but keep user-scoped data)
+    clearAnalysisUserId();
+    clearCurrentUserId();
     
     // Clear only session-related items, NOT analytics data or analysis state
     const sessionItems = [
       'access_token',
       'refresh_token',
+      'session_id',
       'application_id',
       'applications',
       'products',
       'first_name',
       'product_id',
-      // Note: 'user_email' is kept in localStorage to help restore state on login
+      // Note: 'user_id' is kept in localStorage to help restore state on login
     ];
     
     sessionItems.forEach(key => {

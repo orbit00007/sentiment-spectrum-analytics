@@ -5,6 +5,7 @@ export const handleUnauthorized = () => {
   
   // Clear all auth-related localStorage
   localStorage.removeItem("access_token");
+  localStorage.removeItem("session_id");
   localStorage.removeItem("application_id");
   localStorage.removeItem("first_name");
   localStorage.removeItem("keywords");

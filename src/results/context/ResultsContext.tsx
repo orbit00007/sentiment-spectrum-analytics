@@ -119,9 +119,10 @@ export const ResultsProvider: React.FC<ResultsProviderProps> = ({ children }) =>
     }
   };
 
-  const POLL_INTERVAL_MS = 2 * 60 * 1000;
-  const POLL_MAX_ATTEMPTS = 30;
-  const POLL_COOLDOWN_MS = 10 * 60 * 1000;
+  const POLL_FIRST_DELAY_MS = 5 * 60 * 1000; // First poll after 5 minutes
+  const POLL_INTERVAL_MS = 2 * 60 * 1000;   // Subsequent polls every 2 minutes
+  const POLL_MAX_ATTEMPTS = 5;               // 5 polls per batch
+  const POLL_COOLDOWN_MS = 10 * 60 * 1000;   // 10 minute cooldown between batches
 
   const pollingTimerRef = useRef<number>();
   const hasShownStartMessageRef = useRef(false);
@@ -253,7 +254,11 @@ export const ResultsProvider: React.FC<ResultsProviderProps> = ({ children }) =>
         return;
       }
 
-      console.log(`⏱️ [SCHEDULE] Scheduling next poll in ${POLL_INTERVAL_MS / 60000} minutes...`);
+      // Use first delay (5 min) for the first poll, then regular interval (2 min)
+      const isFirstPoll = pollingAttemptsRef.current === 0;
+      const delay = isFirstPoll ? POLL_FIRST_DELAY_MS : POLL_INTERVAL_MS;
+
+      console.log(`⏱️ [SCHEDULE] Scheduling next poll in ${delay / 60000} minutes (attempt ${pollingAttemptsRef.current})...`);
       pollingTimerRef.current = window.setTimeout(() => {
         if (
           mountedRef.current &&
@@ -263,7 +268,7 @@ export const ResultsProvider: React.FC<ResultsProviderProps> = ({ children }) =>
           isPollingRef.current = false;
           pollProductAnalytics(productId);
         }
-      }, POLL_INTERVAL_MS);
+      }, delay);
     },
     []
   );
@@ -432,14 +437,37 @@ export const ResultsProvider: React.FC<ResultsProviderProps> = ({ children }) =>
                 const analysisCompletedAfterPageLoad = analysisTimestamp > pageLoadTimestampRef.current;
                 
                 if (analysisCompletedAfterPageLoad) {
-                  // Analysis completed while user is on this page -> ask to refresh
+                  // Analysis completed while user is on this page
                   hasShownCompletionToastRef.current = true;
-                  toastRef.current({
-                    title: "Analysis Complete!",
-                    description: "Your analysis is ready. Refresh the page to see the latest data.",
-                    duration: 10000,
+
+                  // Compute snapshot stats from the analytics data
+                  const analyticsPayload = mostRecentAnalysis?.analytics?.[0]?.analytics ?? mostRecentAnalysis?.analytics ?? {};
+                  const searchKeywords = analyticsPayload?.search_keywords || {};
+                  let promptsExecuted = 0;
+                  Object.values(searchKeywords).forEach((kw: any) => {
+                    if (Array.isArray(kw?.prompts)) promptsExecuted += kw.prompts.length;
                   });
-                  console.log("🎉 [POLL] Showing refresh notification - analysis completed while on page");
+                  const llmData = analyticsPayload?.llm_wise_data || {};
+                  const aiModelsAnalyzed = Object.keys(llmData).length || (analyticsPayload?.models_used ? analyticsPayload.models_used.split(",").length : 0);
+                  const responsesProcessed = promptsExecuted * Math.max(aiModelsAnalyzed, 1);
+                  const sourcesData = analyticsPayload?.sources_and_content_impact || {};
+                  const citationsMapped = Object.keys(sourcesData).length;
+                  const brands = analyticsPayload?.brands || [];
+                  const competitorsDetected = Math.max(0, brands.length - 1);
+
+                  toastRef.current({
+                    title: "Analysis Updated",
+                    description: [
+                      "Analysis Snapshot",
+                      `Prompts executed:                    ${promptsExecuted}`,
+                      `AI models analyzed:                ${aiModelsAnalyzed}`,
+                      `Responses processed:             ${responsesProcessed}`,
+                      `Citations mapped:                    ${citationsMapped}`,
+                      `Competitors detected:              ${competitorsDetected}`,
+                    ].join("\n"),
+                    duration: 20000,
+                  });
+                  console.log("🎉 [POLL] Showing Analysis Updated notification");
                 } else {
                   // Page was refreshed AFTER analysis completed -> no notification needed
                   console.log("✅ [POLL] Page already refreshed after completion - no notification");
@@ -785,6 +813,37 @@ export const ResultsProvider: React.FC<ResultsProviderProps> = ({ children }) =>
       isInCooldownRef.current = false;
     };
   }, [productData?.id, pollProductAnalytics]);
+
+  // Restart polling when a new analysis is triggered (regenerate/new analysis)
+  useEffect(() => {
+    if (!isAnalyzing || !triggeredAt) return;
+    const productId = currentProductIdRef.current;
+    if (!productId) return;
+
+    // Reset polling state so new polls can start
+    console.log("🔄 [REGEN] Analysis triggered - resetting polling state");
+    hasReceivedDataRef.current = false;
+    hasShownStartMessageRef.current = false;
+    hasShownCompletionToastRef.current = false;
+    isPollingRef.current = false;
+    pollingAttemptsRef.current = 0;
+    isInCooldownRef.current = false;
+    pageLoadTimestampRef.current = Date.now();
+
+    if (pollingTimerRef.current) {
+      clearTimeout(pollingTimerRef.current);
+      pollingTimerRef.current = undefined;
+    }
+    if (cooldownTimerRef.current) {
+      clearTimeout(cooldownTimerRef.current);
+      cooldownTimerRef.current = undefined;
+    }
+
+    setIsLoading(true);
+    
+    // Schedule first poll after 5 minutes
+    scheduleNextPoll(productId);
+  }, [isAnalyzing, triggeredAt, scheduleNextPoll]);
 
   useEffect(() => {
     if (!productData?.id) return;

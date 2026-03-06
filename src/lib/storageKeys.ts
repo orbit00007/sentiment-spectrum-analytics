@@ -1,22 +1,25 @@
 /**
- * Email-scoped storage key utilities
- * Used to scope localStorage/sessionStorage keys per user email
+ * User-ID-scoped storage key utilities
+ * Used to scope localStorage/sessionStorage keys per user ID
  */
 
-// Get sanitized email string for use in storage keys
-export function getSanitizedEmail(email?: string): string {
-  const userEmail = email || localStorage.getItem("user_email") || "";
-  return userEmail.toLowerCase().replace(/[^a-z0-9]/g, "_");
+// Get user ID for use in storage keys
+export function getUserId(userId?: string): string {
+  return userId || localStorage.getItem("user_id") || "";
 }
 
-// Get email-scoped key
-export function getEmailScopedKey(baseKey: string, email?: string): string {
-  const sanitized = getSanitizedEmail(email);
-  if (sanitized) {
-    return `${baseKey}_${sanitized}`;
+// Get user-ID-scoped key
+export function getUserScopedKey(baseKey: string, userId?: string): string {
+  const id = getUserId(userId);
+  if (id) {
+    return `${baseKey}_${id}`;
   }
   return baseKey;
 }
+
+// Keep legacy aliases for backward compatibility during migration
+export const getSanitizedEmail = getUserId;
+export const getEmailScopedKey = getUserScopedKey;
 
 // Storage key constants
 export const STORAGE_KEYS = {
@@ -24,21 +27,23 @@ export const STORAGE_KEYS = {
   LAST_ANALYSIS_DATA: "last_analysis_data",
   LAST_ANALYSIS_DATE: "last_analysis_date",
   ANALYSIS_STATE: "analysis_state",
-  USER_EMAIL: "user_email",
+  USER_ID: "user_id",
+  USER_EMAIL: "user_email", // kept for legacy
   COMPLETION_TOAST_SHOWN: "completion_toast_shown",
   PREVIOUS_ANALYTICS_CACHE: "previous_analytics_cache",
+  FIRST_ANALYSIS: "first_analysis",
 } as const;
 
 // Clear analytics data for current user (call when starting new analysis)
 export function clearAnalyticsDataForCurrentUser(): void {
-  const sanitized = getSanitizedEmail();
-  if (!sanitized) return;
+  const id = getUserId();
+  if (!id) return;
   
   const keysToRemove = [
-    `${STORAGE_KEYS.ANALYTICS_DATA}_${sanitized}`,
-    `${STORAGE_KEYS.LAST_ANALYSIS_DATA}_${sanitized}`,
-    `${STORAGE_KEYS.LAST_ANALYSIS_DATE}_${sanitized}`,
-    `${STORAGE_KEYS.COMPLETION_TOAST_SHOWN}_${sanitized}`,
+    `${STORAGE_KEYS.ANALYTICS_DATA}_${id}`,
+    `${STORAGE_KEYS.LAST_ANALYSIS_DATA}_${id}`,
+    `${STORAGE_KEYS.LAST_ANALYSIS_DATE}_${id}`,
+    `${STORAGE_KEYS.COMPLETION_TOAST_SHOWN}_${id}`,
   ];
   
   keysToRemove.forEach((key) => {
@@ -50,7 +55,7 @@ export function clearAnalyticsDataForCurrentUser(): void {
   });
 }
 
-// Get all email-scoped datasets from localStorage
+// Get all user-scoped datasets from localStorage
 export function getAllEmailScopedDatasets(): Array<{
   email: string;
   key: string;
@@ -70,33 +75,28 @@ export function getAllEmailScopedDatasets(): Array<{
   const lastDataPrefix = STORAGE_KEYS.LAST_ANALYSIS_DATA + "_";
   const lastDatePrefix = STORAGE_KEYS.LAST_ANALYSIS_DATE + "_";
   
-  // Collect all unique email suffixes
-  const emailSuffixes = new Set<string>();
+  const idSuffixes = new Set<string>();
   
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
     if (!key) continue;
     
     if (key.startsWith(analyticsPrefix)) {
-      emailSuffixes.add(key.substring(analyticsPrefix.length));
+      idSuffixes.add(key.substring(analyticsPrefix.length));
     } else if (key.startsWith(lastDataPrefix)) {
-      emailSuffixes.add(key.substring(lastDataPrefix.length));
+      idSuffixes.add(key.substring(lastDataPrefix.length));
     } else if (key.startsWith(lastDatePrefix)) {
-      emailSuffixes.add(key.substring(lastDatePrefix.length));
+      idSuffixes.add(key.substring(lastDatePrefix.length));
     }
   }
   
-  // Build dataset info for each email
-  emailSuffixes.forEach((suffix) => {
+  idSuffixes.forEach((suffix) => {
     const analyticsKey = `${STORAGE_KEYS.ANALYTICS_DATA}_${suffix}`;
     const lastDataKey = `${STORAGE_KEYS.LAST_ANALYSIS_DATA}_${suffix}`;
     const lastDateKey = `${STORAGE_KEYS.LAST_ANALYSIS_DATE}_${suffix}`;
     
-    // Try to recover original email from suffix (best effort)
-    const email = suffix.replace(/_/g, ".").replace(/\.com$/, "@gmail.com") || suffix;
-    
     datasets.push({
-      email: suffix, // Use suffix as identifier
+      email: suffix,
       key: suffix,
       hasAnalyticsData: localStorage.getItem(analyticsKey) !== null,
       hasLastAnalysisData: localStorage.getItem(lastDataKey) !== null,
@@ -107,12 +107,12 @@ export function getAllEmailScopedDatasets(): Array<{
   return datasets;
 }
 
-// Delete all data for a specific email suffix
-export function deleteEmailScopedData(emailSuffix: string): void {
+// Delete all data for a specific user suffix
+export function deleteEmailScopedData(suffix: string): void {
   const keysToDelete = [
-    `${STORAGE_KEYS.ANALYTICS_DATA}_${emailSuffix}`,
-    `${STORAGE_KEYS.LAST_ANALYSIS_DATA}_${emailSuffix}`,
-    `${STORAGE_KEYS.LAST_ANALYSIS_DATE}_${emailSuffix}`,
+    `${STORAGE_KEYS.ANALYTICS_DATA}_${suffix}`,
+    `${STORAGE_KEYS.LAST_ANALYSIS_DATA}_${suffix}`,
+    `${STORAGE_KEYS.LAST_ANALYSIS_DATE}_${suffix}`,
   ];
   
   keysToDelete.forEach((key) => {
@@ -123,12 +123,11 @@ export function deleteEmailScopedData(emailSuffix: string): void {
     }
   });
   
-  // Also clear from sessionStorage
   try {
-    sessionStorage.removeItem(`${STORAGE_KEYS.ANALYSIS_STATE}_${emailSuffix}`);
+    sessionStorage.removeItem(`${STORAGE_KEYS.ANALYSIS_STATE}_${suffix}`);
   } catch {
     // ignore
   }
   
-  console.log(`🗑️ [STORAGE] Deleted data for: ${emailSuffix}`);
+  console.log(`🗑️ [STORAGE] Deleted data for: ${suffix}`);
 }

@@ -7,16 +7,10 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 
-# Copy project files
+# Copy project files and .env
 COPY . .
 
-# Accept env vars from docker-compose (build-time)
-ARG VITE_BASE_URL
-ARG VITE_ENCRYPTION_KEY
-ENV VITE_BASE_URL=$VITE_BASE_URL
-ENV VITE_ENCRYPTION_KEY=$VITE_ENCRYPTION_KEY
-
-# Build the Vite app (env vars baked in)
+# Build the Vite app (.env file will be read by Vite)
 RUN npm run build
 
 # Step 2: Serve with nginx

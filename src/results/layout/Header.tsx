@@ -1,5 +1,5 @@
 import { useNavigate, useLocation, Link } from "react-router-dom";
-import { Menu, X, User, LogOut, RefreshCw, Plus, Loader2, FileDown, FileText, Globe, Database, Sparkles, Brain, History, Check, ChevronDown, AlertCircle, CheckCircle } from "lucide-react";
+import { Menu, X, User, LogOut, RefreshCw, Plus, Loader2, FileDown, History, Check, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils";
@@ -44,7 +44,7 @@ const mobileNavItems = [
   },
 ];
 
-// Analysis Animation Component
+// Analysis Animation Component - Figma-matching pill design
 const AnalyzingAnimation = ({ 
   hasError = false, 
   hasCompleted = false,
@@ -55,161 +55,69 @@ const AnalyzingAnimation = ({
   onRetry?: () => void;
 }) => {
   const [currentStep, setCurrentStep] = useState(0);
-  const [showRetryPrompt, setShowRetryPrompt] = useState(false);
   
   const steps = [
-    { icon: FileText, text: "Gathering", color: "text-blue-500" },
-    { icon: Globe, text: "Searching", color: "text-green-500" },
-    { icon: Database, text: "Processing", color: "text-purple-500" },
-    { icon: Brain, text: "ChatGPT", color: "text-emerald-500" },
-    { icon: Sparkles, text: "Gemini", color: "text-amber-500" },
-    { icon: Brain, text: "Analyzing", color: "text-pink-500" },
+    "Creating Queries",
+    "Searching LLMs",
+    "Processing Data",
+    "Analyzing Results",
+    "Building Report",
   ];
 
   useEffect(() => {
-    if (hasError || hasCompleted) return; // Don't animate if there's an error or completed
-    
+    if (hasError || hasCompleted) return;
     const interval = setInterval(() => {
       setCurrentStep((prev) => (prev + 1) % steps.length);
-    }, 1500);
+    }, 3000);
     return () => clearInterval(interval);
   }, [hasError, hasCompleted]);
 
-  // Show retry prompt when error occurs
-  useEffect(() => {
-    if (hasError) {
-      setShowRetryPrompt(true);
-    } else {
-      setShowRetryPrompt(false);
-    }
-  }, [hasError]);
-
-  const handleRetry = () => {
-    setShowRetryPrompt(false);
-    onRetry?.();
-  };
-
-  const handleDismiss = () => {
-    setShowRetryPrompt(false);
-  };
-
-  // Success state - using same style as analyzing steps
   if (hasCompleted) {
-    const SuccessIcon = CheckCircle;
     return (
-      <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-green-500/10 via-green-500/10 to-green-500/10 border border-green-500/20">
-        <div className="relative w-5 h-5 flex items-center justify-center">
-          <div className="absolute inset-0 animate-ping opacity-75">
-            <SuccessIcon className="w-5 h-5 text-green-500" />
-          </div>
-          <SuccessIcon className="w-5 h-5 relative z-10 text-green-500" />
-        </div>
-        <div className="flex flex-col">
-          <span className="text-xs font-semibold transition-all duration-300 text-green-500">
-            Analysis Completed
-          </span>
-          <div className="flex gap-0.5 mt-0.5">
-            {steps.map((_, idx) => (
-              <div
-                key={idx}
-                className="h-0.5 w-3 rounded-full bg-green-500"
-              />
-            ))}
-          </div>
-        </div>
+      <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border-2 border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-950/40">
+        <span className="relative flex h-2.5 w-2.5">
+          <span className="absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75 animate-ping" />
+          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500" />
+        </span>
+        <span className="text-xs font-semibold text-green-700 dark:text-green-400 whitespace-nowrap">
+          Complete
+        </span>
       </div>
     );
   }
 
-  // Error state - using same style as analyzing steps
   if (hasError) {
-    const ErrorIcon = AlertCircle;
     return (
-      <div className="relative">
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-red-500/10 via-red-500/10 to-red-500/10 border border-red-500/20">
-          <div className="relative w-5 h-5 flex items-center justify-center">
-            <div className="absolute inset-0 animate-ping opacity-75">
-              <ErrorIcon className="w-5 h-5 text-red-500" />
-            </div>
-            <ErrorIcon className="w-5 h-5 relative z-10 text-red-500" />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-xs font-semibold transition-all duration-300 text-red-500">
-              Analysis Failed
-            </span>
-            <div className="flex gap-0.5 mt-0.5">
-              {steps.map((_, idx) => (
-                <div
-                  key={idx}
-                  className="h-0.5 w-3 rounded-full bg-red-500"
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-        
-        {/* Retry Prompt Notification */}
-        {showRetryPrompt && onRetry && (
-          <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50 animate-in fade-in slide-in-from-top-2 duration-300">
-            {/* Arrow pointing up */}
-            <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[6px] border-b-card mx-auto mb-0" />
-            
-            <div className="bg-card border border-border rounded-lg shadow-lg p-3 min-w-[200px]">
-              <p className="text-xs font-medium text-foreground mb-2">
-                Do you want to regenerate the analysis?
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="default"
-                  className="flex-1 h-7 text-xs"
-                  onClick={handleRetry}
-                >
-                  Yes
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="flex-1 h-7 text-xs"
-                  onClick={handleDismiss}
-                >
-                  No
-                </Button>
-              </div>
-            </div>
-          </div>
+      <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border-2 border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-950/40">
+        <span className="relative flex h-2.5 w-2.5">
+          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500" />
+        </span>
+        <span className="text-xs font-semibold text-red-700 dark:text-red-400 whitespace-nowrap">
+          Failed
+        </span>
+        {onRetry && (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-5 px-1.5 text-[10px] text-red-600 hover:text-red-700 dark:text-red-400"
+            onClick={onRetry}
+          >
+            Retry
+          </Button>
         )}
       </div>
     );
   }
 
-  // Normal analyzing state
-  const CurrentIcon = steps[currentStep].icon;
-
   return (
-    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-primary/10 via-purple-500/10 to-amber-500/10 border border-primary/20">
-      <div className="relative w-5 h-5 flex items-center justify-center">
-        <div className="absolute inset-0 animate-ping opacity-75">
-          <CurrentIcon className={cn("w-5 h-5", steps[currentStep].color)} />
-        </div>
-        <CurrentIcon className={cn("w-5 h-5 relative z-10", steps[currentStep].color)} />
-      </div>
-      <div className="flex flex-col">
-        <span className={cn("text-xs font-semibold transition-all duration-300", steps[currentStep].color)}>
-          {steps[currentStep].text}
-        </span>
-        <div className="flex gap-0.5 mt-0.5">
-          {steps.map((_, idx) => (
-            <div
-              key={idx}
-              className={cn(
-                "h-0.5 w-3 rounded-full transition-all duration-300",
-                idx === currentStep ? "bg-primary" : "bg-muted"
-              )}
-            />
-          ))}
-        </div>
-      </div>
+    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border-2 border-orange-300 dark:border-orange-700 bg-orange-50 dark:bg-orange-950/40">
+      <span className="relative flex h-2.5 w-2.5">
+        <span className="absolute inline-flex h-full w-full rounded-full bg-orange-500 opacity-75 animate-ping" />
+        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-orange-500" />
+      </span>
+      <span className="text-xs font-semibold text-orange-700 dark:text-orange-400 transition-all duration-500 whitespace-nowrap">
+        {steps[currentStep]}
+      </span>
     </div>
   );
 };
@@ -320,8 +228,6 @@ export const Header = () => {
           "Your analysis has begun. Please stay on this page, you'll receive a notification here when it's ready.",
         duration: 10000,
       });
-
-      // NOTE: keep locked until dataReady becomes true (handled by useEffect)
     } catch (error) {
       setAnalysisError(true);
       
@@ -334,7 +240,6 @@ export const Header = () => {
       setIsRegenerating(false);
       completeAnalysis();
       
-      // Auto-clear error state after 5 seconds
       setTimeout(() => {
         setAnalysisError(false);
       }, 5000);
@@ -356,7 +261,6 @@ export const Header = () => {
       return;
     }
 
-    // Reset generating state after print
     setTimeout(() => {
       setIsGeneratingReport(false);
     }, 2000);
@@ -374,12 +278,14 @@ export const Header = () => {
     });
   };
 
+  const showAnalysisStatus = isAnalysisInProgress || isRegenerating || analysisLocked || analysisError || analysisCompleted;
+
   return (
     <>
       <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-b border-border no-print shadow-sm">
-        <div className="flex items-center justify-between px-3 md:px-6 md:pl-14 py-2 md:py-3">
-          <div className="flex items-center gap-2 md:gap-3">
-            {/* Mobile menu button */}
+        <div className="flex items-center justify-between px-3 md:px-6 md:pl-14 h-[49px]">
+          {/* Left: hamburger + logo */}
+          <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">
             <button
               className="md:hidden p-1.5 -ml-1 text-foreground touch-manipulation"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -407,26 +313,25 @@ export const Header = () => {
             </Link>
           </div>
 
-          <div className="flex items-center gap-1.5 md:gap-3">
-            {/* Analysis in Progress Animation - beside New Analysis button */}
-            {(isAnalysisInProgress || isRegenerating || analysisLocked || analysisError || analysisCompleted) && (
-              <div className="flex items-center">
-                <AnalyzingAnimation 
-                  hasError={analysisError} 
-                  hasCompleted={analysisCompleted}
-                  onRetry={handleRegenerateAnalysis}
-                />
-              </div>
+          {/* Right: actions — hide user menu on mobile (moved to hamburger) */}
+          <div className="flex items-center gap-1.5 md:gap-3 min-w-0 justify-end">
+            {/* Analysis Status */}
+            {showAnalysisStatus && (
+              <AnalyzingAnimation 
+                hasError={analysisError} 
+                hasCompleted={analysisCompleted}
+                onRetry={handleRegenerateAnalysis}
+              />
             )}
             
-            {/* Previous Analytics Dropdown */}
+            {/* Previous Analytics Dropdown — desktop only */}
             {analyticsList && analyticsList.length > 1 && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="outline"
                     size="sm"
-                    className="text-[10px] md:text-sm px-2 py-1 md:px-4 md:py-2 gap-1 h-7 md:h-9"
+                    className="hidden sm:inline-flex text-xs md:text-sm px-2 py-1 md:px-4 md:py-2 gap-1 h-7 md:h-9"
                     disabled={isAnalyticsListLoading || isSwitchingAnalytics}
                   >
                     {isSwitchingAnalytics ? (
@@ -434,8 +339,8 @@ export const Header = () => {
                     ) : (
                       <History className="w-3 h-3 md:w-4 md:h-4" />
                     )}
-                    <span className="hidden sm:inline">Previous Analytics</span>
-                    <span className="sm:hidden">Previous</span>
+                    <span className="hidden md:inline">Previous Analytics</span>
+                    <span className="md:hidden">History</span>
                     <ChevronDown className="w-3 h-3 md:w-4 md:h-4" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -480,16 +385,16 @@ export const Header = () => {
               <span className="sm:hidden">New</span>
             </Button>
 
-            {/* User Menu */}
-            {user ? (
+            {/* User Menu — desktop only */}
+            {user && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="relative h-7 w-7 md:h-10 md:w-10 rounded-full p-0 md:mr-5"
+                    className="relative hidden md:flex h-10 w-10 rounded-full p-0 mr-5"
                   >
-                    <div className="w-7 h-7 md:w-10 md:h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold text-xs md:text-sm shadow-lg">
+                    <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold text-sm shadow-lg">
                       {user.first_name?.charAt(0).toUpperCase() || "U"}
                     </div>
                   </Button>
@@ -545,7 +450,10 @@ export const Header = () => {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            ) : (
+            )}
+
+            {/* Login/Register for logged-out users */}
+            {!user && (
               <div className="flex items-center gap-1 md:gap-2">
                 <Link to="/login">
                   <Button
@@ -579,16 +487,17 @@ export const Header = () => {
         />
       )}
 
-      {/* Mobile menu drawer */}
+      {/* Mobile menu drawer — full height with user actions at bottom */}
       <div
         className={cn(
-          "fixed top-[49px] left-0 right-0 bg-card border-b border-border z-50 md:hidden transition-all duration-300 overflow-hidden",
+          "fixed top-[49px] left-0 right-0 bottom-0 bg-card border-b border-border z-50 md:hidden transition-all duration-300 flex flex-col",
           mobileMenuOpen
-            ? "max-h-[80vh] opacity-100 overflow-y-auto"
-            : "max-h-0 opacity-0"
+            ? "opacity-100 pointer-events-auto"
+            : "opacity-0 pointer-events-none"
         )}
       >
-        <nav className="p-3 space-y-1">
+        {/* Navigation items */}
+        <nav className="p-3 space-y-1 flex-1 overflow-y-auto">
           {mobileNavItems.map((item) => (
             <button
               key={item.path}
@@ -609,7 +518,107 @@ export const Header = () => {
               Coming Soon
             </span>
           </div>
+
+          {/* Divider */}
+          <div className="border-t border-border my-2" />
+
+          {/* Previous Analytics — mobile */}
+          {analyticsList && analyticsList.length > 1 && (
+            <div className="px-3 py-1">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Previous Analytics
+              </span>
+              <div className="mt-1.5 space-y-1">
+                {analyticsList.map((item) => (
+                  <button
+                    key={item.analytics_id}
+                    onClick={() => {
+                      switchToAnalytics(item.analytics_id);
+                      setMobileMenuOpen(false);
+                    }}
+                    disabled={isSwitchingAnalytics}
+                    className={cn(
+                      "w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center justify-between",
+                      selectedAnalyticsId === item.analytics_id
+                        ? "bg-primary/10 text-primary font-medium"
+                        : "text-foreground hover:bg-muted"
+                    )}
+                  >
+                    <span>{formatAnalyticsLabel(item.created_at)}</span>
+                    {selectedAnalyticsId === item.analytics_id && (
+                      <Check className="w-4 h-4 text-primary" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* User actions — mobile */}
+          {user && productId && (
+            <>
+              <div className="border-t border-border my-2" />
+              <button
+                onClick={() => {
+                  handleRegenerateAnalysis();
+                  setMobileMenuOpen(false);
+                }}
+                disabled={actionsDisabled}
+                className={cn(
+                  "w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-3",
+                  actionsDisabled
+                    ? "text-muted-foreground opacity-60"
+                    : "text-foreground hover:bg-muted"
+                )}
+              >
+                <RefreshCw className={cn("w-4 h-4", isRegenerating && "animate-spin")} />
+                Regenerate Analysis
+              </button>
+              <button
+                onClick={() => {
+                  handleGenerateReport();
+                  setMobileMenuOpen(false);
+                }}
+                disabled={isGeneratingReport || isAnalysisInProgress}
+                className={cn(
+                  "w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-3",
+                  (isGeneratingReport || isAnalysisInProgress)
+                    ? "text-muted-foreground opacity-60"
+                    : "text-foreground hover:bg-muted"
+                )}
+              >
+                <FileDown className={cn("w-4 h-4", isGeneratingReport && "animate-pulse")} />
+                {isGeneratingReport ? "Generating..." : "Generate Report"}
+              </button>
+            </>
+          )}
         </nav>
+
+        {/* User info + Logout pinned to bottom */}
+        {user && (
+          <div className="border-t border-border p-3 flex-shrink-0">
+            <div className="flex items-center gap-3 px-3 py-2 mb-2">
+              <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold text-sm">
+                {user.first_name?.charAt(0).toUpperCase() || "U"}
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-foreground truncate">
+                  {user.first_name} {user.last_name}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                handleLogout();
+                setMobileMenuOpen(false);
+              }}
+              className="w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors flex items-center gap-3"
+            >
+              <LogOut className="w-4 h-4" />
+              Logout
+            </button>
+          </div>
+        )}
       </div>
     </>
   );

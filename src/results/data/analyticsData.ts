@@ -1,36 +1,54 @@
-const ANALYTICS_STORAGE_KEY_PREFIX = 'geo_analytics_data';
-let currentAnalyticsData: any = null;
-let currentUserEmail: string | null = null;
+import { mergeBrandAliases, areBrandsAliased } from './brandAliases';
 
-// Get storage key for specific user email
-const getStorageKey = (email?: string): string => {
-  const userEmail = email || currentUserEmail || localStorage.getItem('user_email') || '';
-  if (userEmail) {
-    return `${ANALYTICS_STORAGE_KEY_PREFIX}_${userEmail.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+const ANALYTICS_STORAGE_KEY_PREFIX = 'geo_analytics_data';
+
+// Helper: find a brand in the merged list, accounting for aliases
+const findTestBrand = <T extends { brand: string }>(brands: T[], testBrandName: string): T | undefined => {
+  return brands.find(b => b.brand === testBrandName || areBrandsAliased(b.brand, testBrandName));
+};
+const findTestBrandIndex = <T extends { brand: string }>(brands: T[], testBrandName: string): number => {
+  return brands.findIndex(b => b.brand === testBrandName || areBrandsAliased(b.brand, testBrandName));
+};
+let currentAnalyticsData: any = null;
+let currentUserId: string | null = null;
+
+// Get storage key for specific user ID
+const getStorageKey = (userId?: string): string => {
+  const id = userId || currentUserId || localStorage.getItem('user_id') || '';
+  if (id) {
+    return `${ANALYTICS_STORAGE_KEY_PREFIX}_${id}`;
   }
   return ANALYTICS_STORAGE_KEY_PREFIX;
 };
 
-// Get current user email
-export const getCurrentUserEmail = (): string | null => {
-  return currentUserEmail || localStorage.getItem('user_email');
+// Get current user ID
+export const getCurrentUserId = (): string | null => {
+  return currentUserId || localStorage.getItem('user_id');
 };
 
-// Set current user email (call this on login)
-export const setCurrentUserEmail = (email: string) => {
-  currentUserEmail = email;
-  localStorage.setItem('user_email', email);
-  // Clear current data so it reloads for this user
+// Legacy alias
+export const getCurrentUserEmail = getCurrentUserId;
+
+// Set current user ID (call this on login)
+export const setCurrentUserId = (userId: string) => {
+  currentUserId = userId;
+  localStorage.setItem('user_id', userId);
   currentAnalyticsData = null;
-  console.log('👤 [ANALYTICS] User email set:', email);
+  console.log('👤 [ANALYTICS] User ID set:', userId);
 };
 
-// Clear user email (call on logout)
-export const clearCurrentUserEmail = () => {
-  currentUserEmail = null;
+// Legacy alias
+export const setCurrentUserEmail = setCurrentUserId;
+
+// Clear user ID (call on logout)
+export const clearCurrentUserId = () => {
+  currentUserId = null;
   currentAnalyticsData = null;
-  console.log('👤 [ANALYTICS] User email cleared from memory');
+  console.log('👤 [ANALYTICS] User ID cleared from memory');
 };
+
+// Legacy alias
+export const clearCurrentUserEmail = clearCurrentUserId;
 
 // Clear current analytics data (call when starting new analysis)
 export const clearCurrentAnalyticsData = () => {
@@ -50,18 +68,17 @@ export const formatLogoUrl = (domain: string): string => {
 // Load analytics from localStorage for current user
 export const loadAnalyticsFromStorage = (): boolean => {
   try {
-    // Try email-scoped key from LAST_ANALYSIS_DATA
-    const userEmail = getCurrentUserEmail();
-    if (userEmail) {
-      const sanitizedEmail = userEmail.toLowerCase().replace(/[^a-z0-9]/g, '_');
-      const lastDataKey = `last_analysis_data_${sanitizedEmail}`;
+    // Try user-ID-scoped key from LAST_ANALYSIS_DATA
+    const userId = getCurrentUserId();
+    if (userId) {
+      const lastDataKey = `last_analysis_data_${userId}`;
       const stored = localStorage.getItem(lastDataKey);
       
       if (stored) {
         const parsed = JSON.parse(stored);
         if (parsed.analytics?.[0]) {
           currentAnalyticsData = parsed;
-          console.log('📦 [ANALYTICS] Data loaded from email-scoped key:', lastDataKey);
+          console.log('📦 [ANALYTICS] Data loaded from user-scoped key:', lastDataKey);
           return true;
         }
       }
@@ -251,7 +268,7 @@ export const getProductId = (): string => {
   return currentAnalyticsData?.product_id || '';
 };
 
-// Get brand info with logos - REVERSED ORDER for correct ranking
+// Get brand info with logos - REVERSED ORDER for correct ranking, with brand aliasing
 export const getBrandInfoWithLogos = (): Array<{
   brand: string;
   geo_score: number;
@@ -263,6 +280,8 @@ export const getBrandInfoWithLogos = (): Array<{
   summary: string;
   outlook: string;
   mention_breakdown: Record<string, number> | null;
+  isMerged?: boolean;
+  originalNames?: string[];
 }> => {
   const analytics = getAnalytics();
   
@@ -284,7 +303,7 @@ export const getBrandInfoWithLogos = (): Array<{
   // Reverse for descending order (highest score first)
   const reversedBrands = [...brands].reverse();
   
-  return reversedBrands.map((brand: any) => ({
+  const rawBrands = reversedBrands.map((brand: any) => ({
     brand: brand.brand,
     geo_score: brand.geo_score || 0,
     mention_score: brand.mention_score || 0,
@@ -296,6 +315,13 @@ export const getBrandInfoWithLogos = (): Array<{
     outlook: brand.outlook || 'Neutral',
     mention_breakdown: brand.mention_breakdown || null
   }));
+
+  // Apply brand aliasing - merge YouTube/YouTube Live etc.
+  const brandName = analytics?.brand_name || '';
+  const merged = mergeBrandAliases(rawBrands, brandName);
+  
+  // Re-sort by geo_score descending after merge
+  return merged.sort((a, b) => b.geo_score - a.geo_score || b.mention_score - a.mention_score);
 };
 
 // Get brand logo
@@ -340,8 +366,8 @@ export const getAIVisibilityMetrics = (): {
     };
   }
   
-  const brandInfo = brandInfoWithLogos.find(b => b.brand === brandName);
-  const brandIndex = brandInfoWithLogos.findIndex(b => b.brand === brandName);
+  const brandInfo = findTestBrand(brandInfoWithLogos, brandName);
+  const brandIndex = findTestBrandIndex(brandInfoWithLogos, brandName);
   
   let totalT1 = 0;
   let totalT2 = 0;
@@ -495,10 +521,10 @@ export const getMentionsPosition = (): {
     return a.brand.localeCompare(b.brand);
   });
   
-  const brandIndex = sortedByMentions.findIndex(b => b.brand === brandName);
+  const brandIndex = findTestBrandIndex(sortedByMentions, brandName);
   const position = brandIndex >= 0 ? brandIndex + 1 : sortedByMentions.length;
   
-  const brandInfo = brandInfoWithLogos.find(b => b.brand === brandName);
+  const brandInfo = findTestBrand(brandInfoWithLogos, brandName);
   const brandMentionScore = brandInfo?.mention_score || 0;
   const topMentionScore = sortedByMentions[0]?.mention_score || 0;
   const tier = brandInfo?.mention_tier || 'Low';
@@ -569,7 +595,7 @@ export const getSentiment = () => {
     };
   }
   
-  const brandInfo = brandInfoWithLogos.find(b => b.brand === brandName);
+  const brandInfo = findTestBrand(brandInfoWithLogos, brandName);
   
   return { 
     dominant_sentiment: brandInfo?.outlook || 'N/A', 

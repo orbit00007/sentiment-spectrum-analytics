@@ -6,60 +6,61 @@ import SourcesAllContent from "./SourcesAllContent";
 import CompetitorsComparisonsContent from "./CompetitorsComparisonsContent";
 import ExecutiveSummaryContent from "./ExecutiveSummaryContent";
 import RecommendationsContent from "./RecommendationsContent";
-import { Search } from "lucide-react";
-import { useEffect, useState } from "react";
+import AnalysisPipelineScreen from "@/results/loading/AnalysisPipelineScreen";
+import { useEffect, useState, useMemo } from "react";
+import { useLocation } from "react-router-dom";
+import { getUserScopedKey, STORAGE_KEYS } from "@/lib/storageKeys";
 
-// Loading component to show while initializing
-const LoadingScreen = () => (
-  <div className="min-h-screen bg-background flex items-center justify-center">
-    <div className="text-center">
-      <div className="relative mb-6">
-        <div className="w-20 h-20 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto" />
-        <Search className="w-8 h-8 text-primary absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
-      </div>
-      <h2 className="text-xl font-semibold text-foreground mb-2">
-        Loading Analysis
-      </h2>
-      <p className="text-muted-foreground">
-        Please wait while we fetch your data...
-      </p>
-    </div>
-  </div>
-);
+const scrollToTop = () => {
+  window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+};
 
 const ResultsContent = () => {
-  const { activeTab, dataReady, isLoading } = useResults();
-  const [mounted, setMounted] = useState(false);
+  const { activeTab, dataReady, currentAnalytics } = useResults();
+  const location = useLocation();
 
-  // Track mount state to ensure we always show something
-  useEffect(() => {
-    console.log("🎬 [ResultsContent] Mounted, isLoading:", isLoading, "dataReady:", dataReady);
-    setMounted(true);
+  // Check if pipeline should be skipped (first_analysis already "0")
+  const shouldSkipPipeline = useMemo(() => {
+    try {
+      const key = getUserScopedKey(STORAGE_KEYS.FIRST_ANALYSIS);
+      const val = localStorage.getItem(key);
+      return val === "0";
+    } catch {
+      return false;
+    }
   }, []);
 
-  // Always show loading if not mounted yet or if loading without data
-  if (!mounted || (isLoading && !dataReady)) {
+  const [pipelineDone, setPipelineDone] = useState(shouldSkipPipeline);
+
+  useEffect(() => {
+    if (pipelineDone) {
+      scrollToTop();
+    }
+  }, [location.pathname, activeTab, pipelineDone]);
+
+  const analyticsData =
+    currentAnalytics?.analytics?.[0]?.analytics ??
+    currentAnalytics?.analytics ??
+    null;
+  const isAlreadyCompleted =
+    currentAnalytics?.status?.toLowerCase() === "completed";
+
+  if (!pipelineDone) {
     return (
-      <Layout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="text-center">
-            <div className="relative mb-6">
-              <div className="w-20 h-20 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto" />
-              <Search className="w-8 h-8 text-primary absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
-            </div>
-            <h2 className="text-xl font-semibold text-foreground mb-2">
-              Loading Analysis
-            </h2>
-            <p className="text-muted-foreground">
-              Please wait while we fetch your data...
-            </p>
-          </div>
-        </div>
+      <Layout hideNav>
+        <AnalysisPipelineScreen
+          dataReady={dataReady}
+          analyticsData={analyticsData}
+          onComplete={() => {
+            scrollToTop();
+            setPipelineDone(true);
+          }}
+          isAlreadyCompleted={isAlreadyCompleted}
+        />
       </Layout>
     );
   }
 
-  // Render active tab content
   const renderContent = () => {
     switch (activeTab) {
       case "overview":
@@ -79,29 +80,37 @@ const ResultsContent = () => {
     }
   };
 
-  return <Layout>{renderContent()}<div className="md:w-full md:h-[100px]"></div></Layout>;
+  return (
+    <Layout>
+      {renderContent()}
+      <div className="md:w-full md:h-[100px]" />
+    </Layout>
+  );
 };
+
+const LoadingBootstrap = () => (
+  <div className="min-h-screen bg-background flex items-center justify-center">
+    <div className="w-8 h-8 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
+  </div>
+);
 
 const NewResultsContainer = () => {
   const [initializing, setInitializing] = useState(true);
 
   useEffect(() => {
     console.log("🎬 [NewResultsContainer] Mount - checking auth");
-    // Check auth immediately on mount
     const accessToken = localStorage.getItem("access_token");
     if (!accessToken) {
       console.log("🔒 [NewResultsContainer] No token - will redirect in context");
     }
-    // Small delay to ensure DOM is ready
     const timer = setTimeout(() => {
       setInitializing(false);
     }, 50);
     return () => clearTimeout(timer);
   }, []);
 
-  // Show loading screen during initialization
   if (initializing) {
-    return <LoadingScreen />;
+    return <LoadingBootstrap />;
   }
 
   return (
