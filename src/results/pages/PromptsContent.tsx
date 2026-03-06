@@ -1,15 +1,7 @@
 import {
-  getAnalytics,
-  getBrandName,
-  getBrandInfoWithLogos,
-  getSearchKeywordsWithPrompts,
-  getLlmData,
+  getAnalytics, getBrandName, getBrandInfoWithLogos, getSearchKeywordsWithPrompts, getLlmData,
 } from "@/results/data/analyticsData";
-import {
-  ChevronDown,
-  ChevronRight,
-  Zap,
-} from "lucide-react";
+import { ChevronDown, Zap } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -31,7 +23,7 @@ const PromptsContent = () => {
   const keywordsWithPrompts = getSearchKeywordsWithPrompts();
   const [searchParams] = useSearchParams();
   const [expandedKeywords, setExpandedKeywords] = useState<Set<string>>(new Set());
-  const [viewType, setViewType] = useState<"category" | "model" | "brand">("brand"); // Default to brand wise
+  const [viewType, setViewType] = useState<"category" | "model" | "brand">("brand");
   const [selectedBrand, setSelectedBrand] = useState("");
   const llmData = getLlmData();
   const categories = ['Discovery', 'Comparison', 'Pricing', 'Use Case', 'Trust'];
@@ -40,22 +32,20 @@ const PromptsContent = () => {
     const expandAllParam = searchParams.get("expandAll");
     const selectedBrandParam = searchParams.get("selectBrand");
     const selectedViewTypeParam = searchParams.get("viewType");
-    if (expandAllParam === "true" && keywordsWithPrompts.length > 0) {
-      setExpandedKeywords(new Set(keywordsWithPrompts.map((k) => k.id)));
-    }
+    if (expandAllParam === "true" && keywordsWithPrompts.length > 0) setExpandedKeywords(new Set(keywordsWithPrompts.map((k) => k.id)));
     if (selectedBrandParam) setSelectedBrand(selectedBrandParam);
-    if (selectedViewTypeParam) setViewType(selectedViewTypeParam as "model" | "category" | "brand");
+    if (selectedViewTypeParam) setViewType(selectedViewTypeParam as any);
   }, [searchParams, keywordsWithPrompts.length]);
 
   const filteredKeywords = keywordsWithPrompts;
   const allPrompts = filteredKeywords.flatMap((keyword) => keyword.prompts.map((prompt) => ({ ...prompt, keywordId: keyword.id, keywordName: keyword.name })));
 
-  // Calculate mention rate
   const totalPrompts = keywordsWithPrompts.reduce((acc, k) => acc + k.prompts.length, 0);
   const brandMentionCount = brandInfo.find(b => b.brand === brandName)?.mention_breakdown
     ? Object.values(brandInfo.find(b => b.brand === brandName)?.mention_breakdown || {}).reduce((sum: number, v: any) => sum + (typeof v === 'number' ? v : 0), 0)
     : 0;
   const mentionRate = totalPrompts > 0 ? Math.round((brandMentionCount / totalPrompts) * 100) : 0;
+  const mentionRateColor = mentionRate === 0 ? '#F25454' : mentionRate < 50 ? '#F5BE20' : '#22C55E';
 
   const getAllBrands = () => {
     const brandToUse = selectedBrand || brandName;
@@ -119,54 +109,44 @@ const PromptsContent = () => {
   return (
     <div className="w-full mx-auto px-5 md:px-10 py-6">
       {/* Header */}
-      <div className="ds-card !rounded-2xl !px-6 !py-5">
+      <div className="ds-card">
         <div className="flex items-start justify-between gap-8">
           <div className="min-w-0">
-            <div className="flex items-center gap-2 mb-1.5">
-              <div className="w-8 h-8 rounded-lg bg-[#EFF6FF] flex items-center justify-center border border-[#DBEAFE] flex-shrink-0">
-                <Zap className="w-4 h-4 text-ds-blue" />
-              </div>
-              <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-ds-text-muted">Query Intelligence</span>
-            </div>
-            <h1 className="text-[32px] md:text-[48px] leading-[1.02] font-semibold tracking-[-0.02em] text-ds-text">AI Prompts & Queries</h1>
-            <p className="text-[13px] text-ds-text-muted leading-relaxed mt-2 max-w-2xl">Exact questions AI is answering about your brand</p>
+            <h1 className="text-[32px] font-bold" style={{ color: '#1E2433' }}>AI Prompts & Queries</h1>
+            <p className="text-[13px] leading-relaxed mt-2 max-w-2xl" style={{ color: '#737E8F' }}>Exact questions AI is answering about your brand</p>
           </div>
           <div className="hidden md:flex items-center gap-8 flex-shrink-0 pt-2">
             <div className="text-center">
-              <div className="text-[28px] font-bold text-ds-text leading-none">{keywordsWithPrompts.length}</div>
-              <div className="text-[11px] text-ds-text-muted uppercase tracking-[0.15em] font-medium mt-1">Keywords</div>
+              <div className="text-[28px] font-bold leading-none" style={{ color: '#1E2433', fontVariantNumeric: 'tabular-nums' }}>{keywordsWithPrompts.length}</div>
+              <div className="text-[11px] uppercase tracking-[0.15em] font-medium mt-1" style={{ color: '#737E8F' }}>Keywords</div>
             </div>
             <div className="text-center">
-              <div className="text-[28px] font-bold text-ds-text leading-none">{totalPrompts}</div>
-              <div className="text-[11px] text-ds-text-muted uppercase tracking-[0.15em] font-medium mt-1">Prompts</div>
+              <div className="text-[28px] font-bold leading-none" style={{ color: '#1E2433', fontVariantNumeric: 'tabular-nums' }}>{totalPrompts}</div>
+              <div className="text-[11px] uppercase tracking-[0.15em] font-medium mt-1" style={{ color: '#737E8F' }}>Prompts</div>
             </div>
             <div className="text-center">
-              <div className="text-[28px] font-bold text-ds-blue leading-none">{mentionRate}%</div>
-              <div className="text-[11px] text-ds-text-muted uppercase tracking-[0.15em] font-medium mt-1">Mention Rate</div>
+              <div className="text-[28px] font-bold leading-none" style={{ color: mentionRateColor, fontVariantNumeric: 'tabular-nums' }}>{mentionRate}%</div>
+              <div className="text-[11px] uppercase tracking-[0.15em] font-medium mt-1" style={{ color: '#737E8F' }}>Mention Rate</div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* View Type Toggle - Pill style */}
+      {/* View Type Toggle */}
       <div className="flex gap-3 items-center flex-wrap mt-4">
-        <div className="flex items-center gap-1 p-1 rounded-full border border-border bg-card" style={{ boxShadow: 'var(--shadow-card)' }}>
+        <div className="flex items-center gap-0.5 p-1 rounded-full" style={{ background: '#EFF3F8' }}>
           {viewOptions.map(({ key, label }) => (
             <button key={key} onClick={() => setViewType(key)}
-              className={`px-4 py-1.5 rounded-full text-[13px] font-semibold transition-all duration-150 ${
-                viewType === key
-                  ? "text-white shadow-md"
-                  : "text-ds-text-muted hover:text-ds-text"
-              }`}
-              style={viewType === key ? { background: '#4DA6FF', boxShadow: '0 1px 3px rgba(77,166,255,0.4)' } : { background: 'transparent' }}>
+              className="px-[18px] py-1.5 rounded-full text-[13px] font-semibold transition-all duration-150"
+              style={viewType === key
+                ? { background: '#4DA6FF', color: '#FFFFFF', boxShadow: '0 1px 3px rgba(77,166,255,0.3)' }
+                : { background: 'transparent', color: '#737E8F' }}>
               {label}
             </button>
           ))}
         </div>
         <div className="grow flex justify-end gap-2">
-          {selectedBrand && (
-            <Button onClick={handleClearBrandSelection} variant="outline" size="default" className="whitespace-nowrap">Clear Brand</Button>
-          )}
+          {selectedBrand && <Button onClick={handleClearBrandSelection} variant="outline" size="default" className="whitespace-nowrap">Clear Brand</Button>}
           <Button onClick={handleExpandAll} variant="outline" size="default" className="whitespace-nowrap">Expand All</Button>
           <Button onClick={handleCollapseAll} variant="outline" size="default" className="whitespace-nowrap">Collapse All</Button>
         </div>
@@ -187,30 +167,31 @@ const PromptsContent = () => {
               const brandsToDisplay = getBrandsForKeyword(keyword.id);
 
               return (
-                <div key={keyword.id} className="ds-card overflow-hidden !p-0">
-                  <div className="p-5 flex items-center justify-between gap-3 cursor-pointer hover:bg-muted/30 transition-colors"
+                <div key={keyword.id} className="ds-card overflow-hidden" style={{ padding: 0 }}>
+                  <div className="p-5 flex items-center justify-between gap-3 cursor-pointer hover:bg-[#F8FAFC] transition-colors"
                     onClick={() => toggleKeyword(keyword.id)}>
                     <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <ChevronDown className={`w-5 h-5 flex-shrink-0 transition-transform duration-200 ${isExpanded ? 'text-ds-blue' : 'text-ds-text-muted -rotate-90'}`} />
+                      <ChevronDown className={`w-5 h-5 flex-shrink-0 transition-transform duration-200 ${isExpanded ? '' : '-rotate-90'}`}
+                        style={{ color: isExpanded ? '#4DA6FF' : '#737E8F' }} />
                       <div className="min-w-0">
-                        <span className="font-semibold text-ds-text text-[15px] block truncate">{keyword.name}</span>
-                        <span className="text-[12px] text-ds-text-muted">{promptCount} prompts</span>
+                        <span className="font-bold text-[15px] block truncate" style={{ color: '#1E2433' }}>{keyword.name}</span>
+                        <span className="text-[12px]" style={{ color: '#737E8F' }}>{promptCount} prompts</span>
                       </div>
                     </div>
                     <div className="flex items-center gap-3 flex-shrink-0">
                       <div className="flex flex-col items-center">
-                        <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold text-white`}
-                          style={{ background: brandScore >= 3 ? '#22C55E' : brandScore >= 1 ? '#F5BE20' : '#F25454' }}>
+                        <div className="text-[10px] uppercase mb-1" style={{ color: '#737E8F' }}>Your brand</div>
+                        <span className="inline-flex items-center justify-center w-9 h-9 rounded-full text-sm font-bold text-white"
+                          style={{ background: brandScore > 0 ? '#22C55E' : '#F25454' }}>
                           {brandScore}
                         </span>
-                        <span className="text-[10px] text-ds-text-muted mt-1 uppercase">Your brand</span>
                       </div>
                       {topCompetitor.brand && (
-                        <div className="hidden md:flex items-center gap-2 px-3 py-2 rounded-lg border border-border" style={{ background: '#F8FAFC' }}>
+                        <div className="hidden md:flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: '#F8FAFC', border: '1px solid #E3EAF2' }}>
                           {topCompetitor.logo && <img src={topCompetitor.logo} alt="" className="w-4 h-4 rounded-full object-contain bg-white" />}
-                          <span className="text-[11px] text-ds-text-muted">Top:</span>
-                          <span className="text-[11px] font-semibold text-ds-text">{topCompetitor.brand}</span>
-                          <span className="text-[11px] font-bold text-ds-blue">{topCompetitor.score}</span>
+                          <span className="text-[11px]" style={{ color: '#737E8F' }}>Top:</span>
+                          <span className="text-[11px] font-bold" style={{ color: '#1E2433' }}>{topCompetitor.brand}</span>
+                          <span className="text-[11px] font-bold" style={{ color: '#4DA6FF' }}>{topCompetitor.score}</span>
                         </div>
                       )}
                     </div>
@@ -230,7 +211,7 @@ const PromptsContent = () => {
               );
             })}
             {filteredKeywords.length === 0 && (
-              <div className="text-center py-8 text-ds-text-muted ds-card text-sm">No keywords or prompts found</div>
+              <div className="text-center py-8 ds-card text-sm" style={{ color: '#737E8F' }}>No keywords or prompts found</div>
             )}
           </div>
         )}

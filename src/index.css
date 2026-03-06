@@ -2,83 +2,70 @@
 @tailwind components;
 @tailwind utilities;
 
-/* GeoRankers AI Search Visibility Tool Design System
-All colors MUST be HSL. Complete color scheme with all themes.
-*/
-
 @layer base {
   :root {
-    /* Base colors - clean white background */
-    --background: 0 0% 100%; /* #FFFFFF */
+    /* Page background - #F4F6F9 */
+    --background: 220 16% 96%;
     --foreground: 224 15% 15%;
 
-    /* Card system */
+    /* Card system - white */
     --card: 0 0% 100%;
     --card-foreground: 224 15% 15%;
 
-    /* Popover system */
     --popover: 0 0% 100%;
     --popover-foreground: 224 15% 15%;
 
-    /* Primary - GeoRankers blue theme #4DA6FF */
+    /* Primary - #4DA6FF */
     --primary: 210 100% 65%;
     --primary-foreground: 0 0% 100%;
     --primary-glow: 210 100% 70%;
 
-    /* Secondary - light blue variations */
     --secondary: 210 40% 96%;
     --secondary-foreground: 210 100% 45%;
 
-    /* Muted system - #EFF3F8 */
+    /* Muted - #EFF3F8 */
     --muted: 214 32% 95%;
-    --muted-foreground: 215 14% 53%; /* #737E8F */
+    --muted-foreground: 215 14% 53%;
 
-    /* Accent */
     --accent: 214 32% 95%;
     --accent-foreground: 210 100% 45%;
 
-    /* Success and error states */
-    --success: 142 76% 36%; /* #22C55E */
+    /* Status */
+    --success: 142 76% 36%;
     --success-foreground: 0 0% 100%;
     --positive: 142 71% 45%;
     --positive-foreground: 0 0% 100%;
-    --destructive: 4 90% 63%; /* #F25454 */
+    --destructive: 4 90% 63%;
     --destructive-foreground: 0 0% 100%;
     --negative: 4 90% 63%;
     --negative-foreground: 0 0% 100%;
 
-    /* Border and input system - #E3EAF2 */
+    /* Border - #E3EAF2 */
     --border: 213 28% 92%;
     --input: 213 28% 92%;
     --ring: 210 100% 65%;
 
-    /* Warning amber #F5BE20 */
     --warning: 44 91% 54%;
     --warning-foreground: 0 0% 0%;
 
-    /* Medium/Neutral state */
     --medium-neutral: 44 91% 54%;
     --medium-neutral-foreground: 0 0% 100%;
 
-    /* Design tokens */
     --radius: 0.75rem;
 
-    /* Gradients */
     --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
     --gradient-hero: linear-gradient(135deg, hsl(210 100% 65%) 0%, hsl(220 100% 68%) 50%, hsl(240 100% 73%) 100%);
     --gradient-card: linear-gradient(145deg, hsl(210 25% 97%) 0%, hsl(0 0% 100%) 100%);
-    --gradient-bg: linear-gradient(180deg, hsl(210 33% 98%) 0%, hsl(210 33% 98%) 100%);
+    --gradient-bg: linear-gradient(180deg, hsl(220 16% 96%) 0%, hsl(220 16% 96%) 100%);
 
-    /* Shadows - enterprise card shadow */
-    --shadow-card: 0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06);
+    --shadow-card: 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06);
     --shadow-elevated: 0 4px 16px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.04);
     --shadow-glow: 0 0 30px hsl(210 100% 68% / 0.3);
+    --shadow-nav: 0 1px 4px rgba(0,0,0,0.06);
 
-    /* Animations */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 
-    /* Sidebar system */
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 210 15% 25%;
     --sidebar-primary: 210 100% 65%;
@@ -88,17 +75,15 @@ All colors MUST be HSL. Complete color scheme with all themes.
     --sidebar-border: 213 28% 92%;
     --sidebar-ring: 210 100% 65%;
 
-    /* Custom design system colors */
-    --ds-blue: 210 100% 65%; /* #4DA6FF */
-    --ds-text-primary: 225 17% 17%; /* #1E2433 */
-    --ds-text-muted: 215 14% 53%; /* #737E8F */
-    --ds-bg-muted: 214 32% 95%; /* #EFF3F8 */
-    --ds-border: 213 28% 92%; /* #E3EAF2 */
-    --ds-success: 142 76% 36%; /* #22C55E */
-    --ds-warning: 44 91% 54%; /* #F5BE20 */
-    --ds-danger: 4 90% 63%; /* #F25454 */
+    --ds-blue: 210 100% 65%;
+    --ds-text-primary: 225 17% 17%;
+    --ds-text-muted: 215 14% 53%;
+    --ds-bg-muted: 214 32% 95%;
+    --ds-border: 213 28% 92%;
+    --ds-success: 142 76% 36%;
+    --ds-warning: 44 91% 54%;
+    --ds-danger: 4 90% 63%;
 
-    /* Amplitude theme */
     --amplitude-blue: 217 91% 60%;
     --amplitude-dark: 225 25% 12%;
     --amplitude-purple: 258 90% 66%;
@@ -108,38 +93,29 @@ All colors MUST be HSL. Complete color scheme with all themes.
     --amplitude-green: 142 71% 45%;
     --amplitude-red: 0 84% 60%;
 
-    /* Heat map colors */
-    --heat-0: 210 33% 98%; /* #F8FAFC */
-    --heat-1: 213 94% 91%; /* #DBEAFE */
-    --heat-2: 211 90% 78%; /* #93C5FD */
-    --heat-3: 210 100% 65%; /* #4DA6FF - white text */
+    --heat-0: 210 33% 98%;
+    --heat-1: 213 94% 91%;
+    --heat-2: 211 90% 78%;
+    --heat-3: 210 100% 65%;
     --heat-100: 217 91% 24%;
   }
 
   .dark {
-    /* Dark mode with blue accents */
     --background: 224 20% 8%;
     --foreground: 210 20% 95%;
-
     --card: 224 20% 10%;
     --card-foreground: 210 20% 95%;
-
     --popover: 224 20% 10%;
     --popover-foreground: 210 20% 95%;
-
     --primary: 210 100% 68%;
     --primary-foreground: 224 20% 8%;
     --primary-glow: 210 100% 73%;
-
     --secondary: 224 20% 15%;
     --secondary-foreground: 210 20% 95%;
-
     --muted: 224 20% 15%;
     --muted-foreground: 210 10% 65%;
-
     --accent: 224 20% 15%;
     --accent-foreground: 210 20% 95%;
-
     --success: 142 76% 40%;
     --success-foreground: 0 0% 100%;
     --positive: 142 71% 45%;
@@ -148,29 +124,21 @@ All colors MUST be HSL. Complete color scheme with all themes.
     --destructive-foreground: 0 0% 100%;
     --negative: 4 90% 63%;
     --negative-foreground: 0 0% 100%;
-
     --border: 224 20% 18%;
     --input: 224 20% 18%;
     --ring: 210 100% 68%;
-
     --warning: 44 91% 58%;
     --warning-foreground: 0 0% 0%;
-
     --medium-neutral: 44 91% 58%;
     --medium-neutral-foreground: 0 0% 100%;
-
-    /* Dark gradients */
     --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
     --gradient-hero: linear-gradient(135deg, hsl(210 100% 68%) 0%, hsl(220 100% 73%) 50%, hsl(240 100% 78%) 100%);
     --gradient-card: linear-gradient(145deg, hsl(224 20% 12%) 0%, hsl(224 20% 10%) 100%);
     --gradient-bg: linear-gradient(180deg, hsl(224 20% 8%) 0%, hsl(224 20% 6%) 100%);
-
-    /* Dark shadows */
     --shadow-card: 0 4px 20px -4px hsl(0 0% 0% / 0.3);
     --shadow-elevated: 0 10px 40px -8px hsl(0 0% 0% / 0.4);
     --shadow-glow: 0 0 30px hsl(210 100% 68% / 0.2);
-
-    /* Dark design system */
+    --shadow-nav: 0 1px 4px rgba(0,0,0,0.2);
     --ds-blue: 210 100% 68%;
     --ds-text-primary: 210 20% 95%;
     --ds-text-muted: 210 10% 65%;
@@ -179,8 +147,6 @@ All colors MUST be HSL. Complete color scheme with all themes.
     --ds-success: 142 76% 40%;
     --ds-warning: 44 91% 58%;
     --ds-danger: 4 90% 65%;
-
-    /* Dark sidebar */
     --sidebar-background: 224 20% 6%;
     --sidebar-foreground: 210 20% 85%;
     --sidebar-primary: 210 100% 68%;
@@ -198,21 +164,14 @@ All colors MUST be HSL. Complete color scheme with all themes.
   }
 
   body {
-    @apply bg-background text-foreground font-sans antialiased overflow-x-hidden;
+    @apply bg-background text-foreground antialiased overflow-x-hidden;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
   }
-  
+
   html {
     overflow-x: hidden;
   }
 
-  .executive-summary {
-    border: 2px solid;
-    border-image: var(--gradient-hero) 1;
-    box-shadow: 0 10px 15px -3px hsl(210 100% 68% / 0.2), 0 4px 6px -4px hsl(210 100% 68% / 0.1);
-  }
-
-  /* Custom component classes */
   .gradient-text {
     background: var(--gradient-hero);
     -webkit-background-clip: text;
@@ -243,143 +202,187 @@ All colors MUST be HSL. Complete color scheme with all themes.
     background: linear-gradient(135deg, hsl(var(--amplitude-dark)) 0%, hsl(var(--amplitude-gradient-end)) 100%);
   }
 
-  .amplitude-gradient-light {
-    background: linear-gradient(135deg, hsl(225 25% 18%) 0%, hsl(258 50% 30%) 100%);
+  /* ─── Enterprise Design System ─── */
+
+  .ds-card {
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: var(--shadow-card);
+    transition: border-color 0.15s ease;
   }
 
-  /* ─── Enterprise Design System Components ─── */
-
-  /* Standard card used everywhere */
-  .ds-card {
-    @apply bg-card rounded-xl border border-border p-6;
-    box-shadow: var(--shadow-card);
+  .ds-card-interactive:hover {
+    border-color: hsla(210, 100%, 65%, 0.25);
   }
 
   .ds-card-compact {
-    @apply bg-card rounded-xl border border-border p-4;
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: 12px;
+    padding: 20px;
     box-shadow: var(--shadow-card);
   }
 
   /* Section header with blue left border */
   .ds-section-header {
-    @apply mt-8 mb-4;
+    margin-top: 32px;
+    margin-bottom: 16px;
   }
 
   .ds-section-title {
-    @apply flex items-center gap-2;
+    display: flex;
+    align-items: center;
+    gap: 8px;
     border-left: 4px solid hsl(var(--ds-blue));
-    padding-left: 8px;
-  }
-
-  .ds-section-title h2 {
-    @apply text-lg font-bold;
-    color: hsl(var(--ds-text-primary));
-  }
-
-  .ds-section-subtitle {
-    @apply text-[13px] mt-1;
-    color: hsl(var(--ds-text-muted));
     padding-left: 12px;
   }
 
-  /* Badge system */
+  .ds-section-title h2 {
+    font-size: 18px;
+    font-weight: 700;
+    color: hsl(var(--ds-text-primary));
+    line-height: 1.3;
+  }
+
+  .ds-section-subtitle {
+    font-size: 13px;
+    font-weight: 400;
+    margin-top: 4px;
+    color: hsl(var(--ds-text-muted));
+    padding-left: 16px;
+  }
+
+  /* Badge system - solid fill, no borders */
   .ds-badge {
-    @apply inline-flex items-center rounded-full text-[11px] font-semibold px-2.5 py-0.5;
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border: none;
+    outline: none;
+    white-space: nowrap;
   }
 
-  .ds-badge-positive {
-    background: #22C55E;
-    color: #FFFFFF;
-    border: none;
-  }
+  .ds-badge-positive { background: #22C55E; color: #FFFFFF; }
+  .ds-badge-warning { background: #F5BE20; color: #FFFFFF; }
+  .ds-badge-danger { background: #F25454; color: #FFFFFF; }
+  .ds-badge-info { background: #4DA6FF; color: #FFFFFF; }
+  .ds-badge-neutral { background: #94A3B8; color: #FFFFFF; }
 
-  .ds-badge-warning {
-    background: #F5BE20;
-    color: #FFFFFF;
-    border: none;
-  }
-
-  .ds-badge-danger {
-    background: #F25454;
-    color: #FFFFFF;
-    border: none;
-  }
-
-  .ds-badge-info {
-    background: #4DA6FF;
-    color: #FFFFFF;
-    border: none;
-  }
-
-  .ds-badge-neutral {
-    background: #94A3B8;
-    color: #FFFFFF;
-    border: none;
+  /* Insight chip pattern */
+  .ds-insight-chip {
+    background: #EFF3F8;
+    border-left: 3px solid #4DA6FF;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 12px;
+    font-weight: 500;
+    color: hsl(var(--ds-text-primary));
   }
 
   /* Nav styles */
   .nav-tab {
-    @apply px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors relative;
+    padding: 0 16px;
+    height: 56px;
+    display: flex;
+    align-items: center;
     font-size: 14px;
     font-weight: 500;
+    color: #737E8F;
+    transition: color 0.15s ease;
+    position: relative;
+    white-space: nowrap;
+  }
+
+  .nav-tab:hover {
+    color: #1E2433;
   }
 
   .nav-tab-active {
-    @apply text-foreground;
+    color: #1E2433;
   }
 
   .nav-tab-active::after {
     content: '';
-    @apply absolute bottom-0 left-0 right-0;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
     height: 2px;
-    background: hsl(var(--ds-blue));
+    background: #4DA6FF;
+  }
+
+  /* Table system */
+  .table-header {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #737E8F;
   }
 
   .stat-card {
-    @apply bg-card rounded-xl border border-border p-6;
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: 12px;
+    padding: 24px;
     box-shadow: var(--shadow-card);
   }
 
   .progress-bar {
-    @apply overflow-hidden;
+    overflow: hidden;
     height: 6px;
     border-radius: 999px;
-    background: hsl(var(--ds-bg-muted));
+    background: #EFF3F8;
   }
 
   .progress-bar-fill {
-    @apply h-full transition-all duration-500;
+    height: 100%;
     border-radius: 999px;
-    background: hsl(var(--ds-blue));
+    background: #4DA6FF;
+    transition: width 0.5s ease;
   }
 
   .heat-cell {
-    @apply p-3 text-center text-sm font-medium;
-  }
-
-  .table-header {
-    @apply text-xs font-semibold uppercase tracking-wider;
-    font-size: 11px;
+    padding: 12px;
+    text-align: center;
+    font-size: 14px;
     font-weight: 600;
-    letter-spacing: 0.05em;
-    color: hsl(var(--ds-text-muted));
+    min-width: 48px;
+    min-height: 44px;
   }
 
   .expandable-row {
-    @apply cursor-pointer hover:bg-muted/50 transition-colors;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+  }
+
+  .expandable-row:hover {
+    background: hsla(var(--muted), 0.5);
   }
 
   .brand-chip {
-    @apply inline-flex items-center gap-1.5 px-3 py-1.5 bg-muted rounded-full text-sm font-medium;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    background: #EFF3F8;
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 500;
   }
 
-  .comparison-card {
-    @apply bg-card rounded-xl border border-border p-6;
-    box-shadow: var(--shadow-card);
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 
-  .visibility-bar {
-    @apply h-3 rounded-full overflow-hidden;
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
   }
 }
 
@@ -388,19 +391,6 @@ All colors MUST be HSL. Complete color scheme with all themes.
     border: 2px solid transparent;
     background: linear-gradient(hsl(var(--background)), hsl(var(--background))) padding-box,
                 var(--gradient-hero) border-box;
-  }
-  
-  .shadow-excutive-summary\/20 {
-    box-shadow: 0 10px 15px -3px hsl(210 100% 68% / 0.2), 0 4px 6px -4px hsl(210 100% 68% / 0.1);
-  }
-
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-  
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
   }
 }
 
@@ -413,7 +403,6 @@ All colors MUST be HSL. Complete color scheme with all themes.
     margin: 1.5cm;
   }
 
-  /* Hide navigation and interactive elements */
   .no-print,
   nav,
   button,
@@ -423,7 +412,6 @@ All colors MUST be HSL. Complete color scheme with all themes.
     display: none !important;
   }
 
-  /* Prevent page breaks inside content */
   section,
   .card,
   [class*="card"],
@@ -436,31 +424,26 @@ All colors MUST be HSL. Complete color scheme with all themes.
     break-inside: avoid !important;
   }
 
-  /* Keep headers with content */
   h1, h2, h3, h4, h5, h6 {
     page-break-after: avoid !important;
     break-after: avoid !important;
   }
 
-  /* Ensure colors print correctly */
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
     box-shadow: none !important;
   }
 
-  /* Clean background */
   body,
   .bg-gradient-bg {
     background: white !important;
   }
 
-  /* Remove sticky positioning */
   .sticky {
     position: static !important;
   }
 
-  /* Ensure all content is visible */
   * {
     overflow: visible !important;
   }
