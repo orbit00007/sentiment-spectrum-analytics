@@ -7,6 +7,7 @@ import {
   Sidebar,
   SidebarContent,
   SidebarInset,
+  useSidebar,
 } from "@/components/ui/sidebar";
 
 interface LayoutProps {
@@ -14,9 +15,8 @@ interface LayoutProps {
   hideNav?: boolean;
 }
 
-// Chat bubble
 const ChatBubbleButton = ({ onMobileChatOpen }: { onMobileChatOpen: () => void }) => {
-  const { toggleSidebar } = require("@/components/ui/sidebar").useSidebar();
+  const { toggleSidebar } = useSidebar();
 
   const handleChatClick = useCallback(() => {
     if (window.innerWidth < 768) { onMobileChatOpen(); } else { toggleSidebar(); }
