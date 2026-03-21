@@ -87,7 +87,11 @@ const PlanExpiredBanner = () => {
 
 const ResultsContent = () => {
   const { activeTab, dataReady, currentAnalytics, analyticsList, isAnalyzing } = useResults();
+  const { pricingPlan, planExpiresAt } = useAuth();
   const location = useLocation();
+
+  // Check if free plan is expired — block everything
+  const isFreePlanExpired = pricingPlan === "free" && planExpiresAt && Date.now() / 1000 > planExpiresAt;
 
   // Pipeline should ONLY be shown when navigating from the input page
   // (location.state?.isNew === true) for the very first analysis
@@ -115,6 +119,15 @@ const ResultsContent = () => {
     null;
   const isAlreadyCompleted =
     currentAnalytics?.status?.toLowerCase() === "completed";
+
+  // Free plan expired: show full-page overlay, no API calls / results
+  if (isFreePlanExpired) {
+    return (
+      <Layout>
+        <FreeTrialExpiredOverlay />
+      </Layout>
+    );
+  }
 
   if (!pipelineDone) {
     return (
