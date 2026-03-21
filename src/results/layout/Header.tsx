@@ -330,6 +330,10 @@ export const Header = () => {
   };
 
   const handleNewAnalysis = () => {
+    if (isPlanExpired) {
+      navigate("/billing", { state: { from: location.pathname } });
+      return;
+    }
     if (actionsDisabled) return;
 
     const currentWebsite = products?.[0]?.website || "";
