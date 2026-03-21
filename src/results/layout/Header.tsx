@@ -20,6 +20,7 @@ import {
   MailPlus,
   Lock,
   Settings,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect, useCallback, useRef } from "react";
