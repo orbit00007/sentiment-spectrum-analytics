@@ -350,6 +350,10 @@ export const Header = () => {
   };
 
   const handleRegenerateAnalysis = async () => {
+    if (isPlanExpired) {
+      navigate("/billing", { state: { from: location.pathname } });
+      return;
+    }
     if (!productId) return;
     if (actionsDisabled) return;
 
