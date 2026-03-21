@@ -1,14 +1,4 @@
-import { mergeBrandAliases, areBrandsAliased } from './brandAliases';
-
 const ANALYTICS_STORAGE_KEY_PREFIX = 'geo_analytics_data';
-
-// Helper: find a brand in the merged list, accounting for aliases
-const findTestBrand = <T extends { brand: string }>(brands: T[], testBrandName: string): T | undefined => {
-  return brands.find(b => b.brand === testBrandName || areBrandsAliased(b.brand, testBrandName));
-};
-const findTestBrandIndex = <T extends { brand: string }>(brands: T[], testBrandName: string): number => {
-  return brands.findIndex(b => b.brand === testBrandName || areBrandsAliased(b.brand, testBrandName));
-};
 let currentAnalyticsData: any = null;
 let currentUserId: string | null = null;
 
@@ -188,7 +178,7 @@ export const getKeywords = (): string[] => {
 };
 
 // Get search keywords with prompts
-export const getSearchKeywordsWithPrompts = (): Array<{ id: string; name: string; prompts: [{ query: string; brands_per_llm: Record<string, any> }] }> => {
+export const getSearchKeywordsWithPrompts = (): Array<{ id: string; name: string; prompts: Array<{ query: string; category?: string; result: Record<string, { tier: string; brands: string[] }> }> }> => {
   const analytics = getAnalytics();
   const searchKeywords = analytics?.search_keywords || {};
   return Object.entries(searchKeywords).map(([id, data]: [string, any]) => ({
@@ -202,6 +192,10 @@ export const getSearchKeywordsWithPrompts = (): Array<{ id: string; name: string
 export const getSearchKeywords = (): string[] => {
   return getAnalysisKeywords();
 };
+
+// Returns true when a provider returned no result for a prompt (array is exactly ["RESULT_ABSENT"])
+export const isResultAbsent = (brandsArr: any): boolean =>
+  Array.isArray(brandsArr) && brandsArr.length === 1 && brandsArr[0] === 'RESULT_ABSENT';
 
 // Get LLM data
 export const getLlmData = (): Record<string, any> => {
@@ -245,6 +239,12 @@ export const getSourcesData = (): Record<string, any> => {
   return analytics?.sources_and_content_impact || {};
 };
 
+// Get source impact ranked (preferred for Source Intelligence UI)
+export const getSourceImpactRanked = (): Record<string, any> => {
+  const analytics = getAnalytics();
+  return analytics?.source_impact_ranked || {};
+};
+
 // Get depth notes from sources
 export const getDepthNotes = (): Array<{ source: string; notes: string[] }> => {
   const sourcesData = getSourcesData();
@@ -268,7 +268,7 @@ export const getProductId = (): string => {
   return currentAnalyticsData?.product_id || '';
 };
 
-// Get brand info with logos - REVERSED ORDER for correct ranking, with brand aliasing
+// Get brand info with logos - REVERSED ORDER for correct ranking
 export const getBrandInfoWithLogos = (): Array<{
   brand: string;
   geo_score: number;
@@ -280,8 +280,6 @@ export const getBrandInfoWithLogos = (): Array<{
   summary: string;
   outlook: string;
   mention_breakdown: Record<string, number> | null;
-  isMerged?: boolean;
-  originalNames?: string[];
 }> => {
   const analytics = getAnalytics();
   
@@ -303,11 +301,11 @@ export const getBrandInfoWithLogos = (): Array<{
   // Reverse for descending order (highest score first)
   const reversedBrands = [...brands].reverse();
   
-  const rawBrands = reversedBrands.map((brand: any) => ({
+  return reversedBrands.map((brand: any) => ({
     brand: brand.brand,
-    geo_score: brand.geo_score || 0,
-    mention_score: brand.mention_score || 0,
-    mention_count: brand.mention_count || 0,
+    geo_score: typeof brand.geo_score === 'object' ? (brand.geo_score?.Value ?? 0) : (brand.geo_score || 0),
+    mention_score: typeof brand.mention_score === 'object' ? (brand.mention_score?.Value ?? 0) : (brand.mention_score || 0),
+    mention_count: typeof brand.mention_count === 'object' ? (brand.mention_count?.Value ?? 0) : (brand.mention_count || 0),
     logo: formatLogoUrl(brand.logo || ''),
     geo_tier: brand.geo_tier || 'Low',
     mention_tier: brand.mention_tier || 'Low',
@@ -315,13 +313,6 @@ export const getBrandInfoWithLogos = (): Array<{
     outlook: brand.outlook || 'Neutral',
     mention_breakdown: brand.mention_breakdown || null
   }));
-
-  // Apply brand aliasing - merge YouTube/YouTube Live etc.
-  const brandName = analytics?.brand_name || '';
-  const merged = mergeBrandAliases(rawBrands, brandName);
-  
-  // Re-sort by geo_score descending after merge
-  return merged.sort((a, b) => b.geo_score - a.geo_score || b.mention_score - a.mention_score);
 };
 
 // Get brand logo
@@ -366,8 +357,14 @@ export const getAIVisibilityMetrics = (): {
     };
   }
   
-  const brandInfo = findTestBrand(brandInfoWithLogos, brandName);
-  const brandIndex = findTestBrandIndex(brandInfoWithLogos, brandName);
+  // Sort by geo_score descending for AI visibility ranking
+  const sortedByGeoScore = [...brandInfoWithLogos].sort((a, b) => {
+    if (b.geo_score !== a.geo_score) return b.geo_score - a.geo_score;
+    return a.brand.localeCompare(b.brand);
+  });
+  
+  const brandInfo = sortedByGeoScore.find(b => b.brand === brandName);
+  const brandIndex = sortedByGeoScore.findIndex(b => b.brand === brandName);
   
   let totalT1 = 0;
   let totalT2 = 0;
@@ -375,23 +372,30 @@ export const getAIVisibilityMetrics = (): {
   let llmCount = 0;
   
   Object.values(llmData).forEach((llm: any) => {
-    if (llm && typeof llm === 'object') {
-      totalT1 += llm.t1 || 0;
-      totalT2 += llm.t2 || 0;
-      totalT3 += llm.t3 || 0;
-      llmCount++;
-    }
+    if (!llm || typeof llm !== "object") return;
+
+    const t1 = Number(llm.t1);
+    const t2 = Number(llm.t2);
+    const t3 = Number(llm.t3);
+
+    // Only count entries that actually look like LLM tier penetration metrics.
+    if (![t1, t2, t3].every((v) => Number.isFinite(v))) return;
+
+    totalT1 += t1;
+    totalT2 += t2;
+    totalT3 += t3;
+    llmCount++;
   });
   
-  const topPosition = llmCount > 0 ? Math.round(totalT1 / llmCount) : 0;
-  const midPosition = llmCount > 0 ? Math.round(totalT2 / llmCount) : 0;
-  const lowPosition = llmCount > 0 ? Math.round(totalT3 / llmCount) : 0;
+  const topPosition = llmCount > 0 ? totalT1 / llmCount : 0;
+  const midPosition = llmCount > 0 ? totalT2 / llmCount : 0;
+  const lowPosition = llmCount > 0 ? totalT3 / llmCount : 0;
   
   return {
     score: brandInfo?.geo_score || 0,
     tier: brandInfo?.geo_tier || 'Low',
     brandPosition: brandIndex + 1,
-    totalBrands: brandInfoWithLogos.length,
+    totalBrands: sortedByGeoScore.length,
     positionBreakdown: { topPosition, midPosition, lowPosition }
   };
 };
@@ -518,13 +522,17 @@ export const getMentionsPosition = (): {
     if (b.mention_score !== a.mention_score) {
       return b.mention_score - a.mention_score;
     }
+    // Tiebreaker: higher geo_score first
+    if (b.geo_score !== a.geo_score) {
+      return b.geo_score - a.geo_score;
+    }
     return a.brand.localeCompare(b.brand);
   });
   
-  const brandIndex = findTestBrandIndex(sortedByMentions, brandName);
+  const brandIndex = sortedByMentions.findIndex(b => b.brand === brandName);
   const position = brandIndex >= 0 ? brandIndex + 1 : sortedByMentions.length;
   
-  const brandInfo = findTestBrand(brandInfoWithLogos, brandName);
+  const brandInfo = brandInfoWithLogos.find(b => b.brand === brandName);
   const brandMentionScore = brandInfo?.mention_score || 0;
   const topMentionScore = sortedByMentions[0]?.mention_score || 0;
   const tier = brandInfo?.mention_tier || 'Low';
@@ -595,7 +603,7 @@ export const getSentiment = () => {
     };
   }
   
-  const brandInfo = findTestBrand(brandInfoWithLogos, brandName);
+  const brandInfo = brandInfoWithLogos.find(b => b.brand === brandName);
   
   return { 
     dominant_sentiment: brandInfo?.outlook || 'N/A', 
@@ -618,6 +626,24 @@ export const setAnalyticsData = (apiResponse: any) => {
   } else {
     console.error('Invalid analytics data format');
   }
+};
+
+// Temporarily set analytics data for report generation without polluting the results page.
+// Returns a restore function that puts back the original data.
+let _savedAnalyticsData: any = undefined;
+
+export const setAnalyticsDataTemporary = (apiResponse: any): (() => void) => {
+  _savedAnalyticsData = currentAnalyticsData;
+  if (apiResponse && apiResponse.analytics && Array.isArray(apiResponse.analytics)) {
+    currentAnalyticsData = apiResponse;
+    sessionStorage.removeItem('analytics_brands_warning');
+    console.log('📦 [ANALYTICS] Temporary data set for report generation');
+  }
+  return () => {
+    currentAnalyticsData = _savedAnalyticsData;
+    _savedAnalyticsData = undefined;
+    console.log('📦 [ANALYTICS] Original data restored after report generation');
+  };
 };
 
 // Clear analytics data for current user
@@ -663,4 +689,77 @@ export const getSourcesDataForTable = (): Array<{
     
     return row;
   });
+};
+
+// Get total number of prompts analyzed across all keywords
+export const getTotalPromptCount = (): number => {
+  const keywords = getSearchKeywordsWithPrompts();
+  return keywords.reduce((sum, kw) => sum + (kw.prompts?.length || 0), 0);
+};
+
+// Get prompts that contributed to a given position tier for the test brand.
+// A prompt qualifies if ANY LLM assigned the brand to that tier (t1=top, t2=mid, t3=low).
+// Returns the query and a map of LLMs where the brand qualified (llmName → 1-based rank).
+export const getPromptsForPositionTier = (
+  tier: 'top' | 'mid' | 'low',
+  brandName: string
+): Array<{ query: string; llmRanks: Record<string, number> }> => {
+  const keywords = getSearchKeywordsWithPrompts();
+  const results: Array<{ query: string; llmRanks: Record<string, number> }> = [];
+
+  const tierKey = tier === 'top' ? 't1' : tier === 'mid' ? 't2' : 't3';
+
+  for (const keyword of keywords) {
+    for (const prompt of keyword.prompts) {
+      const resultPerLlm = (prompt as any).result || {};
+      let qualifies = false;
+      const llmRanks: Record<string, number> = {};
+
+      for (const [llmName, llmResult] of Object.entries(resultPerLlm)) {
+        const r = llmResult as { tier: string; brands: string[] };
+        const brands = r.brands;
+        if (!Array.isArray(brands) || isResultAbsent(brands)) continue;
+        const idx = brands.indexOf(brandName);
+        if (idx === -1) continue;
+
+        const rank = idx + 1;
+        // Use the tier field from the backend (t1/t2/t3)
+        if (r.tier === tierKey) {
+          llmRanks[llmName] = rank;
+          qualifies = true;
+        }
+      }
+
+      if (qualifies) {
+        results.push({ query: (prompt as any).query, llmRanks });
+      }
+    }
+  }
+  return results;
+};
+
+// ── Trend helpers ──────────────────────────────────────────────────────────────
+
+import type { TrendRunItem } from "@/apiHelpers";
+
+/**
+ * Returns a stable string ID for a keyword set — sorted names joined with "|".
+ * Two runs with the same keywords (regardless of order) produce the same ID.
+ */
+export const getKeywordSetId = (keywords: string[]): string =>
+  [...keywords].sort().join("|");
+
+/**
+ * Returns { current, previous } values for a given metric across the two most
+ * recent trend runs, or null if fewer than two runs exist.
+ */
+export const getDeltaForMetric = (
+  trendRuns: TrendRunItem[],
+  metric: "geo_score" | "mention_score" | "outlook"
+): { current: number | string; previous: number | string } | null => {
+  if (trendRuns.length < 2) return null;
+  return {
+    current: trendRuns[0][metric],
+    previous: trendRuns[1][metric],
+  };
 };

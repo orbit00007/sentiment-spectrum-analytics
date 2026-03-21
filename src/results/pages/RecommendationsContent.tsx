@@ -1,165 +1,402 @@
-import { useMemo } from "react";
-import { getBrandName, getRecommendations } from "@/results/data/analyticsData";
-import { Lightbulb, Zap, TrendingUp, ArrowUpRight, CheckCircle2, Target } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-
-const SectionHeader = ({ title, subtitle }: { title: string; subtitle: string }) => (
-  <div className="mt-8 mb-4">
-    <div className="ds-section-title"><h2>{title}</h2></div>
-    <p className="ds-section-subtitle">{subtitle}</p>
-  </div>
-);
-
-const getImpactNumberStyle = (impact: string) => {
-  if (impact === "High") return { bg: "#FFFFFF", border: "#F25454", text: "#F25454" };
-  if (impact === "Medium") return { bg: "#FFFFFF", border: "#F5BE20", text: "#D97706" };
-  return { bg: "#FFFFFF", border: "#22C55E", text: "#16A34A" };
-};
-
-const getInsightBg = (impact: string) => {
-  if (impact === "High") return { bg: "#FEF2F2", border: "#F25454" };
-  if (impact === "Medium") return { bg: "#FFFBEB", border: "#F5BE20" };
-  return { bg: "#F0FDF4", border: "#22C55E" };
-};
-
-const getBadgeClass = (level: string) => {
-  if (level === "High") return "ds-badge ds-badge-danger";
-  if (level === "Medium") return "ds-badge ds-badge-warning";
-  return "ds-badge ds-badge-positive";
-};
+import { useState } from "react";
+import { getRecommendations, getBrandName } from "@/results/data/analyticsData";
+import {
+  Lightbulb,
+  Target,
+  TrendingUp,
+  Zap,
+  Play, 
+  ChevronDown,
+  CheckCircle,
+} from "lucide-react";
 
 const RecommendationsContent = () => {
   const brandName = getBrandName();
   const recommendations = getRecommendations();
-  const navigate = useNavigate();
+  const [activeFilter, setActiveFilter] = useState<"all" | "high" | "medium" | "quick">("all");
+  const [expandedHowTo, setExpandedHowTo] = useState<Record<number, boolean>>({});
 
-  const highImpact = useMemo(() => recommendations.filter((r: any) => r.impact === "High"), [recommendations]);
-  const mediumImpact = useMemo(() => recommendations.filter((r: any) => r.impact === "Medium"), [recommendations]);
-  const quickWins = useMemo(() => recommendations.filter((r: any) => r.overall_effort === "Low" && r.impact === "High"), [recommendations]);
+  const getEffortConfig = (effort: string) => {
+    switch (effort) {
+      case "High":
+        return {
+          bg: "bg-red-500/10",
+          text: "text-red-500",
+          border: "border-red-500/20",
+        };
+      case "Medium":
+        return {
+          bg: "bg-amber-500/10",
+          text: "text-amber-500",
+          border: "border-amber-500/20",
+        };
+      case "Low":
+        return {
+          bg: "bg-green-500/10",
+          text: "text-green-500",
+          border: "border-green-500/20",
+        };
+      default:
+        return {
+          bg: "bg-muted",
+          text: "text-muted-foreground",
+          border: "border-border",
+        };
+    }
+  };
+
+  const getImpactConfig = (impact: string) => {
+    switch (impact) {
+      case "High":
+        return {
+          bg: "bg-green-500/10",
+          text: "text-green-500",
+          border: "border-green-500/20",
+        };
+      case "Medium":
+        return {
+          bg: "bg-amber-500/10",
+          text: "text-amber-500",
+          border: "border-amber-500/20",
+        };
+      case "Low":
+        return {
+          bg: "bg-red-500/10",
+          text: "text-red-500",
+          border: "border-red-500/20",
+        };
+      default:
+        return {
+          bg: "bg-muted",
+          text: "text-muted-foreground",
+          border: "border-border",
+        };
+    }
+  };
+
+  const highImpact = recommendations.filter((r: any) => r.impact === "High");
+  const mediumImpact = recommendations.filter(
+    (r: any) => r.impact === "Medium"
+  );
+  const quickWins = recommendations.filter((r: any) => r.overall_effort === "Low" && r.impact === "High");
+
+  // Filter recommendations based on active filter
+  const filteredRecommendations = () => {
+    switch (activeFilter) {
+      case "high":
+        return highImpact;
+      case "medium":
+        return mediumImpact;
+      case "quick":
+        return quickWins;
+      default:
+        return recommendations;
+    }
+  };
+
+  const displayedRecommendations = filteredRecommendations();
 
   return (
-    <div className="w-full mx-auto px-5 md:px-10 py-6">
-      {/* Header */}
-      <div className="ds-card">
-        <div className="flex items-center gap-3 flex-wrap">
-          <h1 className="text-[32px] font-bold" style={{ color: '#1E2433' }}>Strategic Recommendations</h1>
-          <span className="ds-badge ds-badge-info text-[13px]">{recommendations.length} Action Items</span>
-        </div>
-        <p className="text-[13px] leading-relaxed mt-2 max-w-2xl" style={{ color: '#737E8F' }}>
-          Targeted optimizations for {brandName}'s AI search visibility
-        </p>
-      </div>
-
-      {/* KPI Strip */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4" style={{ alignItems: 'stretch' }}>
-        {[
-          { icon: Zap, label: "High Impact", value: highImpact.length, color: "#F25454", bg: "#FEF2F2", border: "rgba(242,84,84,0.3)", titleColor: "#F25454" },
-          { icon: TrendingUp, label: "Strategic Growth", value: mediumImpact.length, color: "#D97706", bg: "#FFFBEB", border: "rgba(217,119,6,0.3)", titleColor: "#D97706" },
-          { icon: Target, label: "Quick Wins", value: quickWins.length, color: "#16A34A", bg: "#F0FDF4", border: "rgba(22,163,74,0.3)", titleColor: "#16A34A" },
-        ].map(({ icon: Icon, label, value, color, bg, border, titleColor }) => (
-          <div key={label} className="ds-card" style={{ background: bg, borderColor: border }}>
-            <div className="flex items-center gap-2 mb-2">
-              <Icon className="w-4 h-4" style={{ color }} />
-              <span className="text-[13px] font-semibold uppercase tracking-wider" style={{ color: titleColor }}>{label}</span>
+    <div className="p-3 md:p-6 space-y-4 md:space-y-6 w-full max-w-full overflow-x-hidden">
+      {/* Header with gradient */}
+      <div className="relative overflow-hidden rounded-xl md:rounded-2xl bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-transparent border border-amber-500/20 p-4 md:p-6">
+        <div className="absolute top-0 right-0 w-32 md:w-48 h-32 md:h-48 bg-amber-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex items-center gap-2 md:gap-3">
+            <div className="p-2 md:p-3 bg-amber-500/10 rounded-lg md:rounded-xl">
+              <Lightbulb className="w-5 h-5 md:w-6 md:h-6 text-amber-500" />
             </div>
-            {value > 0 ? (
-              <div className="text-[36px] font-bold leading-none" style={{ color: titleColor, fontVariantNumeric: 'tabular-nums' }}>{value}</div>
-            ) : (
-              <div className="text-[13px] italic" style={{ color: '#737E8F' }}>None identified</div>
-            )}
+            <div>
+              <h1 className="text-lg md:text-2xl font-bold text-foreground">
+                Strategic Recommendations
+              </h1>
+              <p className="text-xs md:text-sm text-muted-foreground">
+                Data-driven actions to boost {brandName}'s AI presence
+              </p>
+            </div>
           </div>
-        ))}
+          <div className="text-center sm:text-right">
+            <div className="text-2xl md:text-3xl font-bold text-amber-500">
+              {displayedRecommendations.length}
+            </div>
+            <div className="text-[10px] md:text-xs text-muted-foreground">
+              {activeFilter === "all" ? "Action Items" : "Filtered Items"}
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div className="mt-8 mb-4" style={{ borderBottom: '1px solid #E3EAF2' }} />
+      {/* Quick Stats - Now Clickable Filters */}
+      <div className="grid grid-cols-3 gap-2 md:gap-4">
+        <button
+          onClick={() => setActiveFilter(activeFilter === "high" ? "all" : "high")}
+          className={`transition-all rounded-lg md:rounded-xl border p-3 md:p-5 text-left ${
+            activeFilter === "high"
+              ? "bg-green-500/30 border-green-500/50 shadow-lg scale-105"
+              : "bg-green-500/10 border-green-500/20 hover:bg-green-500/15"
+          }`}
+        >
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-1 md:gap-3">
+            <div className="flex items-center gap-1.5 md:gap-3">
+              <Zap className="w-4 h-4 md:w-5 md:h-5 text-green-500" />
+              <span className="text-[10px] md:text-sm font-medium text-foreground">
+                High Impact
+              </span>
+            </div>
+            <span className="text-xl md:text-2xl font-bold text-green-500">
+              {highImpact.length}
+            </span>
+          </div>
+        </button>
+        <button
+          onClick={() => setActiveFilter(activeFilter === "medium" ? "all" : "medium")}
+          className={`transition-all rounded-lg md:rounded-xl border p-3 md:p-5 text-left ${
+            activeFilter === "medium"
+              ? "bg-amber-500/30 border-amber-500/50 shadow-lg scale-105"
+              : "bg-amber-500/10 border-amber-500/20 hover:bg-amber-500/15"
+          }`}
+        >
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-1 md:gap-3">
+            <div className="flex items-center gap-1.5 md:gap-3">
+              <TrendingUp className="w-4 h-4 md:w-5 md:h-5 text-amber-500" />
+              <span className="text-[10px] md:text-sm font-medium text-foreground">
+                Medium Impact
+              </span>
+            </div>
+            <span className="text-xl md:text-2xl font-bold text-amber-500">
+              {mediumImpact.length}
+            </span>
+          </div>
+        </button>
+        <button
+          onClick={() => setActiveFilter(activeFilter === "quick" ? "all" : "quick")}
+          className={`relative group transition-all rounded-lg md:rounded-xl border p-3 md:p-5 text-left ${
+            activeFilter === "quick"
+              ? "bg-primary/30 border-primary/50 shadow-lg scale-105"
+              : "bg-muted border-border hover:bg-muted/80"
+          }`}
+        >
+          {/* Tooltip */}
+          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-popover text-popover-foreground text-xs rounded-lg shadow-lg border border-border opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+            Low effort, high value actions
+            <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-popover"></div>
+          </div>
+          
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-1 md:gap-3">
+            <div className="flex items-center gap-1.5 md:gap-3">
+              <CheckCircle className={`w-4 h-4 md:w-5 md:h-5 ${activeFilter === "quick" ? "text-primary" : "text-muted-foreground"}`} />
+              <span className="text-[10px] md:text-sm font-medium text-foreground">
+                Quick Wins
+              </span>
+            </div>
+            <span className="text-xl md:text-2xl font-bold text-muted-foreground">
+              {quickWins.length}
+            </span>
+          </div>
+        </button>
+      </div>
 
-      <SectionHeader title="Actionable Insights" subtitle="Prioritized recommendations to improve your AI visibility" />
+      {/* Active Filter Indicator */}
+      {activeFilter !== "all" && (
+        <div className="flex items-center justify-between bg-primary/10 border border-primary/20 rounded-lg px-4 py-2">
+          <span className="text-sm text-foreground">
+            Showing {activeFilter === "high" ? "High Impact" : activeFilter === "medium" ? "Medium Impact" : "Quick Wins"} recommendations
+          </span>
+          <button
+            onClick={() => setActiveFilter("all")}
+            className="text-xs text-primary hover:underline font-medium"
+          >
+            Clear filter
+          </button>
+        </div>
+      )}
 
-      {/* Recommendations */}
-      <div className="flex flex-col mt-4">
-        {recommendations.map((rec: any, index: number) => {
-          const steps = Array.isArray(rec?.suggested_action_v1?.how_to_execute) && rec.suggested_action_v1.how_to_execute.length
-            ? rec.suggested_action_v1.how_to_execute
-            : rec?.suggested_action ? rec.suggested_action.split(".").map((s: string) => s.trim()).filter(Boolean).slice(0, 3) : [];
-          const successSignal = rec?.suggested_action_v1?.success_signal || null;
-          const strategyTitle = rec?.suggested_action_v1?.strategy || rec?.suggested_action || "";
-          const insightText = rec?.insight?.summary || rec?.overall_insight || "";
-          const numStyle = getImpactNumberStyle(rec.impact);
-          const insightStyle = getInsightBg(rec.impact);
+      {/* Recommendations List */}
+      <div className="space-y-3 md:space-y-4">
+        {displayedRecommendations.map((rec: any, index: number) => {
+          const effortConfig = getEffortConfig(rec.overall_effort);
+          const impactConfig = getImpactConfig(rec.impact);
+          const hasSuggestedActionV1 =
+            rec.suggested_action_v1 &&
+            typeof rec.suggested_action_v1 === "object" &&
+            Object.keys(rec.suggested_action_v1).length > 0;
+          const insightSummary =
+            rec.insight?.summary || rec.overall_insight || "";
+          const isHowToExpanded = !!expandedHowTo[index];
+
+          // Determine circle color based on active filter
+          let circleConfig = impactConfig;
+          if (activeFilter === "quick") {
+            circleConfig = {
+              bg: "bg-muted",
+              text: "text-muted-foreground",
+              border: "border-border"
+            };
+          }
 
           return (
-            <div key={index}>
-              {index > 0 && <div className="my-6" style={{ borderTop: '1px solid #E3EAF2' }} />}
-              <div className="ds-card overflow-hidden">
-                {/* Header */}
-                <div className="flex items-start gap-4 mb-4">
-                  <div className="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center"
-                    style={{ background: numStyle.bg, border: `2px solid ${numStyle.border}` }}>
-                    <span className="text-[18px] font-bold" style={{ color: numStyle.text }}>{index + 1}</span>
-                  </div>
-                  <div className="flex items-center gap-2 flex-wrap pt-1.5">
-                    <span className={getBadgeClass(rec.overall_effort)}>Effort: {rec.overall_effort}</span>
-                    <span className={getBadgeClass(rec.impact)}>Impact: {rec.impact}</span>
-                  </div>
-                </div>
-
-                {/* Insight */}
-                {insightText && (
-                  <div className="rounded-lg p-3 mb-4" style={{ background: insightStyle.bg, borderLeft: `3px solid ${insightStyle.border}` }}>
-                    <span className="text-[10px] uppercase font-semibold block mb-1" style={{ color: '#737E8F' }}>Insight</span>
-                    <p className="text-[13px] font-medium leading-relaxed" style={{ color: '#1E2433' }}>{insightText}</p>
-                  </div>
-                )}
-
-                <div style={{ borderTop: '1px solid #E3EAF2', paddingTop: '16px' }}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <ArrowUpRight className="w-3.5 h-3.5" style={{ color: '#4DA6FF' }} />
-                    <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#4DA6FF' }}>Suggested Action</span>
-                  </div>
-                  <p className="text-[18px] font-bold leading-[1.3] mb-1" style={{ color: '#1E2433' }}>{strategyTitle}</p>
-                  {rec?.suggested_action_v1?.start_here && (
-                    <p className="text-[13px] italic mb-3" style={{ color: '#737E8F' }}>→ {rec.suggested_action_v1.start_here}</p>
-                  )}
-
-                  {(steps.length > 0 || successSignal) && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
-                      {steps.length > 0 && (
-                        <div>
-                          <span className="text-[11px] font-semibold uppercase tracking-wider block mb-2" style={{ color: '#737E8F' }}>Execution Steps</span>
-                          <ol className="space-y-0">
-                            {steps.slice(0, 4).map((step: string, i: number) => (
-                              <li key={i} className="flex items-start gap-2 text-[13px] leading-relaxed py-2"
-                                style={{ borderBottom: i < steps.length - 1 ? '1px solid #E3EAF2' : 'none', color: '#1E2433' }}>
-                                <span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-semibold text-white mt-0.5"
-                                  style={{ background: '#4DA6FF' }}>{i + 1}</span>
-                                <span>{step}</span>
-                              </li>
-                            ))}
-                          </ol>
-                        </div>
-                      )}
-                      {successSignal && (
-                        <div>
-                          <span className="text-[11px] font-semibold uppercase tracking-wider block mb-2" style={{ color: '#737E8F' }}>Expected Outcome</span>
-                          <div className="rounded-lg p-3" style={{ background: '#F0FDF4', borderLeft: '3px solid #22C55E' }}>
-                            <div className="flex items-center gap-1.5 mb-1.5">
-                              <CheckCircle2 className="w-3.5 h-3.5" style={{ color: '#22C55E' }} />
-                              <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: '#22C55E' }}>Success Signal</span>
-                            </div>
-                            <p className="text-[13px] italic leading-relaxed" style={{ color: '#737E8F' }}>{successSignal}</p>
-                          </div>
-                        </div>
-                      )}
+            <div
+              key={index}
+              className="bg-card rounded-xl border border-border overflow-hidden hover:shadow-md transition-all group"
+            >
+              {/* Header */}
+              <div className="p-3 md:p-6 pb-2 md:pb-4">
+                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 md:gap-4 mb-3 md:mb-4">
+                  <div className="flex items-start gap-2 md:gap-4 flex-1">
+                    <div
+                      className={`flex-shrink-0 w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center ${circleConfig.bg} ${circleConfig.text} font-bold text-sm md:text-base`}
+                    >
+                      {index + 1}
                     </div>
-                  )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 md:gap-2 mb-1 md:mb-2">
+                        <Lightbulb className="w-3 h-3 md:w-4 md:h-4 text-amber-400" />
+                        <span className="text-[10px] md:text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                          Insight
+                        </span>
+                      </div>
+                      <p className="text-xs md:text-base text-foreground leading-relaxed">
+                        {insightSummary}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 flex-shrink-0 ml-10 md:ml-0">
+                    <div
+                      className={`w-20 md:w-24 h-12 md:h-14 flex flex-col justify-center rounded-lg ${effortConfig.bg} border ${effortConfig.border}`}
+                    >
+                      <span className="text-[8px] md:text-xs text-muted-foreground text-center">
+                        Effort
+                      </span>
+                      <span
+                        className={`text-[10px] md:text-sm font-semibold text-center ${effortConfig.text}`}
+                      >
+                        {rec.overall_effort}
+                      </span>
+                    </div>
 
-                  <div className="flex justify-end mt-3">
-                    <button onClick={() => navigate('/results/prompts')} className="text-[12px] font-medium flex items-center gap-1" style={{ color: '#4DA6FF' }}>
-                      View related prompts →
-                    </button>
+                    <div
+                      className={`w-20 md:w-24 h-12 md:h-14 flex flex-col justify-center rounded-lg ${impactConfig.bg} border ${impactConfig.border}`}
+                    >
+                      <span className="text-[8px] md:text-xs text-muted-foreground text-center">
+                        Impact
+                      </span>
+                      <span
+                        className={`text-[10px] md:text-sm font-semibold text-center ${impactConfig.text}`}
+                      >
+                        {rec.impact}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
+
+              {/* Action */}
+              <div className="px-3 pb-3 md:px-6 md:pb-6">
+  {hasSuggestedActionV1 && (
+    <div className="rounded-xl bg-blue-50 border border-blue-100 px-6 py-5 space-y-5">
+
+      {/* Header */}
+      <div className="flex items-center gap-2">
+        <Target className="w-4 h-4 text-blue-600" />
+        <span className="text-xs font-semibold text-blue-600 uppercase tracking-wider">
+          Suggested action
+        </span>
+      </div>
+
+      {/* Main strategy */}
+      {rec.suggested_action_v1?.strategy && (
+        <p className="text-lg font-semibold text-foreground leading-snug">
+          {rec.suggested_action_v1.strategy}
+        </p>
+      )}
+
+      <div className="border-t border-blue-100" />
+
+      {/* Start here */}
+      {rec.suggested_action_v1?.start_here && (
+        <div className="space-y-2">
+          <button
+            type="button"
+            className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 cursor-pointer hover:text-blue-700 transition-colors"
+            onClick={() =>
+              setExpandedHowTo((prev) => ({
+                ...prev,
+                [index]: !prev[index],
+              }))
+            }
+          >
+            <Play className="w-4 h-4 stroke-[2] fill-none" />
+            Start here
+          </button>
+
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            {rec.suggested_action_v1.start_here}
+          </p>
+        </div>
+      )}
+
+      <div className="border-t border-blue-100" />
+
+      {/* How to execute */}
+      {Array.isArray(rec.suggested_action_v1?.how_to_execute) && (
+        <div>
+          <button
+            type="button"
+            className="w-full flex items-center gap-2 text-sm font-medium text-blue-600"
+            onClick={() =>
+              setExpandedHowTo((prev) => ({
+                ...prev,
+                [index]: !prev[index],
+              }))
+            }
+          >
+            <ChevronDown
+              className={`w-4 h-4 transition-transform ${
+                isHowToExpanded ? "rotate-180" : ""
+              }`}
+            />
+            How to execute
+          </button>
+
+          {isHowToExpanded && (
+            <ol className="mt-4 space-y-3">
+              {rec.suggested_action_v1.how_to_execute.map(
+                (step: string, stepIndex: number) => (
+                  <li
+                    key={stepIndex}
+                    className="flex gap-3 text-sm text-foreground"
+                  >
+                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-medium">
+                      {stepIndex + 1}
+                    </span>
+                    <span className="leading-relaxed">{step}</span>
+                  </li>
+                )
+              )}
+            </ol>
+          )}
+        </div>
+      )}
+
+      <div className="border-t border-blue-100" />
+
+      {/* Success signal */}
+      {rec.suggested_action_v1?.success_signal && (
+        <div>
+          <p className="text-sm font-medium text-blue-600 mb-1">
+            Success signal
+          </p>
+          <p className="text-sm italic text-muted-foreground leading-relaxed">
+            {rec.suggested_action_v1.success_signal}
+          </p>
+        </div>
+      )}
+    </div>
+  )}
+</div>
+
+
+
             </div>
           );
         })}

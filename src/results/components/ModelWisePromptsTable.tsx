@@ -1,5 +1,5 @@
 import { MessageSquare, Check, X } from "lucide-react";
-import { getLlmData, getModelDisplayName } from "@/results/data/analyticsData";
+import { getLlmData, getModelDisplayName, isResultAbsent } from "@/results/data/analyticsData";
 import { LLMIcon } from "@/results/ui/LLMIcon";
 
 const DEFAULT_BRAND_MENTION = 0;
@@ -10,9 +10,14 @@ interface Brand {
   mention_breakdown?: Record<string, number>;
 }
 
+interface LLMPromptResult {
+  tier: string;
+  brands: string[];
+}
+
 interface Prompt {
   query: string;
-  brands_per_llm: Record<string, string[]>;
+  result: Record<string, LLMPromptResult>;
 }
 
 interface ModelWisePromptsTableProps {
@@ -42,7 +47,7 @@ const ModelWisePromptsTable = ({
   // Helper function to check if selected brand is in prompt's brands for a specific LLM
   const isBrandVisibleInLLM = (prompt: Prompt, modelName: string): boolean => {
     if (!selectedBrand) return false;
-    const brandsForLLM = prompt.brands_per_llm[modelName] || [];
+    const brandsForLLM = prompt.result[modelName]?.brands || [];
     return brandsForLLM.includes(selectedBrand);
   };
 
@@ -94,11 +99,13 @@ const ModelWisePromptsTable = ({
                     </div>
                   </td>
                   {modelNames.map((modelName) => {
-                    const isVisible = isBrandVisibleInLLM(prompt, modelName);
-                    console.log(isVisible);
+                    const absent = isResultAbsent(prompt.result[modelName]?.brands);
+                    const isVisible = !absent && isBrandVisibleInLLM(prompt, modelName);
                     return (
                       <td key={modelName} className="py-3 px-4 text-center">
-                        {selectedBrand ? (
+                        {absent ? (
+                          <span className="text-sm text-muted-foreground">-</span>
+                        ) : selectedBrand ? (
                           <div className="flex items-center justify-center">
                             {isVisible ? (
                               <Check className="w-5 h-5 text-green-500" />

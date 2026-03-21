@@ -65,15 +65,6 @@ export default {
 					DEFAULT: 'hsl(var(--medium-neutral))',
 					foreground: 'hsl(var(--medium-neutral-foreground))'
 				},
-				// Design system semantic colors
-				'ds-blue': 'hsl(var(--ds-blue))',
-				'ds-text': 'hsl(var(--ds-text-primary))',
-				'ds-text-muted': 'hsl(var(--ds-text-muted))',
-				'ds-bg-muted': 'hsl(var(--ds-bg-muted))',
-				'ds-border': 'hsl(var(--ds-border))',
-				'ds-success': 'hsl(var(--ds-success))',
-				'ds-warning': 'hsl(var(--ds-warning))',
-				'ds-danger': 'hsl(var(--ds-danger))',
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',

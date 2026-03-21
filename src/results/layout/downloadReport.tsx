@@ -62,7 +62,7 @@ interface BrandInfo {
 interface Prompt {
   query: string;
   category?: string;
-  brands_per_llm: Record<string, string[]>;
+  result: Record<string, { tier: string; brands: string[] }>;
 }
 
 interface PrintableContentProps {
@@ -165,7 +165,7 @@ const computeIntentData = (
     const intent = getIntentFromPrompt(p);
     if (!intent) return;
     llmModels.forEach(m => {
-      const brandsInResp = p.brands_per_llm[m] || [];
+      const brandsInResp = p.result[m]?.brands || [];
       brands.forEach(b => {
         result[intent][b].total++;
         if (brandsInResp.includes(b)) result[intent][b].vis++;
@@ -579,7 +579,7 @@ const PrintableContent = (props: PrintableContentProps) => {
 
   // Intent data
   const allPrompts: Prompt[] = keywords.flatMap(kw => kw.prompts.map(p => ({
-    query: p.query || "", brands_per_llm: p.brands_per_llm || {}, category: p.category,
+    query: p.query || "", result: p.result || {}, category: p.category,
   })));
   const allBrandNames = brandInfo.map(b => b.brand);
   const intentResults = computeIntentData(allPrompts, allBrandNames, llmModels, brandName);
@@ -1520,7 +1520,7 @@ const PrintableContent = (props: PrintableContentProps) => {
                     <td style={{ ...S.td, textAlign: 'center' }}>{pIdx + 1}</td>
                     <td style={{ ...S.td, maxWidth: '200px' }}>{prompt.query}</td>
                     {llmModels.map(model => {
-                      const brands = prompt.brands_per_llm?.[model] || [];
+                      const brands = prompt.result?.[model]?.brands || [];
                       const hasBrand = brands.includes(brandName);
                       return (
                         <td key={model} style={{

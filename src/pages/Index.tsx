@@ -21,13 +21,14 @@ import {
   Zap,
 } from "lucide-react";
 import { getProductsByApplication } from "@/apiHelpers";
+import { getSecureAccessToken, getSecureApplicationId, getSecureProductId, setSecureProductId, setSecureKeywords, setSecureKeywordCount } from "@/lib/secureStorage";
 
 const Index = () => {
   const { user, isLoading } = useAuth();
   const navigate = useNavigate();
   // Initialize hasProduct from localStorage synchronously to avoid flash of wrong text
   const [hasProduct, setHasProduct] = useState(() => {
-    const productId = localStorage.getItem("product_id");
+    const productId = getSecureProductId();
     return !!productId;
   });
   const [checkingProduct, setCheckingProduct] = useState(false);
@@ -56,8 +57,8 @@ const Index = () => {
       setCheckingProduct(true);
 
       try {
-        const accessToken = localStorage.getItem("access_token") || "";
-        const applicationId = localStorage.getItem("application_id") || "";
+        const accessToken = getSecureAccessToken();
+        const applicationId = getSecureApplicationId();
         
         if (!applicationId) {
           setHasProduct(false);
@@ -75,9 +76,9 @@ const Index = () => {
           const firstProduct = products[0];
           
           // Store product data
-          localStorage.setItem("product_id", firstProduct.id);
-          localStorage.setItem("keywords", JSON.stringify(firstProduct.search_keywords || []));
-          localStorage.setItem("keyword_count", (firstProduct.search_keywords || []).length.toString());
+          setSecureProductId(firstProduct.id);
+          setSecureKeywords(firstProduct.search_keywords || []);
+          setSecureKeywordCount((firstProduct.search_keywords || []).length.toString());
           
           setHasChecked(true);
           sessionStorage.setItem("app_initialized", "true");
@@ -115,8 +116,8 @@ const Index = () => {
     }
   
     try {
-      const accessToken = localStorage.getItem("access_token") || "";
-      const applicationId = localStorage.getItem("application_id") || "";
+      const accessToken = getSecureAccessToken();
+      const applicationId = getSecureApplicationId();
   
       if (!applicationId) {
         navigate("/input");
@@ -155,8 +156,8 @@ const Index = () => {
     }
 
     try {
-      const accessToken = localStorage.getItem("access_token") || "";
-      const applicationId = localStorage.getItem("application_id") || "";
+      const accessToken = getSecureAccessToken();
+      const applicationId = getSecureApplicationId();
   
       if (!applicationId) {
         // No application ID → go to input
@@ -170,9 +171,9 @@ const Index = () => {
         const lastProduct = products[products.length - 1];
   
         // Store product id and keywords
-        localStorage.setItem("product_id", lastProduct.id);
-        localStorage.setItem("keywords", JSON.stringify(lastProduct.search_keywords || []));
-        localStorage.setItem("keyword_count", (lastProduct.search_keywords || []).length.toString());
+        setSecureProductId(lastProduct.id);
+        setSecureKeywords(lastProduct.search_keywords || []);
+        setSecureKeywordCount((lastProduct.search_keywords || []).length.toString());
         
         navigate("/results", {
           state: {

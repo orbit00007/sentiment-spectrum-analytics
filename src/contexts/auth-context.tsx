@@ -1,14 +1,52 @@
+// Auth context — provides authentication state to the entire app
 import React, { createContext, useContext, useState, useEffect } from "react";
 import {
   login as loginAPI,
   register as registerAPI,
+  logout as logoutAPI,
   LoginResponse,
   RegisterRequest,
   RegisterResponse,
 } from "@/apiHelpers";
-import { setCurrentUserId, clearCurrentUserId } from "@/results/data/analyticsData";
-import { setAnalysisUserId, clearAnalysisUserId } from "@/hooks/useAnalysisState";
+import {
+  setCurrentUserId,
+  clearCurrentUserId,
+} from "@/results/data/analyticsData";
+import {
+  setAnalysisUserId,
+  clearAnalysisUserId,
+} from "@/hooks/useAnalysisState";
 import { STORAGE_KEYS, getUserScopedKey } from "@/lib/storageKeys";
+import {
+  getSecureAccessToken,
+  getSecureSessionId,
+  getSecureApplicationId,
+  getSecureFirstName,
+  setSecureUserId,
+  setSecureFirstName,
+  setSecureApplicationId,
+  getSecureUserId,
+  clearSecureAuthStorage,
+  setSecureApplications,
+  getSecureApplications,
+  setSecureProducts,
+  getSecureProducts,
+  setSecurePricingPlan,
+  getSecurePricingPlan,
+  setSecureCollaborators,
+  getSecureCollaborators,
+  clearAllSecureData,
+  setSecureUserRole,
+  getSecureUserRole,
+  setSecurePlanExpiresAt,
+  getSecurePlanExpiresAt,
+  setSecureEmail,
+  getSecureEmail,
+  setSecureLastName,
+  getSecureLastName,
+} from "@/lib/secureStorage";
+import { decodeAccessToken, DecodedTokenInfo } from "@/lib/jwtDecode";
+import { getPricingPlanName, type PricingPlanName } from "@/lib/plans";
 
 /* =====================
    TYPES
@@ -38,7 +76,27 @@ interface Application {
 }
 
 interface ExtendedUser extends NonNullable<LoginResponse["user"]> {
-  owned_applications?: { id: string; company_name: string; project_token: string }[];
+  owned_applications?: {
+    id: string;
+    company_name: string;
+    project_token: string;
+  }[];
+}
+
+interface Collaborator {
+  id: string;
+  application_id: string;
+  user_id: string;
+  role: string;
+  created_at: string;
+  updated_at: string;
+  user?: {
+    id: string;
+    email: string;
+    first_name: string;
+    last_name: string;
+    is_active: boolean;
+  };
 }
 
 interface AuthContextType {
@@ -46,8 +104,17 @@ interface AuthContextType {
   applicationId: string | null;
   applications: Application[];
   products: Product[];
+  pricingPlan: PricingPlanName;
+  collaborators: Collaborator[];
+  userRole: string;
+  userRoleInt: number;
+  planInt: number;
+  planExpiresAt: number | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<boolean | 'email_not_verified'>;
+  login: (
+    email: string,
+    password: string
+  ) => Promise<boolean | "email_not_verified">;
   register: (
     email: string,
     password: string,
@@ -61,45 +128,83 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 /* =====================
    PROVIDER
    ===================== */
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [user, setUser] = useState<ExtendedUser | null>(null);
   const [applicationId, setApplicationId] = useState<string | null>(null);
   const [applications, setApplications] = useState<Application[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [pricingPlan, setPricingPlan] = useState<PricingPlanName>("free");
+  const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
+  const [userRole, setUserRole] = useState<string>("viewer");
+  const [userRoleInt, setUserRoleInt] = useState<number>(4);
+  const [planInt, setPlanInt] = useState<number>(0);
+  const [planExpiresAt, setPlanExpiresAt] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   /* Restore state from localStorage on refresh */
   useEffect(() => {
-    const storedAppId = localStorage.getItem("application_id");
-    const storedToken = localStorage.getItem("access_token");
-    const storedSessionId = localStorage.getItem("session_id");
-    const storedFirstName = localStorage.getItem("first_name");
-    const storedApplications = localStorage.getItem("applications");
-    const storedProducts = localStorage.getItem("products");
-    
-    if (storedAppId) {
-      setApplicationId(storedAppId);
+    const storedAppId = getSecureApplicationId();
+    const storedToken = getSecureAccessToken();
+    const storedSessionId = getSecureSessionId();
+    const storedFirstName = getSecureFirstName();
+    const storedApplications = getSecureApplications();
+    const storedProducts = getSecureProducts();
+
+    if (storedAppId) setApplicationId(storedAppId);
+    if (storedApplications.length > 0) setApplications(storedApplications);
+    if (storedProducts.length > 0) setProducts(storedProducts);
+
+    // Restore pricing plan and collaborators
+    const storedPlan = getSecurePricingPlan();
+    if (storedPlan) setPricingPlan(storedPlan as PricingPlanName);
+    const storedCollabs = getSecureCollaborators();
+    if (storedCollabs.length > 0) setCollaborators(storedCollabs);
+
+    // Restore role and plan from secure storage
+    const storedRole = getSecureUserRole();
+    if (storedRole) {
+      setUserRole(storedRole);
+      // Convert back to int for access checks
+      const roleMap: Record<string, number> = {
+        god: 0,
+        admin: 1,
+        application: 2,
+        editor: 3,
+        viewer: 4,
+      };
+      setUserRoleInt(roleMap[storedRole] ?? 4);
     }
-    
-    if (storedApplications) {
-      setApplications(JSON.parse(storedApplications));
+    const storedPlanExpiry = getSecurePlanExpiresAt();
+    if (storedPlanExpiry) setPlanExpiresAt(storedPlanExpiry);
+
+    // Try to decode current token for plan/role info
+    if (storedToken) {
+      const decoded = decodeAccessToken(storedToken);
+      if (decoded) {
+        setUserRoleInt(decoded.roleInt);
+        setUserRole(decoded.roleName);
+        setPlanInt(decoded.planInt);
+        setPricingPlan(decoded.planName as PricingPlanName);
+        if (decoded.planExpiresAt) setPlanExpiresAt(decoded.planExpiresAt);
+      }
     }
-    
-    if (storedProducts) {
-      setProducts(JSON.parse(storedProducts));
-    }
-    
-    // If we have a token and session ID, restore user state (user is logged in)
+
+    // If we have a token and session ID, restore user state
     if (storedToken && storedSessionId) {
-      const storedUserId = localStorage.getItem("user_id") || "restored";
-      setUser({ 
-        id: storedUserId, 
-        email: "user@restored.com", 
-        first_name: storedFirstName || "User", 
-        last_name: "User" 
+      const storedUserId = getSecureUserId() || "restored";
+      // Decode JWT to get real email and user info
+      const decoded = decodeAccessToken(storedToken);
+      const restoredEmail = decoded?.email || getSecureEmail() || "";
+      const restoredLastName = getSecureLastName() || "";
+      setUser({
+        id: storedUserId,
+        email: restoredEmail,
+        first_name: storedFirstName || "User",
+        last_name: restoredLastName || "",
       });
-      
-      // Restore user ID scoping
+
       if (storedUserId && storedUserId !== "restored") {
         setCurrentUserId(storedUserId);
         setAnalysisUserId(storedUserId);
@@ -110,35 +215,52 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   /* =====================
      LOGIN
      ===================== */
-  const login = async (email: string, password: string): Promise<boolean | 'email_not_verified'> => {
+  const login = async (
+    email: string,
+    password: string
+  ): Promise<boolean | "email_not_verified"> => {
     setIsLoading(true);
     try {
       const res = await loginAPI({ email, password });
 
       // Check if email is not verified
       if (!res.access_token || res.access_token.trim() === "") {
-        return 'email_not_verified';
+        return "email_not_verified";
       }
 
-      // We have a valid response with access_token
+      // Decode JWT to extract role, plan, expiry
+      const decoded = decodeAccessToken(res.access_token);
+      if (decoded) {
+        setUserRoleInt(decoded.roleInt);
+        setUserRole(decoded.roleName);
+        setPlanInt(decoded.planInt);
+        setPricingPlan(decoded.planName as PricingPlanName);
+        setPlanExpiresAt(decoded.planExpiresAt);
+
+        // Persist role and plan
+        setSecureUserRole(decoded.roleName);
+        setSecurePricingPlan(decoded.planName);
+        if (decoded.planExpiresAt)
+          setSecurePlanExpiresAt(decoded.planExpiresAt);
+      }
+
       if (res.user) {
         const extendedUser = res.user as ExtendedUser;
         setUser(extendedUser);
 
         const userId = extendedUser.id || "";
 
-        // Set user ID for analytics data mapping and analysis state scoping
         setCurrentUserId(userId);
         setAnalysisUserId(userId);
-
-        // Save user ID and first name to localStorage
-        localStorage.setItem("user_id", userId);
-        localStorage.setItem("first_name", extendedUser.first_name);
+        setSecureUserId(userId);
+        setSecureFirstName(extendedUser.first_name);
+        setSecureLastName(extendedUser.last_name || "");
+        setSecureEmail(extendedUser.email || "");
 
         // Store applications and products from response
         const appsFromResponse = (res as any).applications || [];
         setApplications(appsFromResponse);
-        localStorage.setItem("applications", JSON.stringify(appsFromResponse));
+        setSecureApplications(appsFromResponse);
 
         // Extract products from applications
         const allProducts: Product[] = [];
@@ -148,17 +270,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         });
         setProducts(allProducts);
-        localStorage.setItem("products", JSON.stringify(allProducts));
+        setSecureProducts(allProducts);
 
-        // Set first_analysis flag: "1" if no products exist yet (first time user)
-        const firstAnalysisKey = getUserScopedKey(STORAGE_KEYS.FIRST_ANALYSIS, userId);
+        // Extract collaborators from first application
+        const collabs = appsFromResponse[0]?.collaborators || [];
+        setCollaborators(collabs);
+        setSecureCollaborators(collabs);
+
+        // Set first_analysis flag
+        const firstAnalysisKey = getUserScopedKey(
+          STORAGE_KEYS.FIRST_ANALYSIS,
+          userId
+        );
         const existingFlag = localStorage.getItem(firstAnalysisKey);
         if (existingFlag === null) {
-          // First time seeing this user — check if they already have products
-          const isFirstAnalysis = allProducts.length === 0 ? "1" : "1";
-          // Always set to "1" on first encounter; it becomes "0" when View Dashboard is clicked
-          localStorage.setItem(firstAnalysisKey, isFirstAnalysis);
-          console.log(`🏁 [AUTH] First analysis flag set to ${isFirstAnalysis} for user ${userId}`);
+          localStorage.setItem(firstAnalysisKey, "1");
+          console.log(`🏁 [AUTH] First analysis flag set for user ${userId}`);
         }
 
         // Pick applicationId from response
@@ -171,17 +298,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           appId = appsFromResponse[0].id;
         }
 
+        // Override with JWT applicationId if available
+        if (decoded?.applicationId) {
+          appId = decoded.applicationId;
+        }
+
         if (appId) {
           setApplicationId(appId);
+          setSecureApplicationId(appId);
         }
 
         return true;
       }
-      
+
       return false;
     } catch (error: any) {
-      console.error('Auth context: Login error:', error);
-      console.error('Error response:', error.response?.data);
+      console.error("Auth context: Login error:", error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -198,10 +330,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   ) => {
     setIsLoading(true);
     try {
-      // Split full name on first space
-      const parts = fullName.trim().split(' ');
+      const parts = fullName.trim().split(" ");
       const firstName = parts[0];
-      const lastName = parts.slice(1).join(' ') || ' ';
+      const lastName = parts.slice(1).join(" ") || " ";
 
       const payload: RegisterRequest = {
         email,
@@ -215,58 +346,88 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (response.application?.id) {
         setApplicationId(response.application.id);
-        localStorage.setItem("application_id", response.application.id);
+        setSecureApplicationId(response.application.id);
       }
 
-      // Save first name to localStorage
-      localStorage.setItem("first_name", firstName);
-          } finally {
+      setSecureFirstName(firstName);
+    } finally {
       setIsLoading(false);
     }
   };
 
   /* =====================
-     LOGOUT - Clear session data but preserve analytics
+     LOGOUT
      ===================== */
   const logout = () => {
-    // Clear user ID references (but keep user-scoped data)
+    // Capture tokens BEFORE clearing storage so the API call can use them
+    const accessToken = getSecureAccessToken();
+    const sessionId = getSecureSessionId();
+
+    // Call backend logout endpoint with captured tokens
+    if (accessToken) {
+      logoutAPI(accessToken, sessionId).catch((err) => {
+        console.warn(
+          "Backend logout failed (session may already be expired):",
+          err
+        );
+      });
+    }
+
     clearAnalysisUserId();
     clearCurrentUserId();
-    
-    // Clear only session-related items, NOT analytics data or analysis state
+    clearAllSecureData();
+
     const sessionItems = [
-      'access_token',
-      'refresh_token',
-      'session_id',
-      'application_id',
-      'applications',
-      'products',
-      'first_name',
-      'product_id',
-      // Note: 'user_id' is kept in localStorage to help restore state on login
+      "refresh_token",
+      "pending_verification_email",
+      "access_token",
+      "session_id",
+      "application_id",
+      "first_name",
+      "user_id",
+      "product_id",
+      "keywords",
+      "keyword_count",
+      "applications",
+      "products",
     ];
-    
-    sessionItems.forEach(key => {
+
+    sessionItems.forEach((key) => {
       try {
         localStorage.removeItem(key);
-      } catch {
-        // ignore
-      }
+      } catch {}
     });
-    
-    // Do NOT clear sessionStorage - analysis state is stored there per email
-    // sessionStorage.clear(); // REMOVED - this was wiping analysis state
-    
-    // Reset state
+
     setUser(null);
     setApplicationId(null);
     setApplications([]);
     setProducts([]);
+    setPricingPlan("free");
+    setCollaborators([]);
+    setUserRole("viewer");
+    setUserRoleInt(4);
+    setPlanInt(0);
+    setPlanExpiresAt(null);
   };
 
   return (
     <AuthContext.Provider
-      value={{ user, applicationId, applications, products, isLoading, login, register, logout }}
+      value={{
+        user,
+        applicationId,
+        applications,
+        products,
+        pricingPlan,
+        collaborators,
+        userRole,
+        userRoleInt,
+        planInt,
+        planExpiresAt,
+        isLoading,
+        login,
+        register,
+        logout,
+      }}
     >
       {children}
     </AuthContext.Provider>

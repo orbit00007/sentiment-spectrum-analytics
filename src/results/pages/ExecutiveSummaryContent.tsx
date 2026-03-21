@@ -1,203 +1,315 @@
-import { toOrdinal } from "@/results/data/formulas";
+import { getTierColorVar, toOrdinal } from "@/results/data/formulas";
 import { TierBadge } from "@/results/ui/TierBadge";
+import { ProgressAcrossRuns } from "@/results/overview/ProgressAcrossRuns";
 import {
-  getExecutiveSummary, getAIVisibilityMetrics, getBrandInfoWithLogos, getRecommendations,
+  getExecutiveSummary,
+  getAnalysisDate,
+  getBrandName,
+  getAIVisibilityMetrics,
+  getBrandInfoWithLogos,
 } from "@/results/data/analyticsData";
-import { CheckCircle2, XCircle, Target, Trophy, TrendingUp, ArrowDown } from "lucide-react";
-
-const SectionHeader = ({ title, subtitle }: { title: string; subtitle: string }) => (
-  <div className="mt-8 mb-4">
-    <div className="ds-section-title"><h2>{title}</h2></div>
-    <p className="ds-section-subtitle">{subtitle}</p>
-  </div>
-);
-
-const ScoreDonut = ({ score, max = 20 }: { score: number; max?: number }) => {
-  const pct = (score / max) * 100;
-  const radius = 50;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (pct / 100) * circumference;
-
-  return (
-    <div className="relative" style={{ width: '130px', height: '130px' }}>
-      <svg viewBox="0 0 120 120" className="w-full h-full -rotate-90">
-        <circle cx="60" cy="60" r={radius} fill="none" stroke="#EFF3F8" strokeWidth="12" />
-        <circle cx="60" cy="60" r={radius} fill="none" stroke="#4DA6FF" strokeWidth="12"
-          strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round"
-          className="transition-all duration-1000" />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-[32px] font-bold" style={{ color: '#1E2433' }}>{score}</span>
-        <span className="text-[16px]" style={{ color: '#737E8F' }}>/ {max}</span>
-      </div>
-    </div>
-  );
-};
+import {
+  CheckCircle2,
+  XCircle,
+  Target,
+  TrendingUp,
+  AlertTriangle,
+  Trophy,
+  Users,
+  ArrowDown,
+  Sparkles,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const ExecutiveSummaryContent = () => {
   const visibilityData = getAIVisibilityMetrics();
   const brandInfo = getBrandInfoWithLogos();
   const executiveSummary = getExecutiveSummary();
-  const recommendations = getRecommendations();
 
   const getBrandLogo = (brandName: string) => {
     const cleanName = brandName.replace(/\s*\(GEO \d+\)/, "");
-    return brandInfo.find((b) => b.brand === cleanName)?.logo;
-  };
-  const getGeoScore = (brandName: string) => {
-    const cleanName = brandName.replace(/\s*\(GEO \d+\)/, "");
-    return brandInfo.find((b) => b.brand === cleanName)?.geo_score || 0;
-  };
-  const getOutlook = (brandName: string) => {
-    const cleanName = brandName.replace(/\s*\(GEO \d+\)/, "");
-    return brandInfo.find((b) => b.brand === cleanName)?.outlook || "Neutral";
-  };
-  const outlookDotColor = (outlook: string) => {
-    if (outlook === "Positive") return "#22C55E";
-    if (outlook === "Negative") return "#F25454";
-    return "#F5BE20";
+    const brand = brandInfo.find((b) => b.brand === cleanName);
+    return brand?.logo;
   };
 
   return (
-    <div className="w-full mx-auto px-5 md:px-10 py-6">
-      {/* Header */}
-      <div className="ds-card">
-        <div className="flex items-center gap-3 flex-wrap">
-          <h1 className="text-[32px] font-bold" style={{ color: '#1E2433' }}>Executive Summary</h1>
-          <TierBadge tier={visibilityData.tier} />
+    <div className="p-3 md:p-6 space-y-4 md:space-y-6 max-w w-full overflow-x-hidden">
+      {/* Page Title with gradient header */}
+      <div className="relative overflow-hidden rounded-xl md:rounded-2xl bg-gradient-to-r from-primary/20 via-primary/10 to-transparent border border-primary/20 p-4 md:p-8">
+        <div className="absolute top-0 right-0 w-32 md:w-64 h-32 md:h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+        <div className="relative flex items-center gap-2 md:gap-3 mb-1 md:mb-2">
+          <Sparkles className="w-5 h-5 md:w-8 md:h-8 text-primary" />
+          <h1 className="text-xl md:text-3xl font-bold text-foreground">
+            Executive Summary
+          </h1>
         </div>
-        <p className="text-[14px] mt-2" style={{ color: '#737E8F' }}>
-          A comprehensive overview of your brand's AI visibility performance, strengths, and areas for improvement
-        </p>
       </div>
 
-      {/* Conclusion callout */}
-      {executiveSummary.conclusion && (
-        <div className="mt-4 rounded-[10px] p-4 px-5" style={{ background: '#EFF3F8', borderLeft: '4px solid #4DA6FF' }}>
-          <p className="text-[15px] font-medium leading-relaxed" style={{ color: '#1E2433' }}>
-            {executiveSummary.conclusion || executiveSummary.brand_score_and_tier}
+      {/* Brand Score Card with visual gauge */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+        <div className="lg:col-span-2 bg-card rounded-xl border border-border p-4 md:p-6">
+          <div className="flex items-center gap-2 md:gap-3 mb-3 md:mb-4">
+            <div className="p-2 md:p-3 bg-primary/10 rounded-lg md:rounded-xl">
+              <Target className="w-5 h-5 md:w-6 md:h-6 text-primary" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-base md:text-lg font-semibold text-foreground">
+                Overall Assessment
+              </h2>
+            </div>
+          </div>
+          <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+            {executiveSummary.brand_score_and_tier}
+            {executiveSummary.conclusion}
           </p>
         </div>
-      )}
 
-      {/* Score + Strengths + Weaknesses */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4" style={{ alignItems: 'stretch' }}>
-        {/* Score Card */}
-        <div className="ds-card flex flex-col items-center justify-center text-center">
-          <ScoreDonut score={visibilityData.score} max={20} />
-          <TierBadge tier={visibilityData.tier} className="text-sm px-3 py-1 mt-3" />
-          <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[12px] font-bold mt-2"
-            style={{ background: '#EFF3F8', color: '#4DA6FF' }}>
-            Ranked {toOrdinal(visibilityData.brandPosition)} of {visibilityData.totalBrands} brands
-          </span>
-        </div>
-
-        {/* Strengths */}
-        <div className="ds-card">
-          <div className="flex items-center gap-2 mb-3">
-            <CheckCircle2 className="w-5 h-5" style={{ color: '#22C55E' }} />
-            <span className="text-[16px] font-bold" style={{ color: '#22C55E' }}>Strengths</span>
+        {/* Quick Stats */}
+        <div
+          className={cn(
+            "rounded-xl border p-4 md:p-6 flex flex-col items-center justify-center",
+            getTierColorVar(visibilityData.tier),
+            "bg-[color-mix(in_srgb,var(--tier-color)_10%,transparent)]",
+            "border-[color-mix(in_srgb,var(--tier-color)_20%,transparent)]"
+          )}
+        >
+          {/* Score */}
+          <div className="text-4xl md:text-5xl font-bold text-[var(--tier-color)] mb-1 md:mb-2">
+            {visibilityData.score}
           </div>
-          <ul className="space-y-2">
-            {executiveSummary.strengths?.map((strength: string, index: number) => (
-              <li key={index} className="flex items-start gap-2 text-[13px] leading-relaxed rounded-lg p-2.5"
-                style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderLeft: '3px solid #22C55E' }}>
-                <span className="flex-shrink-0 w-[22px] h-[22px] rounded-full flex items-center justify-center text-[10px] font-bold text-white mt-0.5"
-                  style={{ background: '#22C55E' }}>{index + 1}</span>
-                <span style={{ color: '#1E2433' }}>{strength}</span>
+
+          <div className="text-xs md:text-sm text-muted-foreground mb-2 md:mb-3">
+            AI Visibility Score
+          </div>
+
+          <TierBadge
+            tier={visibilityData.tier}
+            className="text-sm md:text-lg px-3 py-1.5 md:px-4 md:py-2"
+          />
+
+          <p className="text-[10px] md:text-xs text-muted-foreground mt-2 md:mt-3 text-center">
+            Your brand ranked {toOrdinal(visibilityData.brandPosition)} out of{" "}
+            {visibilityData.totalBrands} brands in AI visibility score.
+          </p>
+        </div>
+      </div>
+
+      {/* Progress Across Runs */}
+      <ProgressAcrossRuns />
+
+      {/* Strengths & Weaknesses Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+        {/* Strengths */}
+        <div className="bg-card rounded-xl border border-border p-4 md:p-6 hover:shadow-md transition-shadow">
+          <div className="flex items-center gap-2 md:gap-3 mb-3 md:mb-4">
+            <div className="p-1.5 md:p-2 bg-green-500/20 rounded-lg">
+              <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-green-500" />
+            </div>
+            <h3 className="text-base md:text-lg font-semibold text-foreground">
+              Strengths
+            </h3>
+          </div>
+          <ul className="space-y-2 md:space-y-3">
+            {executiveSummary.strengths?.map((strength, index) => (
+              <li
+                key={index}
+                className="flex items-start gap-2 md:gap-3 p-2 md:p-3 bg-green-500/5 rounded-lg border border-green-500/10"
+              >
+                <span className="flex-shrink-0 w-5 h-5 md:w-6 md:h-6 flex items-center justify-center rounded-full bg-green-500/20 text-green-500 text-[10px] md:text-xs font-semibold">
+                  {index + 1}
+                </span>
+                <span className="text-xs md:text-sm text-foreground leading-relaxed">
+                  {strength}
+                </span>
               </li>
             ))}
           </ul>
         </div>
 
         {/* Weaknesses */}
-        <div className="ds-card">
-          <div className="flex items-center gap-2 mb-3">
-            <XCircle className="w-5 h-5" style={{ color: '#F25454' }} />
-            <span className="text-[16px] font-bold" style={{ color: '#F25454' }}>Weaknesses</span>
+        <div className="bg-card rounded-xl border border-border p-4 md:p-6 hover:shadow-md transition-shadow">
+          <div className="flex items-center gap-2 md:gap-3 mb-3 md:mb-4">
+            <div className="p-1.5 md:p-2 bg-red-500/20 rounded-lg">
+              <XCircle className="w-4 h-4 md:w-5 md:h-5 text-red-500" />
+            </div>
+            <h3 className="text-base md:text-lg font-semibold text-foreground">
+              Weaknesses
+            </h3>
           </div>
-          <ul className="space-y-2">
-            {executiveSummary.weaknesses?.map((weakness: string, index: number) => (
-              <li key={index} className="flex items-start gap-2 text-[13px] leading-relaxed rounded-lg p-2.5"
-                style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderLeft: '3px solid #F25454' }}>
-                <span className="flex-shrink-0 w-[22px] h-[22px] rounded-full flex items-center justify-center text-[10px] font-bold text-white mt-0.5"
-                  style={{ background: '#F25454' }}>{index + 1}</span>
-                <span style={{ color: '#1E2433' }}>{weakness}</span>
+          <ul className="space-y-2 md:space-y-3">
+            {executiveSummary.weaknesses?.map((weakness, index) => (
+              <li
+                key={index}
+                className="flex items-start gap-2 md:gap-3 p-2 md:p-3 bg-red-500/5 rounded-lg border border-red-500/10"
+              >
+                <span className="flex-shrink-0 w-5 h-5 md:w-6 md:h-6 flex items-center justify-center rounded-full bg-red-500/20 text-red-500 text-[10px] md:text-xs font-semibold">
+                  {index + 1}
+                </span>
+                <span className="text-xs md:text-sm text-foreground leading-relaxed">
+                  {weakness}
+                </span>
               </li>
             ))}
           </ul>
         </div>
       </div>
 
-      <div className="mt-8 mb-4" style={{ borderBottom: '1px solid #E3EAF2' }} />
-
-      {/* Competitive Positioning */}
-      <SectionHeader title="Competitive Positioning" subtitle="How your brand compares against competitors in AI visibility" />
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-        {[
-          { title: "Leaders", data: executiveSummary.competitor_positioning.leaders, icon: Trophy, bg: "#F0FDF4", borderColor: "#22C55E", titleColor: "#16A34A" },
-          { title: "Mid-Tier", data: executiveSummary.competitor_positioning.mid_tier, icon: TrendingUp, bg: "#FFFBEB", borderColor: "#F5BE20", titleColor: "#D97706" },
-          { title: "Laggards", data: executiveSummary.competitor_positioning.laggards, icon: ArrowDown, bg: "#FEF2F2", borderColor: "#F25454", titleColor: "#DC2626" },
-        ].map(({ title, data, icon: Icon, bg, borderColor, titleColor }) => (
-          <div key={title} className="ds-card" style={{ background: bg, borderLeft: `3px solid ${borderColor}` }}>
-            <div className="flex items-center gap-2 mb-3">
-              <Icon className="w-4 h-4" style={{ color: borderColor }} />
-              <span className="text-[14px] font-bold" style={{ color: titleColor }}>{title}</span>
-            </div>
-            <div className="space-y-3">
-              {data?.map((brand: any, idx: number) => (
-                <div key={idx} className="flex items-start gap-3 py-2"
-                  style={{ borderBottom: idx < data.length - 1 ? `1px solid ${borderColor}30` : 'none' }}>
-                  <div className="flex items-center gap-1 flex-shrink-0">
-                    <div className="w-[10px] h-[10px] rounded-full" style={{ background: outlookDotColor(getOutlook(brand.name)) }} />
-                    {getBrandLogo(brand.name) && (
-                      <img src={getBrandLogo(brand.name)} alt="" className="w-5 h-5 rounded-full object-contain"
-                        style={{ background: '#FFFFFF', border: '1px solid #E3EAF2' }} />
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between">
-                      <p className="text-[14px] font-bold" style={{ color: '#1E2433' }}>{brand.name}</p>
-                      <span className="text-[16px] font-bold" style={{ color: '#1E2433' }}>{getGeoScore(brand.name)}</span>
-                    </div>
-                    <p className="text-[12px] leading-relaxed mt-0.5" style={{ color: '#737E8F' }}>{brand.summary}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+      {/* Competitor Positioning */}
+      <div className="bg-card rounded-xl border border-border p-4 md:p-6 hover:shadow-md transition-shadow">
+        <div className="flex items-center gap-2 md:gap-3 mb-4 md:mb-6">
+          <div className="p-1.5 md:p-2 bg-primary/10 rounded-lg">
+            <Users className="w-4 h-4 md:w-5 md:h-5 text-primary" />
           </div>
-        ))}
-      </div>
+          <h3 className="text-base md:text-lg font-semibold text-foreground">
+            Competitive Positioning
+          </h3>
+        </div>
 
-      <div className="mt-8 mb-4" style={{ borderBottom: '1px solid #E3EAF2' }} />
-
-      {/* Prioritized Actions */}
-      <SectionHeader title="Prioritized Actions" subtitle="Top recommended next steps to improve your positioning" />
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-        {executiveSummary.prioritized_actions?.map((action: string, index: number) => {
-          const rec = recommendations[index];
-          return (
-            <div key={index} className="ds-card">
-              <div className="flex items-start gap-3">
-                <span className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-[14px] font-bold text-white"
-                  style={{ background: '#4DA6FF' }}>{index + 1}</span>
-                <div className="flex-1">
-                  <p className="text-[14px] font-medium leading-relaxed" style={{ color: '#1E2433', marginTop: '4px' }}>{action}</p>
-                  {rec && (
-                    <div className="flex items-center gap-2 mt-3">
-                      <span className={`ds-badge ${rec.overall_effort === "High" ? "ds-badge-danger" : rec.overall_effort === "Medium" ? "ds-badge-warning" : "ds-badge-positive"}`}>
-                        Effort: {rec.overall_effort}
-                      </span>
-                      <span className={`ds-badge ${rec.impact === "High" ? "ds-badge-danger" : rec.impact === "Medium" ? "ds-badge-warning" : "ds-badge-positive"}`}>
-                        Impact: {rec.impact}
-                      </span>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+          {/* Leaders */}
+          <div className="relative overflow-hidden bg-gradient-to-br from-green-500/10 to-green-500/5 rounded-xl p-3 md:p-5 border border-green-500/20">
+            <div className="absolute top-0 right-0 w-16 md:w-20 h-16 md:h-20 bg-green-500/10 rounded-full blur-2xl" />
+            <div className="relative">
+              <div className="flex items-center gap-1.5 md:gap-2 mb-3 md:mb-4">
+                <Trophy className="w-4 h-4 md:w-5 md:h-5 text-green-500" />
+                <h4 className="font-semibold text-green-600 text-sm md:text-base">
+                  Leaders
+                </h4>
+              </div>
+              <div className="space-y-2 md:space-y-3">
+                {executiveSummary.competitor_positioning.leaders.map(
+                  (leader, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-start gap-2 md:gap-3 p-2 md:p-3 bg-card/50 rounded-lg"
+                    >
+                      {getBrandLogo(leader.name) && (
+                        <img
+                          src={getBrandLogo(leader.name)}
+                          alt=""
+                          className="w-6 h-6 md:w-8 md:h-8 rounded-full object-contain bg-white flex-shrink-0"
+                        />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-foreground text-xs md:text-sm truncate">
+                          {leader.name}
+                        </p>
+                        <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5 md:mt-1 line-clamp-2">
+                          {leader.summary}
+                        </p>
+                      </div>
                     </div>
-                  )}
-                </div>
+                  )
+                )}
               </div>
             </div>
-          );
-        })}
+          </div>
+
+          {/* Mid-Tier */}
+          <div className="relative overflow-hidden bg-gradient-to-br from-amber-500/10 to-amber-500/5 rounded-xl p-3 md:p-5 border border-amber-500/20">
+            <div className="absolute top-0 right-0 w-16 md:w-20 h-16 md:h-20 bg-amber-500/10 rounded-full blur-2xl" />
+            <div className="relative">
+              <div className="flex items-center gap-1.5 md:gap-2 mb-3 md:mb-4">
+                <TrendingUp className="w-4 h-4 md:w-5 md:h-5 text-amber-500" />
+                <h4 className="font-semibold text-amber-600 text-sm md:text-base">
+                  Mid-Tier
+                </h4>
+              </div>
+              <div className="space-y-2 md:space-y-3">
+                {executiveSummary.competitor_positioning.mid_tier.map(
+                  (brand, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-start gap-2 md:gap-3 p-2 md:p-3 bg-card/50 rounded-lg"
+                    >
+                      {getBrandLogo(brand.name) && (
+                        <img
+                          src={getBrandLogo(brand.name)}
+                          alt=""
+                          className="w-6 h-6 md:w-8 md:h-8 rounded-full object-contain bg-white flex-shrink-0"
+                        />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-foreground text-xs md:text-sm truncate">
+                          {brand.name}
+                        </p>
+                        <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5 md:mt-1 line-clamp-2">
+                          {brand.summary}
+                        </p>
+                      </div>
+                    </div>
+                  )
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Laggards */}
+          <div className="relative overflow-hidden bg-gradient-to-br from-red-500/10 to-red-500/5 rounded-xl p-3 md:p-5 border border-red-500/20">
+            <div className="absolute top-0 right-0 w-16 md:w-20 h-16 md:h-20 bg-red-500/10 rounded-full blur-2xl" />
+            <div className="relative">
+              <div className="flex items-center gap-1.5 md:gap-2 mb-3 md:mb-4">
+                <ArrowDown className="w-4 h-4 md:w-5 md:h-5 text-red-500" />
+                <h4 className="font-semibold text-red-600 text-sm md:text-base">
+                  Laggards
+                </h4>
+              </div>
+              <div className="space-y-2 md:space-y-3">
+                {executiveSummary.competitor_positioning.laggards.map(
+                  (brand, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-start gap-2 md:gap-3 p-2 md:p-3 bg-card/50 rounded-lg"
+                    >
+                      {getBrandLogo(brand.name) && (
+                        <img
+                          src={getBrandLogo(brand.name)}
+                          alt=""
+                          className="w-6 h-6 md:w-8 md:h-8 rounded-full object-contain bg-white flex-shrink-0"
+                        />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-foreground text-xs md:text-sm truncate">
+                          {brand.name}
+                        </p>
+                        <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5 md:mt-1 line-clamp-2">
+                          {brand.summary}
+                        </p>
+                      </div>
+                    </div>
+                  )
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Prioritized Actions */}
+      <div className="bg-card rounded-xl border border-border p-4 md:p-6 hover:shadow-md transition-shadow">
+        <div className="flex items-center gap-2 md:gap-3 mb-4 md:mb-6">
+          <div className="p-1.5 md:p-2 bg-primary/10 rounded-lg">
+            <AlertTriangle className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+          </div>
+          <h3 className="text-base md:text-lg font-semibold text-foreground">
+            Prioritized Actions
+          </h3>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+          {executiveSummary.prioritized_actions?.map((action, index) => (
+            <div
+              key={index}
+              className="flex items-start gap-3 md:gap-4 p-3 md:p-4 bg-gradient-to-br from-muted/50 to-muted/30 rounded-xl border border-border hover:border-primary/30 transition-colors"
+            >
+              <span className="flex-shrink-0 flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full bg-primary text-primary-foreground text-sm md:text-lg font-bold shadow-lg">
+                {index + 1}
+              </span>
+              <span className="text-xs md:text-sm text-foreground leading-relaxed">
+                {action}
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

@@ -1,19 +1,55 @@
-import { useState, useMemo } from "react";
-import {
-  getBrandName,
-  getBrandWebsite,
-  getModelName,
-  getAnalysisKeywords,
-  getBrandLogo,
-  getAnalysisDate,
-  getBrandMentionResponseRates,
-  getBrandInfoWithLogos,
-  getSearchKeywordsWithPrompts,
-  getSourcesData,
-  getModelDisplayName,
-} from "@/results/data/analyticsData";
+import { getBrandName, getBrandWebsite, getModelName, getAnalysisKeywords, getBrandLogo, getAnalysisDate } from "@/results/data/analyticsData";
 import { LLMIcon } from "@/results/ui/LLMIcon";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Calendar } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import openaiIcon from "@/assets/openai-icon.svg";
+import googleaioverviewIcon from "@/assets/googleaioverview.svg";
+import geminiColorIcon from "@/assets/gemini-color.svg";
+import perplexityIcon from "@/assets/perplexity-icon.svg";
+
+// Map incoming model string → { label, icon }
+const MODEL_MAP: Record<string, { label: string; icon: string }> = {
+  openai:               { label: "ChatGPT",           icon: openaiIcon },
+  chatgpt:              { label: "ChatGPT",           icon: openaiIcon },
+  "google-ai-overview": { label: "Google AI Overview", icon: googleaioverviewIcon },
+  "google_ai_overview": { label: "Google AI Overview", icon: googleaioverviewIcon },
+  "google ai overview": { label: "Google AI Overview", icon: googleaioverviewIcon },
+  "google-ai-mode":     { label: "Google AI Mode",    icon: geminiColorIcon },
+  "google_ai_mode":     { label: "Google AI Mode",    icon: geminiColorIcon },
+  "google ai mode":     { label: "Google AI Mode",    icon: geminiColorIcon },
+  gemini:               { label: "Gemini",            icon: geminiColorIcon },
+  perplexity:           { label: "Perplexity",        icon: perplexityIcon },
+};
+
+const resolveModel = (raw: string): { label: string; icon: string } => {
+  const key = raw.toLowerCase().trim();
+  return MODEL_MAP[key] ?? { label: raw, icon: "" };
+};
+
+const ModelIcon = ({ model }: { model: string }) => {
+  const { label, icon } = resolveModel(model);
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <div className="mt-0.5 w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden cursor-default flex-shrink-0">
+          {icon ? (
+            <img src={icon} alt={label} className="w-7 h-7 object-contain" />
+          ) : (
+            <LLMIcon platform={model} size="lg" />
+          )}
+        </div>
+      </TooltipTrigger>
+      <TooltipContent side="bottom">
+        <p className="text-xs font-medium">{label}</p>
+      </TooltipContent>
+    </Tooltip>
+  );
+};
 
 const BrandInfoBar = () => {
   const brandName = getBrandName();
@@ -22,140 +58,101 @@ const BrandInfoBar = () => {
   const keywords = getAnalysisKeywords();
   const brandLogo = getBrandLogo();
   const analysisDate = getAnalysisDate();
-  const brandInfo = getBrandInfoWithLogos();
-  const keywordsWithPrompts = getSearchKeywordsWithPrompts();
-  const sourcesData = getSourcesData();
 
-  const models = modelName?.split(",").map((m) => m.trim()).filter(Boolean) || [];
-
-  const brandMentionRanking = getBrandMentionResponseRates();
-  const brandPosition = brandMentionRanking.findIndex((b) => b.isTestBrand) + 1;
-
-  const isLeader = brandPosition === 1;
-  const isAbsent = !brandPosition;
-
-  const totalSources = Object.keys(sourcesData).length;
-  const totalPrompts = keywordsWithPrompts.reduce((sum, kw) => sum + (kw.prompts?.length || 0), 0);
-
-  // Format date parts
-  const dateParts = useMemo(() => {
-    if (!analysisDate) return { date: '', time: '' };
-    const parts = analysisDate.split(',');
-    if (parts.length >= 2) {
-      return { date: parts.slice(0, -1).join(',').trim(), time: parts[parts.length - 1].trim() };
-    }
-    return { date: analysisDate, time: '' };
-  }, [analysisDate]);
-
+  const models = modelName
+    ?.split(",")
+    .map((m) => m.trim())
+    .filter(Boolean) || [];
+  
   if (!brandName) return null;
-
+  
   return (
-    <div>
-      {/* Main card */}
-      <div className="ds-card" style={{ borderRadius: '12px 12px 0 0', paddingBottom: '20px' }}>
-        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-          {/* LEFT */}
-          <div className="flex items-start gap-4 min-w-0">
-            {/* Favicon */}
-            {brandLogo ? (
-              <img src={brandLogo} alt={brandName}
-                className="w-12 h-12 rounded-[10px] object-contain flex-shrink-0"
-                style={{ border: '1px solid #E3EAF2', background: '#FFFFFF', padding: '4px' }}
-                onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }}
+    <div className="bg-card rounded-xl border border-border p-4 md:p-6 mb-6">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        {/* Left: Brand logo, name, website and keywords */}
+        <div className="flex items-start gap-4">
+          {brandLogo ? (
+            <div className="w-14 h-14 md:w-16 md:h-16 rounded-xl bg-black/5 flex items-center justify-center p-2 flex-shrink-0">
+              <img 
+                src={brandLogo} 
+                alt={brandName} 
+                className="w-full h-full object-contain"
               />
-            ) : null}
-            {!brandLogo && (
-              <div className="w-12 h-12 rounded-[10px] flex items-center justify-center flex-shrink-0"
-                style={{ background: '#4DA6FF', color: '#FFFFFF', fontSize: '20px', fontWeight: 700 }}>
-                {brandName.charAt(0)}
+            </div>
+          ) : (
+            <div className="w-14 h-14 md:w-16 md:h-16 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <span className="text-lg font-bold text-primary">
+                {brandName.substring(0, 2).toUpperCase()}
+              </span>
+            </div>
+          )}
+          <div className="flex-1 min-w-0">
+            <h2 className="text-xl md:text-2xl font-bold text-foreground">{brandName}</h2>
+            {brandWebsite && (
+              <a 
+                href={brandWebsite} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-sm text-muted-foreground hover:text-primary flex items-center gap-1 transition-colors"
+              >
+                <span className="truncate">{brandWebsite}</span>
+                <ExternalLink className="w-3 h-3 flex-shrink-0" />
+              </a>
+            )}
+            {/* Keywords below website */}
+            {keywords.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {keywords.map((keyword, idx) => (
+                  <Badge 
+                    key={idx} 
+                    className="bg-primary text-primary-foreground hover:bg-primary/90 text-xs"
+                  >
+                    {keyword}
+                  </Badge>
+                ))}
               </div>
             )}
-
-            <div className="min-w-0 flex-1">
-              {/* Row 1: Brand name + link icon + badge */}
-              <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-[22px] font-bold" style={{ color: '#1E2433' }}>{brandName}</h1>
-                {brandWebsite && (
-                  <a href={brandWebsite} target="_blank" rel="noopener noreferrer">
-                    <ExternalLink className="w-4 h-4" style={{ color: '#737E8F' }} />
-                  </a>
-                )}
-                {isLeader && <span className="ds-badge ds-badge-info">Market Leader</span>}
-                {isAbsent && <span className="ds-badge ds-badge-neutral">Absent</span>}
-              </div>
-
-              {/* Row 2: Website URL */}
-              {brandWebsite && (
-                <a href={brandWebsite} target="_blank" rel="noopener noreferrer"
-                  className="text-[13px] underline block mt-1" style={{ color: '#4DA6FF' }}>
-                  {brandWebsite}
-                </a>
+            
+            {/* Analysis date and models - shown on mobile below keywords */}
+            <div className="flex flex-col gap-2 mt-3 md:hidden">
+              {analysisDate && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Calendar className="w-4 h-4" />
+                  <span>Analyzed: {analysisDate}</span>
+                </div>
               )}
-
-              {/* Row 3: Keyword chips */}
-              {keywords.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  {keywords.map((kw: string) => (
-                    <span key={kw} className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold"
-                      style={{ background: '#EFF3F8', color: '#4DA6FF' }}>
-                      {kw}
-                    </span>
-                  ))}
+              {models.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">Analyzed by:</span>
+                  <div className="flex items-center gap-2">
+                    {models.map((model) => (
+                      <ModelIcon key={model} model={model} />
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
           </div>
-
-          {/* RIGHT */}
-          <div className="hidden md:flex flex-col items-end gap-1.5 flex-shrink-0">
-            {/* Analyzed by */}
-            {models.length > 0 && (
-              <div className="flex flex-col items-end gap-1">
-                <span className="text-[10px] uppercase font-semibold tracking-[0.12em]" style={{ color: '#737E8F' }}>Analyzed by</span>
-                <div className="flex items-center -space-x-1">
-                  {models.map((model) => (
-                    <div key={model} className="relative" style={{ zIndex: models.length }}>
-                      <LLMIcon platform={model} size="lg" />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Date */}
-            {analysisDate && (
-              <div className="flex items-center gap-1.5 mt-1">
-                <span className="text-[13px] font-semibold" style={{ color: '#1E2433' }}>{dateParts.date}</span>
-                {dateParts.time && <span className="text-[12px]" style={{ color: '#737E8F' }}>{dateParts.time}</span>}
-              </div>
-            )}
-          </div>
         </div>
-      </div>
-
-      {/* Bottom strip */}
-      <div className="flex items-center gap-5 px-6 flex-wrap"
-        style={{ background: '#EFF3F8', height: '36px', borderRadius: '0 0 12px 12px' }}>
-        <div className="flex items-center gap-1.5">
-          <div className="w-2 h-2 rounded-full" style={{ background: '#22C55E' }} />
-          <span className="text-[12px]" style={{ color: '#737E8F' }}>Analysis Complete</span>
-        </div>
-        <span className="text-[12px]" style={{ color: '#CBD5E1' }}>·</span>
-        <span className="text-[12px]" style={{ color: '#737E8F' }}>
-          <strong style={{ color: '#1E2433' }}>{totalSources}</strong> sources analyzed
-        </span>
-        <span className="text-[12px]" style={{ color: '#CBD5E1' }}>·</span>
-        <span className="text-[12px]" style={{ color: '#737E8F' }}>
-          <strong style={{ color: '#1E2433' }}>{keywords.length}</strong> keywords tracked
-        </span>
-        <span className="text-[12px]" style={{ color: '#CBD5E1' }}>·</span>
-        <span className="text-[12px]" style={{ color: '#737E8F' }}>
-          <strong style={{ color: '#1E2433' }}>{brandInfo.length}</strong> competitors
-        </span>
-        <span className="text-[12px]" style={{ color: '#CBD5E1' }}>·</span>
-        <div className="flex items-center gap-1">
-          {models[0] && <LLMIcon platform={models[0]} size="sm" />}
-          <span className="text-[12px]" style={{ color: '#737E8F' }}>Powered by {models.map(m => getModelDisplayName(m)).join(', ')}</span>
+        
+        {/* Right on desktop: Analysis date and LLM models (hidden on mobile) */}
+        <div className="hidden md:flex md:flex-col md:items-end gap-2">
+          {analysisDate && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Calendar className="w-4 h-4" />
+              <span>Analyzed: {analysisDate}</span>
+            </div>
+          )}
+          {models.length > 0 && (
+            <div className="flex flex-col items-end gap-1">
+              <span className="text-xs text-muted-foreground">Analyzed by</span>
+              <div className="flex items-center gap-2">
+                {models.map((model) => (
+                  <ModelIcon key={model} model={model} />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

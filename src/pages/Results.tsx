@@ -10,6 +10,7 @@ import { ContentImpact } from "@/components/ContentImpact";
 import { Recommendations } from "@/components/Recommendations";
 import { QueryAnalysis } from "@/components/QueryAnalysis";
 import { ChatSidebar } from "@/components/ChatSidebar";
+import { ChatSidebarWhenOpen } from "@/components/ChatSidebarWhenOpen";
 import { Search } from "lucide-react";
 import { regenerateAnalysis, getProductAnalytics } from "@/apiHelpers";
 import {
@@ -20,10 +21,12 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { ChatCacheClearTrigger } from "@/hooks/useChatCacheClear";
 import { MessageSquare, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Printer, Plus } from "lucide-react";
+import { getSecureAccessToken, setSecureProductId, setSecureKeywords, setSecureKeywordCount } from "@/lib/secureStorage";
 
 interface InputStateAny {
   product?: { id: string; name?: string; website?: string };
@@ -219,7 +222,7 @@ export default function Results() {
   }, [previousAnalytics]);
 
   useEffect(() => {
-    accessTokenRef.current = localStorage.getItem("access_token") || "";
+    accessTokenRef.current = getSecureAccessToken();
   }, []);
 
   const handleNewAnalysis = () => {
@@ -285,7 +288,7 @@ export default function Results() {
         toastRef.current({
           title: "Analysis Taking Longer Than Expected",
           description: `We'll pause checking for ${POLL_COOLDOWN_MS / 60000} minutes. The analysis will continue in the background.`,
-          duration: 5000,
+          duration: Infinity,
         });
 
         // Clear existing timer
@@ -354,18 +357,15 @@ export default function Results() {
               mostRecentAnalysis.updated_at ||
               mostRecentAnalysis.created_at;
 
-            // Save to localStorage (outside state updates to avoid re-renders)
+            // Save to secure storage (outside state updates to avoid re-renders)
             if (res.product_id) {
-              localStorage.setItem("product_id", res.product_id);
+              setSecureProductId(res.product_id);
             }
             if (mostRecentAnalysis.analytics?.search_keywords) {
               const keywordsObj = mostRecentAnalysis.analytics.search_keywords;
               const keywords = Object.values(keywordsObj).map((kw: { name: string; prompts: string[] }) => kw.name);
-              localStorage.setItem(
-                "keywords",
-                JSON.stringify(keywords.map((k) => ({ keyword: k })))
-              );
-              localStorage.setItem("keyword_count", keywords.length.toString());
+              setSecureKeywords(keywords.map((k) => ({ keyword: k })));
+              setSecureKeywordCount(keywords.length.toString());
             }
 
             const prevAnalytics = previousAnalyticsRef.current;
@@ -410,7 +410,7 @@ export default function Results() {
                   title: "Analysis Completed",
                   description:
                     "Your analysis is now complete and available on this page.",
-                  duration: 10000,
+                  duration: Infinity,
                 });
                 console.log(
                   "🎉 [POLL] Showing completion notification for new completed analysis"
@@ -442,7 +442,7 @@ export default function Results() {
                   title: "Analysis in Progress",
                   description:
                     "Your new analysis has begun. You'll receive a notification on your email when it's ready.",
-                  duration: 10000,
+                  duration: Infinity,
                 });
                 hasShownStartMessageRef.current = true;
               }
@@ -467,7 +467,7 @@ export default function Results() {
                   title: "Analysis in Progress",
                   description:
                     "Your analysis has begun. You'll receive a notification on your email when it's ready.",
-                  duration: 10000,
+                  duration: Infinity,
                 });
                 hasShownStartMessageRef.current = true;
               }
@@ -1040,9 +1040,13 @@ export default function Results() {
         } as React.CSSProperties
       }
     >
+      <ChatCacheClearTrigger
+        productId={resultsData.product.id}
+        isMobileChatOpen={isMobileChatOpen}
+      />
       <Sidebar side="left" collapsible="offcanvas" className="no-print hidden md:flex">
         <SidebarContent>
-          <ChatSidebar productId={resultsData.product.id} />
+          <ChatSidebarWhenOpen productId={resultsData.product.id} />
         </SidebarContent>
       </Sidebar>
 

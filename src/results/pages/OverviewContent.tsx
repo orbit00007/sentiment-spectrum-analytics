@@ -1,87 +1,192 @@
 import { useResults } from "@/results/context/ResultsContext";
-import { areBrandsAliased } from "@/results/data/brandAliases";
 import { useEffect, useState, useMemo } from "react";
+import ReactMarkdown from "react-markdown";
 import {
-  getAIVisibilityMetrics, getMentionsPosition, getBrandMentionResponseRates,
-  getSentiment, hasAnalyticsData, getBrandInfoWithLogos, getBrandName, getRecommendations,
+  getAIVisibilityMetrics,
+  getMentionsPosition,
+  getBrandMentionResponseRates,
+  getSentiment,
+  hasAnalyticsData,
+  getPromptsForPositionTier,
+  getBrandName,
+  getTotalPromptCount,
+  getKeywordSetId,
 } from "@/results/data/analyticsData";
 import { LLMVisibilityTable } from "@/results/overview/LLMVisibilityTable";
-import { PlatformPresence } from "@/results/overview/PlatformPresence";
+import { SourceIntelligence } from "@/results/overview/SourceIntelligence";
 import { CompetitorComparisonChart } from "@/results/overview/CompetitorComparisonChart";
 import { BrandMentionsRadar } from "@/results/overview/BrandMentionsRadar";
 import BrandInfoBar from "@/results/overview/BrandInfoBar";
+import { LLMIcon } from "@/results/ui/LLMIcon";
 import { IntentWiseScoring } from "@/results/overview/IntentWiseScoring";
 import { TierBadge } from "@/results/ui/TierBadge";
 import { toOrdinal } from "@/results/data/formulas";
 import {
-  Info, TrendingUp, MessageSquare, ThumbsUp, Search, ArrowUp, ArrowRight, ArrowDown,
-  CheckCircle2, ArrowUpRight,
+  Info,
+  TrendingUp,
+  MessageSquare,
+  ThumbsUp,
+  Search,
+  ArrowUp,
+  ArrowRight,
+  ArrowDown,
+  ChevronDown,
+  Trophy,
+  Medal,
+  Award,
 } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useNavigate } from "react-router-dom";
 
-const SectionHeader = ({ title, subtitle }: { title: string; subtitle: string }) => (
-  <div className="mt-8 mb-4">
-    <div className="ds-section-title"><h2>{title}</h2></div>
-    <p className="ds-section-subtitle">{subtitle}</p>
-  </div>
-);
-
-const getImpactBorder = (impact: string) => {
-  if (impact === "High") return { borderLeft: '3px solid #F25454' };
-  if (impact === "Medium") return { borderLeft: '3px solid #F5BE20' };
-  return { borderLeft: '3px solid #22C55E' };
+// Parse summary string with ● delimiters into individual points
+const parseSummaryToPoints = (summary: string): string[] => {
+  if (!summary) return [];
+  return summary
+    .replace(/\n+/g, " ")
+    .split(/\s+[•●]\s+|\s-\s(?=[A-Z])/g)
+    .map((s) => s.trim())
+    .filter(Boolean);
 };
 
-const getImpactBadgeClass = (impact: string) => {
-  if (impact === "High") return "ds-badge ds-badge-danger";
-  if (impact === "Medium") return "ds-badge ds-badge-warning";
-  return "ds-badge ds-badge-positive";
-};
+// Resolve incoming LLM key → display name + chip style
+const resolveLLMChip = (llm: string): { displayName: string; chipStyle: string } => {
+  const k = llm.toLowerCase();
 
-const cleanPriorityLabel = (tier: string) => {
-  if (!tier) return "";
-  const t = tier.toLowerCase();
-  if (t === "high_impact") return "High Impact";
-  if (t === "medium_impact") return "Medium Impact";
-  if (t === "quick_win") return "Quick Win";
-  return tier;
+  if (k.includes("google-ai-overview") || k.includes("google_ai_overview") || k.includes("google ai overview")) {
+    return {
+      displayName: "Google AI Overview",
+      chipStyle: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
+    };
+  }
+  if (k.includes("google-ai-mode") || k.includes("google_ai_mode") || k.includes("google ai mode")) {
+    return {
+      displayName: "Google AI Mode",
+      chipStyle: "bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300",
+    };
+  }
+  if (k.includes("gemini")) {
+    return {
+      displayName: "Gemini",
+      chipStyle: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
+    };
+  }
+  if (k.includes("chatgpt") || k.includes("openai")) {
+    return {
+      displayName: "ChatGPT",
+      chipStyle: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
+    };
+  }
+  if (k.includes("perplexity")) {
+    return {
+      displayName: "Perplexity",
+      chipStyle: "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300",
+    };
+  }
+  if (k.includes("claude")) {
+    return {
+      displayName: "Claude",
+      chipStyle: "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300",
+    };
+  }
+  if (k.includes("grok")) {
+    return {
+      displayName: "Grok",
+      chipStyle: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
+    };
+  }
+  return { displayName: llm, chipStyle: "bg-muted text-muted-foreground" };
 };
 
 const OverviewContent = () => {
   const { dataReady, analyticsVersion } = useResults();
   const [animatedBars, setAnimatedBars] = useState(false);
   const navigate = useNavigate();
+
+  // Position tier accordion state
+  const [openTier, setOpenTier] = useState<'top' | 'mid' | 'low' | null>(null);
+  const [expandedTierFull, setExpandedTierFull] = useState<'top' | 'mid' | 'low' | null>(null);
+
   const analyticsAvailable = hasAnalyticsData();
 
   const visibilityData = useMemo(() => {
-    if (!analyticsAvailable) return { score: 0, tier: "Low", brandPosition: 0, totalBrands: 0, positionBreakdown: { topPosition: 0, midPosition: 0, lowPosition: 0 } };
+    if (!analyticsAvailable) {
+      return {
+        score: 0,
+        tier: "Low",
+        brandPosition: 0,
+        totalBrands: 0,
+        positionBreakdown: {
+          topPosition: 0,
+          midPosition: 0,
+          lowPosition: 0,
+        },
+      };
+    }
     return getAIVisibilityMetrics();
   }, [analyticsAvailable, analyticsVersion]);
 
+  const tierPrompts = useMemo(() => {
+    if (!analyticsAvailable) return { top: [], mid: [], low: [] };
+    const brandName = getBrandName();
+
+    const computeGrouped = (tier: 'top' | 'mid' | 'low') => {
+      const raw = getPromptsForPositionTier(tier, brandName);
+
+      const seen = new Map<string, Record<string, number>>();
+      for (const p of raw) {
+        if (seen.has(p.query)) {
+          Object.assign(seen.get(p.query)!, p.llmRanks);
+        } else {
+          seen.set(p.query, { ...p.llmRanks });
+        }
+      }
+      return Array.from(seen.entries()).map(([query, llmRanks]) => ({ query, llmRanks }));
+    };
+
+    return { top: computeGrouped('top'), mid: computeGrouped('mid'), low: computeGrouped('low') };
+  }, [analyticsAvailable, analyticsVersion]);
+
   const mentionsData = useMemo(() => {
-    if (!analyticsAvailable) return { position: 0, tier: "Low", totalBrands: 0, topBrandMentions: 0, brandMentions: 0, allBrandMentions: {} };
+    if (!analyticsAvailable) {
+      return {
+        position: 0,
+        tier: "Low",
+        totalBrands: 0,
+        topBrandMentions: 0,
+        brandMentions: 0,
+        allBrandMentions: {},
+      };
+    }
     return getMentionsPosition();
   }, [analyticsAvailable, analyticsVersion]);
 
-  const allBrandMentionRates = useMemo(() => {
+  const brandMentionRates = useMemo(() => {
     if (!analyticsAvailable) return [];
-    const brandInfo = getBrandInfoWithLogos();
-    const brandName = getBrandName();
-    return brandInfo.map(b => ({
-      brand: b.brand, responseRate: b.mention_score, logo: b.logo,
-      isTestBrand: b.brand === brandName || areBrandsAliased(b.brand, brandName),
-    })).sort((a, b) => b.responseRate - a.responseRate);
+    const rates = getBrandMentionResponseRates();
+    const allBrandMentions = (getMentionsPosition().allBrandMentions ||
+      {}) as Record<string, number>;
+
+    return [...rates].sort((a, b) => {
+      if (b.responseRate !== a.responseRate)
+        return b.responseRate - a.responseRate;
+      const aScore = allBrandMentions[a.brand] ?? 0;
+      const bScore = allBrandMentions[b.brand] ?? 0;
+      if (bScore !== aScore) return bScore - aScore;
+      if (a.isTestBrand && !b.isTestBrand) return 1;
+      if (!a.isTestBrand && b.isTestBrand) return -1;
+      return 0;
+    });
   }, [analyticsAvailable, analyticsVersion]);
 
   const sentiment = useMemo(() => {
-    if (!analyticsAvailable) return { dominant_sentiment: "N/A", summary: "" };
+    if (!analyticsAvailable) {
+      return { dominant_sentiment: "N/A", summary: "" };
+    }
     return getSentiment();
-  }, [analyticsAvailable, analyticsVersion]);
-
-  const recommendations = useMemo(() => {
-    if (!analyticsAvailable) return [];
-    return getRecommendations();
   }, [analyticsAvailable, analyticsVersion]);
 
   useEffect(() => {
@@ -91,231 +196,388 @@ const OverviewContent = () => {
     }
   }, [dataReady, analyticsAvailable]);
 
+  const getMedalIcon = (index: number, isTestBrand: boolean) => {
+    if (index === 0) return <Trophy className="w-4 h-4 text-yellow-500" />;
+    if (index === 1) return <Medal className="w-4 h-4 text-gray-400" />;
+    if (index === 2) return <Medal className="w-4 h-4 text-amber-600" />;
+    return <Award className="w-4 h-4 text-muted-foreground" />;
+  };
+
+  const mentionsInsight = useMemo(() => {
+    const { position, totalBrands } = mentionsData;
+    if (!position || position <= 0) return null;
+    if (position === 1) {
+      return `Your brand is leading in brand mention score among ${totalBrands} brands.`;
+    }
+    return `Your brand ranked at ${toOrdinal(position)} position out of ${totalBrands} brands.`;
+  }, [mentionsData]);
+
   const visibilityInsight = useMemo(() => {
     const { brandPosition, totalBrands } = visibilityData;
-    if (!brandPosition || brandPosition <= 0) return "Your brand is currently not ranking in AI search visibility.";
-    if (brandPosition === 1) return `Your brand is leading in AI visibility among ${totalBrands} brands.`;
-    return `Your brand ranked ${toOrdinal(brandPosition)} out of ${totalBrands} brands.`;
+    if (!brandPosition || brandPosition <= 0 || totalBrands <= 0) return null;
+    if (brandPosition === totalBrands) {
+      return `Your brand has the lowest AI Visibility score among the ${totalBrands} brands compared.`;
+    }
+    const pct = Math.round(((totalBrands - brandPosition) / totalBrands) * 100);
+    return `Your visibility score is higher than ${pct}% of brands tested for these queries.`;
   }, [visibilityData]);
-
-  const sentimentBullets = useMemo(() => {
-    if (!sentiment.summary) return [];
-    return sentiment.summary.split(/[●•]|\n-\s*|\n/).map(s => s.trim()).filter(s => s.length > 0).slice(0, 5);
-  }, [sentiment.summary]);
-
-  const avgResponseRate = useMemo(() => {
-    if (allBrandMentionRates.length === 0) return 0;
-    return Math.round(allBrandMentionRates.reduce((sum, b) => sum + b.responseRate, 0) / allBrandMentionRates.length);
-  }, [allBrandMentionRates]);
 
   if (!dataReady || !analyticsAvailable) {
     return (
-      <div className="flex items-center justify-center min-h-[320px]">
-        <div className="text-center">
-          <Search className="w-12 h-12 mx-auto mb-3 animate-spin" style={{ color: '#737E8F' }} />
-          <h2 className="text-xl font-semibold mb-1" style={{ color: '#1E2433' }}>Analysis Started</h2>
-          <p className="text-[13px]" style={{ color: '#737E8F' }}>Preparing your brand's comprehensive analysis.</p>
+      <div className="container mx-auto px-4 py-20">
+        <div className="flex items-center justify-center min-h-64">
+          <div className="text-center">
+            <Search className="w-16 h-16 mx-auto text-muted-foreground mb-4 animate-spin" />
+            <h2 className="text-2xl font-bold mb-2">Analysis Started</h2>
+            <p className="text-muted-foreground">
+              We are preparing your brand's comprehensive analysis.
+            </p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="w-full mx-auto px-5 md:px-10 py-6">
+    <div className="w-full max-w-full overflow-x-hidden p-4 md:p-6">
+      {/* Brand Info Bar - Only on Overview page */}
       <BrandInfoBar />
 
-      <SectionHeader title="Overall Insights" subtitle="Key performance metrics across AI platforms" />
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4" style={{ alignItems: 'stretch' }}>
-        {/* AI Visibility Card */}
-        <div className="ds-card flex flex-col" style={{ minHeight: '100%' }}>
-          <div className="flex items-center justify-between mb-1.5">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="w-4 h-4" style={{ color: '#4DA6FF' }} />
-              <span className="text-[14px] font-semibold" style={{ color: '#1E2433' }}>AI Visibility</span>
-              <Tooltip>
-                <TooltipTrigger><Info className="w-3.5 h-3.5" style={{ color: '#737E8F' }} /></TooltipTrigger>
-                <TooltipContent className="max-w-xs"><p className="text-xs">A weighted score based on where and how often your brand appears in AI responses.</p></TooltipContent>
-              </Tooltip>
-            </div>
-            <TierBadge tier={visibilityData.tier} />
-          </div>
-          <p className="text-[12px] mb-3" style={{ color: '#737E8F' }}>Where and how often your brand appears in AI responses</p>
-
-          <div className="mb-4">
-            <span className="text-[36px] font-bold leading-none" style={{ color: '#1E2433', fontVariantNumeric: 'tabular-nums' }}>{visibilityData.score}</span>
-            <span className="text-[10px] ml-1.5 uppercase tracking-wider font-semibold" style={{ color: '#737E8F' }}>Score</span>
-          </div>
-
-          <div className="space-y-3 flex-1">
-            {[
-              { label: "Top Position", value: visibilityData.positionBreakdown.topPosition, color: "#22C55E", icon: ArrowUp },
-              { label: "Mid Position (2–4)", value: visibilityData.positionBreakdown.midPosition, color: "#F5BE20", icon: ArrowRight },
-              { label: "Low Position", value: visibilityData.positionBreakdown.lowPosition, color: "#F25454", icon: ArrowDown },
-            ].map(({ label, value, color, icon: Icon }) => (
-              <div key={label} style={{ borderLeft: `3px solid ${color}`, paddingLeft: '8px' }}>
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-2">
-                    <Icon className="w-3.5 h-3.5" style={{ color }} />
-                    <span className="text-[12px] font-medium" style={{ color: '#1E2433' }}>{label}</span>
-                  </div>
-                  <span className="text-[13px] font-semibold" style={{ color }}>{value}%</span>
-                </div>
-                <div className="h-[5px] rounded-full" style={{ background: '#EFF3F8' }}>
-                  <div className="h-full rounded-full transition-all duration-700" style={{ width: `${value}%`, background: color }} />
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-auto pt-4">
-            <div className="ds-insight-chip">↑ {visibilityInsight}</div>
-          </div>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center gap-2">
+          <h1 className="text-xl md:text-2xl font-bold text-foreground">
+            Overall Insights
+          </h1>
+          <Tooltip>
+            <TooltipTrigger>
+              <Info className="w-4 h-4 text-muted-foreground cursor-help" />
+            </TooltipTrigger>
+            <TooltipContent className="max-w-xs">
+              <p>Comprehensive overview of your brand's AI performance.</p>
+            </TooltipContent>
+          </Tooltip>
         </div>
 
-        {/* Brand Mentions Card */}
-        <div className="ds-card flex flex-col" style={{ minHeight: '100%' }}>
-          <div className="flex items-center justify-between mb-1.5">
-            <div className="flex items-center gap-2">
-              <MessageSquare className="w-4 h-4" style={{ color: '#F5BE20' }} />
-              <span className="text-[14px] font-semibold" style={{ color: '#1E2433' }}>Brand Mentions</span>
+        {/* Main metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+          {/* AI Visibility Card */}
+          <div className="bg-card rounded-xl border p-4 md:p-6 shadow-sm">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <TrendingUp className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-semibold text-foreground">
+                    AI Visibility
+                  </span>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Info className="w-4 h-4 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      <p className="text-sm">
+                        Measures how prominently your brand appears in
+                        AI-generated responses. This score is calculated based
+                        on your selected prompts/queries and ranked against
+                        competitors.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+              </div>
+              <TierBadge tier={visibilityData.tier} />
             </div>
-            <TierBadge tier={mentionsData.tier} />
-          </div>
-          <p className="text-[12px] mb-3" style={{ color: '#737E8F' }}>% of AI responses mentioning each brand</p>
 
-          <div className="mb-1">
-            <span className="text-[36px] font-bold leading-none" style={{ color: '#1E2433', fontVariantNumeric: 'tabular-nums' }}>{mentionsData.brandMentions}</span>
-            <span className="text-[16px] font-bold" style={{ color: '#737E8F' }}>%</span>
-            <div className="text-[12px] mt-0.5" style={{ color: '#737E8F' }}>across {allBrandMentionRates.length} total mentions</div>
-          </div>
-
-          <div className="space-y-2 flex-1 relative">
-            {/* 50% dashed ref line label */}
-            <div className="text-right pr-[calc(50%+2px)]" style={{ marginBottom: '-4px' }}>
-              <span className="text-[10px]" style={{ color: '#737E8F' }}>50%</span>
+            <div className="grid grid-cols-[auto_1fr_auto] gap-3 text-xs text-muted-foreground mb-3 pb-2 border-b border-border">
+              <span>
+                A weighted score based on where and how often your brand appears
+                in AI responses across multiple LLMs
+              </span>
             </div>
-            {allBrandMentionRates.map((item, index) => (
-              <div key={`brand-${item.brand}-${index}`}>
-                <div className="flex items-center justify-between mb-0.5">
-                  <div className="flex items-center gap-1.5">
-                    {item.logo && (
-                      <img src={`https://www.google.com/s2/favicons?domain=${item.logo}&sz=16`} alt="" className="w-4 h-4 rounded-full object-contain"
-                        style={{ background: '#FFFFFF' }} onError={(e) => { e.currentTarget.src = item.logo; }} />
+
+            <div className="border-2 border-border rounded-lg p-3 mb-4">
+              <div className="text-center">
+                <span className="text-xl text-muted-foreground">
+                  AI Visibility Score:{" "}
+                </span>
+                <span className="text-2xl font-bold text-foreground">
+                  {visibilityData.score}
+                </span>
+              </div>
+            </div>
+
+            {/* Position Breakdown — Accordion */}
+            <div className="space-y-1">
+              {(
+                [
+                  {
+                    tier: 'top' as const,
+                    label: 'Top Position (Tier 1)',
+                    icon: <ArrowUp className="w-4 h-4 text-emerald-500" />,
+                    tooltip: 'Prompts where your brand was ranked as Tier 1 (t1) by an AI model.',
+                    badgeColor: (c: number) => c > 0
+                      ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                      : 'bg-muted text-muted-foreground',
+                  },
+                  {
+                    tier: 'mid' as const,
+                    label: 'Mid Position (Tier 2)',
+                    icon: <ArrowRight className="w-4 h-4 text-amber-500" />,
+                    tooltip: 'Prompts where your brand was ranked as Tier 2 (t2) by an AI model.',
+                    badgeColor: (c: number) => c > 0
+                      ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                      : 'bg-muted text-muted-foreground',
+                  },
+                  {
+                    tier: 'low' as const,
+                    label: 'Low Position (Tier 3)',
+                    icon: <ArrowDown className="w-4 h-4 text-red-500" />,
+                    tooltip: 'Prompts where your brand was ranked as Tier 3 (t3) by an AI model.',
+                    badgeColor: (_c: number) => 'bg-muted text-muted-foreground',
+                  },
+                ] as const
+              ).map(({ tier, label, icon, tooltip, badgeColor }) => {
+                const count = tierPrompts[tier].length;
+                const tierPct =
+                  tier === "top"
+                    ? visibilityData.positionBreakdown.topPosition
+                    : tier === "mid"
+                    ? visibilityData.positionBreakdown.midPosition
+                    : visibilityData.positionBreakdown.lowPosition;
+                const pct = Number.isFinite(tierPct) ? tierPct : 0;
+                const pctDisplay = pct.toFixed(1).replace(/\.0$/, "");
+                const isOpen = openTier === tier;
+                const PREVIEW = 3;
+                const isFullyExpanded = expandedTierFull === tier;
+                const visiblePrompts = isFullyExpanded
+                  ? tierPrompts[tier]
+                  : tierPrompts[tier].slice(0, PREVIEW);
+                const hasMore = count > PREVIEW;
+
+                return (
+                  <div key={tier} className="rounded-md border border-transparent hover:border-border/50 transition-colors">
+                    <div
+                      className="flex items-center justify-between text-sm cursor-pointer hover:bg-muted/50 rounded-md px-2 py-1.5 -mx-2 transition-colors"
+                      onClick={() => {
+                        setOpenTier(prev => prev === tier ? null : tier);
+                        setExpandedTierFull(null);
+                      }}
+                    >
+                      <div className="flex items-center gap-2">
+                        {icon}
+                        <span className="text-foreground">{label}</span>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="w-3 h-3 text-muted-foreground cursor-help" onClick={(e) => e.stopPropagation()} />
+                          </TooltipTrigger>
+                          <TooltipContent side="right" className="max-w-xs">
+                            <p className="text-sm">{tooltip}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs font-medium px-1.5 py-0.5 rounded-full ${badgeColor(count)}`}>
+                          {count} prompt{count !== 1 ? 's' : ''}
+                        </span>
+                        <span className="font-semibold text-foreground w-10 text-right">{pctDisplay}%</span>
+                        <ChevronDown
+                          className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Expanded prompt list */}
+                    {isOpen && (
+                      <div className="mt-2 mb-2 space-y-2" onClick={(e) => e.stopPropagation()}>
+                        {count === 0 ? (
+                          <p className="text-xs text-muted-foreground py-2">No prompts found for this tier.</p>
+                        ) : (
+                          <>
+                            {visiblePrompts.map((p, i) => {
+                              const llmEntries = Object.entries(p.llmRanks);
+                              return (
+                                <div key={i} className="bg-muted/60 rounded-lg border border-border p-3 flex flex-col gap-2">
+                                  <div className="flex items-start gap-2">
+                                    <span className="mt-0.5 w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />
+                                    <p className="text-xs text-foreground leading-relaxed">{p.query}</p>
+                                  </div>
+                                  <div className="flex flex-wrap items-center gap-1 pl-4">
+                                    {llmEntries.map(([llm]) => {
+                                      const { displayName, chipStyle } = resolveLLMChip(llm);
+                                      return (
+                                        <span key={llm} className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${chipStyle}`}>
+                                          {displayName}
+                                        </span>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                            {hasMore && !isFullyExpanded && (
+                              <button
+                                className="text-xs text-primary underline hover:opacity-80 transition-opacity"
+                                onClick={() => setExpandedTierFull(tier)}
+                              >
+                                Show all {count} prompts ↓
+                              </button>
+                            )}
+                            {isFullyExpanded && hasMore && (
+                              <button
+                                className="text-xs text-muted-foreground underline hover:opacity-80 transition-opacity"
+                                onClick={() => setExpandedTierFull(null)}
+                              >
+                                Show less ↑
+                              </button>
+                            )}
+                            <button
+                              className="text-xs text-muted-foreground hover:text-primary transition-colors block pt-1"
+                              onClick={() => navigate('/results/prompts')}
+                            >
+                              View All Prompts →
+                            </button>
+                          </>
+                        )}
+                      </div>
                     )}
-                    <span className={`text-[11px] font-medium ${item.isTestBrand ? '' : ''}`}
-                      style={{ color: item.isTestBrand ? '#4DA6FF' : '#1E2433', fontWeight: item.isTestBrand ? 700 : 500 }}>
-                      {item.brand}
+                  </div>
+                );
+              })}
+            </div>
+
+            {visibilityData.brandPosition > 0 && visibilityInsight && (
+              <p className="text-sm text-foreground font-medium border-t pt-3 mt-4">
+                {visibilityInsight}
+              </p>
+            )}
+          </div>
+
+          {/* Brand Mention Score Card */}
+          <div className="bg-card rounded-xl border border-border p-4 md:p-6 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-amber-500/10">
+                  <MessageSquare className="w-4 h-4 md:w-5 md:h-5 text-amber-500" />
+                </div>
+                <span className="font-semibold text-foreground">
+                  Brand Mentions
+                </span>
+              </div>
+              <TierBadge tier={mentionsData.tier} />
+            </div>
+
+            <div className="grid grid-cols-[auto_1fr_auto] gap-3 text-xs text-muted-foreground mb-3 pb-2 border-b border-border">
+              <span>% of AI responses where your brand is mentioned</span>
+            </div>
+
+            <div className="space-y-3 py-2">
+              {brandMentionRates.map((item, index) => {
+                return (
+                  <div
+                    key={`brand-mention-${item.brand}-${index}`}
+                    className="grid grid-cols-[auto_1fr_auto] gap-3 items-center"
+                  >
+                    <div className="flex items-center gap-2 min-w-[100px]">
+                      {getMedalIcon(index, item.isTestBrand)}
+                      <span
+                        className={`text-sm truncate ${
+                          item.isTestBrand
+                            ? "font-semibold text-primary"
+                            : "text-foreground"
+                        }`}
+                      >
+                        {item.brand}
+                      </span>
+                    </div>
+
+                    <div
+                      className="relative h-6 bg-muted rounded overflow-hidden cursor-pointer"
+                      onClick={() => {
+                        navigate(`/results/prompts?expandAll=true&viewType=brand`);
+                      }}
+                    >
+                      <div
+                        className={`absolute left-0 top-0 h-full rounded transition-all duration-700 ease-out ${
+                          item.isTestBrand
+                            ? "bg-gradient-to-r from-primary/80 to-primary"
+                            : index === 0
+                            ? "bg-gradient-to-r from-amber-500 to-amber-400"
+                            : "bg-gradient-to-r from-amber-600/80 to-amber-500/80"
+                        }`}
+                        style={{
+                          width: animatedBars ? `${item.responseRate}%` : "0%",
+                          transitionDelay: `${index * 150}ms`,
+                        }}
+                      />
+                    </div>
+
+                    <span
+                      className={`text-sm font-medium min-w-[50px] text-right ${
+                        item.isTestBrand ? "text-primary" : "text-foreground"
+                      }`}
+                    >
+                      {item.responseRate}%
                     </span>
                   </div>
-                  <span className="text-[11px] font-semibold" style={{ color: '#1E2433' }}>{item.responseRate}%</span>
-                </div>
-                <div className="h-[6px] rounded-full relative cursor-pointer" style={{ background: '#EFF3F8' }}
-                  onClick={() => navigate(`/results/prompts?expandAll=true&viewType=brand`)}>
-                  <div className="absolute top-0 bottom-0" style={{ left: '50%', width: '1px', borderLeft: '1px dashed #CBD5E1', zIndex: 2 }} />
-                  <div className="h-full rounded-full transition-all duration-700"
-                    style={{
-                      width: animatedBars ? `${item.responseRate}%` : "0%",
-                      background: item.isTestBrand ? '#4DA6FF' : index === 0 ? '#F5BE20' : '#CBD5E1',
-                      transitionDelay: `${index * 50}ms`,
-                    }}
-                  />
-                </div>
-              </div>
-            ))}
+                );
+              })}
+            </div>
+
+            {mentionsData.position > 0 && mentionsInsight && (
+              <p className="text-sm text-foreground font-medium border-t pt-3 mt-4">
+                {mentionsInsight}
+              </p>
+            )}
           </div>
 
-          <div className="mt-auto pt-3">
-            <div className="ds-insight-chip">Your brand ranked {toOrdinal(mentionsData.position)} of {mentionsData.totalBrands} brands</div>
-          </div>
-        </div>
-
-        {/* Sentiment Card */}
-        <div className="ds-card flex flex-col justify-between" style={{ minHeight: '100%' }}>
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
+          {/* Sentiment Card */}
+          <div className="bg-card rounded-xl border p-4 md:p-6 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <ThumbsUp className="w-4 h-4" style={{ color: '#22C55E' }} />
-                <span className="text-[14px] font-semibold" style={{ color: '#1E2433' }}>Sentiment</span>
+                <div className="p-2 rounded-lg bg-green-500/10">
+                  <ThumbsUp className="w-4 h-4 md:w-5 md:h-5 text-green-500" />
+                </div>
+                <span className="font-semibold text-foreground">Sentiment</span>
               </div>
               <TierBadge tier={sentiment.dominant_sentiment} />
             </div>
-            <p className="text-[12px] mb-3" style={{ color: '#737E8F' }}>How AI models perceive your brand's authority</p>
-
-            <div className="text-[24px] font-bold mb-3" style={{ color: '#1E2433' }}>{sentiment.dominant_sentiment}</div>
-
-            <div className="space-y-2">
-              {sentimentBullets.length > 0 ? (
-                sentimentBullets.map((bullet, index) => (
-                  <div key={`s-${index}`} className="flex items-start gap-2">
-                    <CheckCircle2 className="w-[14px] h-[14px] flex-shrink-0 mt-0.5" style={{ color: '#22C55E' }} />
-                    <span className="text-[13px] leading-relaxed" style={{ color: '#1E2433' }}>{bullet}</span>
-                  </div>
-                ))
-              ) : (
-                <div className="flex flex-col items-center justify-center py-8">
-                  <Info className="w-8 h-8 mb-2" style={{ color: '#94A3B8' }} />
-                  <span className="text-[13px]" style={{ color: '#737E8F' }}>No sentiment data available</span>
-                </div>
-              )}
+            <div className="grid grid-cols-[auto_1fr_auto] gap-3 text-xs text-muted-foreground mb-3 pb-2 border-b border-border">
+              <span>How AI models perceives your brand</span>
+            </div>
+            <div className="py-2">
+              <div className="space-y-2 pl-2 text-sm text-foreground leading-relaxed">
+                {sentiment.summary ? (
+                  parseSummaryToPoints(sentiment.summary).map((point, index) => (
+                    <p key={`sentiment-${index}`} className="flex items-start gap-2">
+                      <span className="text-foreground">●</span>
+                      <span>{point}</span>
+                    </p>
+                  ))
+                ) : (
+                  <p className="text-muted-foreground">No sentiment data available</p>
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <div className="mt-8 mb-4" style={{ borderBottom: '1px solid #E3EAF2' }} />
+        {/* Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+          <CompetitorComparisonChart />
+          <BrandMentionsRadar />
+        </div>
 
-      {/* Key Signals */}
-      {recommendations.length > 0 && (
-        <>
-          <SectionHeader title="Key Signals" subtitle="Data-driven actions from your analysis" />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-            {recommendations.slice(0, 4).map((rec: any, index: number) => (
-              <div key={index} className="ds-card flex flex-col" style={getImpactBorder(rec.impact)}>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className={getImpactBadgeClass(rec.impact)}>{cleanPriorityLabel(rec.priority_tier) || `${rec.impact} Impact`}</span>
-                </div>
-                <p className="text-[14px] font-medium leading-relaxed mb-3" style={{ color: '#1E2433', marginTop: '8px' }}>
-                  {rec.insight?.summary || rec.overall_insight || ""}
-                </p>
-                <div className="flex items-center justify-between mt-auto pt-3">
-                  <div className="flex items-center gap-2">
-                    <span className={getImpactBadgeClass(rec.overall_effort)}>Effort: {rec.overall_effort}</span>
-                    <span className={getImpactBadgeClass(rec.impact)}>Impact: {rec.impact}</span>
-                  </div>
-                  <button onClick={() => navigate('/results/recommendations')} className="text-[12px] font-medium flex items-center gap-1" style={{ color: '#4DA6FF' }}>
-                    View action →
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="mt-8 mb-4" style={{ borderBottom: '1px solid #E3EAF2' }} />
-        </>
-      )}
+        {/* Tables */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+          <LLMVisibilityTable />
+          <SourceIntelligence />
+        </div>
 
-      {/* Competitor Intelligence */}
-      <SectionHeader title="Competitor Intelligence" subtitle="Compare your AI visibility against competitors" />
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
-        <CompetitorComparisonChart />
-        <BrandMentionsRadar />
-      </div>
-
-      <div className="mt-8 mb-4" style={{ borderBottom: '1px solid #E3EAF2' }} />
-
-      {/* Platform & Model Analysis */}
-      <SectionHeader title="Platform & Model Analysis" subtitle="Performance across AI platforms" />
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
-        <LLMVisibilityTable />
-        <PlatformPresence />
-      </div>
-
-      <div className="mt-8 mb-4" style={{ borderBottom: '1px solid #E3EAF2' }} />
-
-      {/* Buyer Intent */}
-      <SectionHeader title="Buyer Intent & Conversion Dynamics" subtitle="Visibility across buyer journey stages" />
-      <div className="mt-4">
-        <IntentWiseScoring />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+          <IntentWiseScoring />
+        </div>
       </div>
     </div>
   );

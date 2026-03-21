@@ -1,29 +1,33 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
-  Paperclip,
-  Globe,
-  Lightbulb,
-  MoreHorizontal,
   Send,
-  MessageSquare,
   Copy,
   Check,
   Search,
   Sparkles,
-  X
+  X,
+  Gauge
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import {
   getChatHistory,
   sendChatMessage,
   ChatMessage,
-  ChatbotResponse
+  ChatUsage
 } from '@/apiHelpers';
+import { getSecureAccessToken } from '@/lib/secureStorage';
+import {
+  getUsageStatus,
+  getUsageProgress,
+  formatResetsAt,
+  USAGE_COPY,
+  USAGE_PROGRESS_COPY,
+  type UsageStatus
+} from '@/components/chat/usageUtils';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 interface ChatSidebarProps {
   productId: string;
@@ -41,9 +45,9 @@ const quickActions = [
   "What content should I focus on?",
   "How can I improve my rankings?",
   "What are my brand's weaknesses?",
-  "Explain my sentiment analysis",
-  "Which sources are most influential?",
-  "What's my brand tier ranking?",
+  "How have I trended over my last few runs?",
+  "What's changed in my visibility lately?",
+  "Compare my recent runs",
   "How do I compare to industry leaders?"
 ];
 
@@ -53,8 +57,15 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ productId, className, 
   const [isLoading, setIsLoading] = useState(false);
   const [suggestedQuestions, setSuggestedQuestions] = useState<string[]>([]);
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
+  const [usage, setUsage] = useState<ChatUsage | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const accessToken = localStorage.getItem("access_token") || "";
+  const accessToken = getSecureAccessToken();
+
+  const status: UsageStatus = getUsageStatus(usage);
+  const isLocked = status === 'locked';
+  const resetText = usage?.resets_at ? formatResetsAt(usage.resets_at) : '';
+  const usageProgress = getUsageProgress(usage);
+  const progressCopy = USAGE_PROGRESS_COPY[status];
 
   // Load chat history and suggested questions on mount
   useEffect(() => {
@@ -62,13 +73,17 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ productId, className, 
       if (!accessToken || !productId) return;
 
       try {
-        const historyMessages = await getChatHistory(productId, accessToken, 100);
+        const { messages: historyMessages, usage: historyUsage } = await getChatHistory(productId, accessToken, 100);
+
+        if (historyUsage) {
+          setUsage(historyUsage);
+        }
 
         // If no chat history exists, add a welcome message (local only, not sent to API)
         if (historyMessages.length === 0) {
           const welcomeMessage: ChatMessage = {
             id: 'welcome-message',
-            content: "👋 **Welcome to Geo AI.**\n\n&nbsp;\n\nI help you understand how your brand appears across AI search.\n\n&nbsp;\n\n🔍 Ask me to **check your visibility**, **audit citations**, or **compare competitors**.",
+            content: "👋 **Welcome to Geo AI.**\n\n&nbsp;\n\nI help you understand how your brand appears across AI search. **I also use your past runs**—so you can ask about trends, changes, or how you're doing over time.\n\n&nbsp;\n\n🔍 Ask me to **check your visibility**, **audit citations**, or **compare competitors**.",
             role: 'assistant',
             timestamp: new Date().toISOString()
           };
@@ -117,7 +132,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ productId, className, 
   }, [messages]);
 
   const handleSendMessage = async (messageText: string) => {
-    if (!messageText.trim() || isLoading || !productId) return;
+    if (!messageText.trim() || isLoading || isLocked || !productId) return;
 
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
@@ -131,43 +146,48 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ productId, className, 
     setIsLoading(true);
     setSuggestedQuestions([]); // Clear previous suggestions
 
-    try {
-      const response: ChatbotResponse | null = await sendChatMessage(messageText, productId, accessToken);
+    const result = await sendChatMessage(messageText, productId, accessToken);
 
-      if (response) {
-        // Add assistant answer
-        const assistantMessage: ChatMessage = {
-          id: (Date.now() + 1).toString(),
-          content: response.answer,
-          role: 'assistant',
-          timestamp: response.timestamp || new Date().toISOString()
-        };
-        setMessages(prev => [...prev, assistantMessage]);
+    if (result.ok) {
+      const response = result.data;
+      // Add assistant answer
+      const assistantMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        content: response.answer,
+        role: 'assistant',
+        timestamp: response.timestamp || new Date().toISOString()
+      };
+      setMessages(prev => [...prev, assistantMessage]);
 
-        // Update suggested questions and save to localStorage
-        if (response.suggested_questions && response.suggested_questions.length > 0) {
-          setSuggestedQuestions(response.suggested_questions);
-
-          // Save to localStorage (overwrite existing)
-          localStorage.setItem('geo_ai_latest_suggestions', JSON.stringify({
-            productId: productId,
-            suggestions: response.suggested_questions,
-            timestamp: new Date().toISOString()
-          }));
-        }
-      } else {
-        // Fallback response
-        const errorMessage: ChatMessage = {
-          id: (Date.now() + 1).toString(),
-          content: "I'm sorry, I'm having trouble connecting right now. Please try again later.",
-          role: 'assistant',
-          timestamp: new Date().toISOString()
-        };
-        setMessages(prev => [...prev, errorMessage]);
+      // Update usage from 200 response
+      if (response.usage) {
+        setUsage(response.usage);
       }
-    } catch (error) {
-      console.error('Failed to send message:', error);
-      // Fallback response
+
+      // Update suggested questions and save to localStorage
+      if (response.suggested_questions && response.suggested_questions.length > 0) {
+        setSuggestedQuestions(response.suggested_questions);
+
+        localStorage.setItem('geo_ai_latest_suggestions', JSON.stringify({
+          productId: productId,
+          suggestions: response.suggested_questions,
+          timestamp: new Date().toISOString()
+        }));
+      }
+    } else if (result.status === 429) {
+      // Limit hit: remove optimistic user message, set usage, add limit message
+      setUsage(result.usage);
+      setMessages(prev => prev.slice(0, -1));
+
+      const limitMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        content: `You've reached today's chat limit. Chat will be available again ${formatResetsAt(result.usage.resets_at)}.`,
+        role: 'assistant',
+        timestamp: new Date().toISOString()
+      };
+      setMessages(prev => [...prev, limitMessage]);
+    } else {
+      // Other error: fallback response
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         content: "I'm sorry, I'm having trouble connecting right now. Please try again later.",
@@ -175,9 +195,9 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ productId, className, 
         timestamp: new Date().toISOString()
       };
       setMessages(prev => [...prev, errorMessage]);
-    } finally {
-      setIsLoading(false);
     }
+
+    setIsLoading(false);
   };
 
   const handleQuickAction = (action: string) => {
@@ -197,32 +217,96 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ productId, className, 
     }
   };
 
+  const usagePopover = (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 px-3 rounded-full bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
+        >
+          <Gauge className="h-3.5 w-3.5 mr-1.5" />
+          <span className="text-xs font-medium">Usage</span>
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-72 p-4">
+        {usage ? (
+          <div className="space-y-3">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-gray-500">Today</p>
+              <p className="text-sm font-semibold text-gray-900">{progressCopy.label}</p>
+              <p className="text-xs text-gray-600 mt-0.5">{progressCopy.detail}</p>
+            </div>
+
+            <div
+              className="h-2.5 w-full rounded-full bg-gray-200 overflow-hidden"
+              role="progressbar"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={Math.round(usageProgress)}
+              aria-label="Chat usage progress"
+            >
+              <div
+                className={`h-full rounded-full transition-all duration-500 ${
+                  status === 'healthy'
+                    ? 'bg-emerald-500'
+                    : status === 'warning'
+                      ? 'bg-amber-400'
+                      : status === 'critical'
+                        ? 'bg-amber-500'
+                        : 'bg-rose-500'
+                }`}
+                style={{ width: `${usageProgress}%` }}
+              />
+            </div>
+
+            {resetText && (
+              <p className="text-xs text-gray-500">
+                Resets {resetText}
+              </p>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-1.5">
+            <p className="text-xs uppercase tracking-wide text-gray-500">Today</p>
+            <p className="text-sm font-semibold text-gray-900">Usage not available yet</p>
+            <p className="text-xs text-gray-600">
+              We will show your chat progress here once usage data is available.
+            </p>
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+
   return (
     <div className={`flex flex-col h-full bg-gray-50/50 ${className}`}>
       {/* Header */}
-      <div className={`flex items-center ${isMobile ? 'h-12 px-3' : 'h-16 px-6'} border-b bg-white shadow-sm z-10 relative`}>
-        <div className="flex items-center space-x-2 sm:space-x-3 flex-1">
+      <div className={`flex items-center ${isMobile ? 'h-12 px-3' : 'h-16 px-6'} border-b bg-white shadow-sm z-10 relative justify-between gap-2`}>
+        <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
           <div className={`${isMobile ? 'w-7 h-7' : 'w-9 h-9'} rounded-xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-md ring-2 ring-white`}>
             <Sparkles className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} text-white fill-white/20`} />
           </div>
-          <div className="flex flex-col">
-            <span className={`font-bold text-gray-900 ${isMobile ? 'text-base' : 'text-lg'} leading-tight`}>Geo AI</span>
+          <div className="flex flex-col min-w-0">
+            <span className={`font-bold text-gray-900 ${isMobile ? 'text-base' : 'text-lg'} leading-tight truncate`}>Geo AI</span>
             {!isMobile && (
-              <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wider">Assistant</span>
+              <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wider truncate">Assistant</span>
             )}
           </div>
         </div>
-        {/* Close Button - Only on Mobile */}
-        {isMobile && onClose && (
-          <Button
-            onClick={onClose}
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 rounded-full"
-          >
-            <X className="h-5 w-5" />
-          </Button>
-        )}
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Close Button - Only on Mobile */}
+          {isMobile && onClose && (
+            <Button
+              onClick={onClose}
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-full"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Messages Area */}
@@ -292,23 +376,51 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ productId, className, 
 
       {/* Input Area */}
       <div className="p-5 bg-gray-100">
+        {/* Usage nudge banner */}
+        {status !== 'healthy' && (
+          <div
+            className={`mb-3 px-3 py-2 rounded-xl text-sm ${
+              status === 'locked'
+                ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                : status === 'critical'
+                  ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                  : 'bg-amber-50/80 text-amber-700 border border-amber-100'
+            }`}
+          >
+            <p className="font-medium">{USAGE_COPY[status].nudge}</p>
+            {status === 'locked' && resetText && (
+              <p className="text-xs mt-0.5 opacity-90">
+                {USAGE_COPY.locked.subtext(resetText)}
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Suggested Questions */}
         {suggestedQuestions.length > 0 && (messages.length === 0 || suggestedQuestions.length > 0) ? (
           <div className="mb-3">
-            {messages.length > 0 && (
-              <div className="flex items-center gap-2 mb-2 ml-1">
-                <p className="text-xs text-gray-600">Suggested questions:</p>
-                <span className="inline-flex items-center justify-center h-5 min-w-5 px-1.5 text-xs font-medium text-blue-700 bg-blue-100 rounded-full">
-                  {suggestedQuestions.length}
-                </span>
+            <div className="flex items-center justify-between gap-2 mb-2 ml-1">
+              <div className="flex items-center gap-2 min-w-0">
+                {messages.length > 0 && (
+                  <>
+                    <p className="text-xs text-gray-600">Suggested questions:</p>
+                    <span className="inline-flex items-center justify-center h-5 min-w-5 px-1.5 text-xs font-medium text-blue-700 bg-blue-100 rounded-full">
+                      {suggestedQuestions.length}
+                    </span>
+                  </>
+                )}
               </div>
-            )}
+              <div className="shrink-0">
+                {usagePopover}
+              </div>
+            </div>
             <div className="flex gap-2 overflow-x-auto overflow-y-hidden pb-2 scrollbar-hide scroll-smooth -mx-1 px-1">
               {suggestedQuestions.map((action, index) => (
                 <Button
                   key={index}
                   variant="ghost"
-                  className="h-auto py-2 px-3 bg-gray-200 hover:bg-gray-300 text-gray-900 text-sm rounded-2xl whitespace-nowrap flex-shrink-0 transition-colors"
+                  disabled={isLocked}
+                  className="h-auto py-2 px-3 bg-gray-200 hover:bg-gray-300 text-gray-900 text-sm rounded-2xl whitespace-nowrap flex-shrink-0 transition-colors disabled:opacity-60 disabled:pointer-events-none"
                   onClick={() => handleQuickAction(action)}
                 >
                   {action}
@@ -318,39 +430,29 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ productId, className, 
           </div>
         ) : null}
 
-        {/* Input Field with Icons */}
+        {suggestedQuestions.length === 0 && (
+          <div className="mb-3 flex justify-end">
+            {usagePopover}
+          </div>
+        )}
+
+        {/* Input + send */}
         <div className="bg-white rounded-3xl shadow-sm p-4 mb-3">
           <input
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Ask anything"
+            placeholder={USAGE_COPY[status].placeholder}
             className="w-full text-base placeholder:text-gray-400 focus:outline-none mb-4"
-            disabled={isLoading}
+            disabled={isLoading || isLocked}
           />
 
-          {/* Icons Row */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-1">
-              <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full hover:bg-gray-100">
-                <Paperclip className="w-5 h-5 text-gray-500" />
-              </Button>
-              <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full hover:bg-gray-100">
-                <Globe className="w-5 h-5 text-gray-500" />
-              </Button>
-              <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full hover:bg-gray-100">
-                <Lightbulb className="w-5 h-5 text-gray-500" />
-              </Button>
-              <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full hover:bg-gray-100">
-                <MoreHorizontal className="w-5 h-5 text-gray-500" />
-              </Button>
-            </div>
-
+          <div className="flex items-center justify-end">
             <Button
               onClick={() => handleSendMessage(inputValue)}
-              disabled={!inputValue.trim() || isLoading}
+              disabled={!inputValue.trim() || isLoading || isLocked}
               size="icon"
-              className="h-10 w-10 rounded-xl bg-gray-900 hover:bg-gray-800 shrink-0"
+              className="h-10 w-10 rounded-xl bg-gray-900 hover:bg-gray-800 shrink-0 disabled:opacity-60"
             >
               <Send className="w-5 h-5" />
             </Button>

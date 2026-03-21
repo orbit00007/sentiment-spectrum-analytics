@@ -1,10 +1,27 @@
 import {
-  getBrandName, getBrandInfoWithLogos, getAnalytics,
+  getBrandName,
+  getBrandInfoWithLogos,
+  getAnalytics,
 } from "@/results/data/analyticsData";
-import { ChevronDown, Globe, FileText, Layers, Search, Lightbulb, Link2, FolderOpen } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  Globe,
+  FileText,
+  Layers,
+  Search,
+  Lightbulb,
+  Link2,
+  FolderOpen,
+} from "lucide-react";
 import { useState, useMemo } from "react";
 
-const DEFAULT_BRAND_DATA = { count: 0, score: 0, insight: "No insights were found" };
+// Default empty data constants
+const DEFAULT_BRAND_DATA = {
+  count: 0,
+  score: 0,
+  insight: "No insights were found",
+};
 
 const SourcesAllContent = () => {
   const brandName = getBrandName();
@@ -16,233 +33,481 @@ const SourcesAllContent = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showAllSources, setShowAllSources] = useState(false);
 
+  // Transform the new data structure
   const sourcesData = useMemo(() => {
-    if (!sourcesAndContentImpact || typeof sourcesAndContentImpact !== "object") return [];
-    return Object.entries(sourcesAndContentImpact).map(([sourceName, sourceData]: [string, any]) => {
-      const mentions = sourceData.mentions || {};
-      const pagesUsed = sourceData.pages_used || [];
-      let totalMentions = 0;
-      Object.values(mentions).forEach((m: any) => { totalMentions += m.count || 0; });
-      return {
-        name: sourceName, pagesUsed, mentions, totalMentions,
-        brandMentions: mentions[brandName]?.count || 0,
-        brandScore: Math.round((mentions[brandName]?.score || 0) * 100),
-        brandInsight: mentions[brandName]?.insight || "",
-      };
-    });
+    if (!sourcesAndContentImpact || typeof sourcesAndContentImpact !== "object")
+      return [];
+
+    return Object.entries(sourcesAndContentImpact).map(
+      ([sourceName, sourceData]: [string, any]) => {
+        const mentions = sourceData.mentions || {};
+        const pagesUsed = sourceData.pages_used || [];
+
+        // Calculate totals across all brands for this source
+        let totalMentions = 0;
+        Object.values(mentions).forEach((m: any) => {
+          totalMentions += m.count || 0;
+        });
+
+        return {
+          name: sourceName,
+          pagesUsed,
+          mentions,
+          totalMentions,
+          brandMentions: mentions[brandName]?.count || 0,
+          brandScore: Math.round((mentions[brandName]?.score || 0) * 100),
+          brandInsight: mentions[brandName]?.insight || "",
+        };
+      }
+    );
   }, [sourcesAndContentImpact, brandName]);
 
+  // Get sources organized by category
   const allSourcesData = useMemo(() => {
-    return sourcesData.map((category) => ({ categoryName: category.name, urls: category.pagesUsed })).filter((cat) => cat.urls.length > 0);
+    return sourcesData
+      .map((category) => ({
+        categoryName: category.name,
+        urls: category.pagesUsed,
+      }))
+      .filter((cat) => cat.urls.length > 0);
   }, [sourcesData]);
 
-  const filteredSources = sourcesData.filter((s) => s.name.toLowerCase().includes(searchQuery.toLowerCase()));
-  const filteredAllSources = allSourcesData.filter((cat) => cat.categoryName.toLowerCase().includes(searchQuery.toLowerCase()) || cat.urls.some((url) => url.toLowerCase().includes(searchQuery.toLowerCase())));
+  // Filter sources based on search
+  const filteredSources = sourcesData.filter((s) =>
+    s.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
+  const filteredAllSources = allSourcesData.filter(
+    (cat) =>
+      cat.categoryName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      cat.urls.some((url) =>
+        url.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+  );
+
+  // Total stats
   const totalSources = sourcesData.length;
-  const totalMentionsAll = sourcesData.reduce((acc, s) => acc + s.brandMentions, 0);
-  const totalUniqueSources = sourcesData.reduce((acc, s) => acc + s.pagesUsed.length, 0);
-  const avgSourcesPerCategory = totalSources > 0 ? Math.round(totalUniqueSources / totalSources) : 0;
+  const totalMentionsAll = sourcesData.reduce(
+    (acc, s) => acc + s.brandMentions,
+    0
+  );
+  const totalUniqueSources = sourcesData.reduce(
+    (acc, s) => acc + s.pagesUsed.length,
+    0
+  );
 
-  const getBrandLogo = (name: string) => brandInfo.find((b) => b.brand === name)?.logo;
+  const getBrandLogo = (name: string) => {
+    const brand = brandInfo.find((b) => b.brand === name);
+    return brand?.logo;
+  };
 
+  // Get top competitor for a source
   const getTopCompetitorForSource = (mentions: Record<string, any>) => {
-    let topBrand = "", topScore = 0, topLogo = "";
+    let topBrand = "";
+    let topScore = 0;
+    let topLogo = "";
+
     Object.entries(mentions).forEach(([brand, data]: [string, any]) => {
-      if (data.count > topScore) { topScore = data.count; topBrand = brand; topLogo = getBrandLogo(brand) || ""; }
+      if (data.count > topScore) {
+        topScore = data.count;
+        topBrand = brand;
+        topLogo = getBrandLogo(brand) || "";
+      }
     });
+
     return { brand: topBrand, count: topScore, logo: topLogo };
   };
 
-  const extractDomain = (url: string) => {
-    try { return new URL(url.startsWith("http") ? url : `https://${url}`).hostname; } catch { return ""; }
-  };
-
   return (
-    <div className="w-full mx-auto px-5 md:px-10 py-6">
-      {/* Header */}
-      <div className="ds-card">
-        <h1 className="text-[32px] font-bold" style={{ color: '#1E2433' }}>Sources</h1>
-        <p className="text-[13px] leading-relaxed mt-2 max-w-2xl" style={{ color: '#737E8F' }}>Where AI finds & cites your brand across the web</p>
-      </div>
-
-      {/* Stats Bar */}
-      <div className="ds-card mt-4" style={{ padding: '20px' }}>
-        <div className="flex items-center justify-between gap-4 flex-wrap">
-          {[
-            { value: totalSources, label: "Source Categories", color: '#4DA6FF' },
-            { value: totalMentionsAll, label: "Brand Mentions", color: totalMentionsAll === 0 ? '#F25454' : '#4DA6FF' },
-            { value: totalUniqueSources, label: "Unique Sources", color: '#4DA6FF' },
-            { value: avgSourcesPerCategory, label: "Sources per Category", color: '#4DA6FF' },
-          ].map(({ value, label, color }, i) => (
-            <div key={label} className="flex items-center gap-4">
-              {i > 0 && <div className="w-px h-10 hidden md:block" style={{ background: '#E3EAF2' }} />}
-              <div className="text-center">
-                <div className="text-[28px] font-bold leading-none" style={{ color, fontVariantNumeric: 'tabular-nums' }}>{value}</div>
-                <div className="text-[12px] mt-1" style={{ color: '#737E8F' }}>{label}</div>
+    <div className="p-3 md:p-6 space-y-4 md:space-y-6 w-full max-w-full overflow-x-hidden">
+      {/* Header with gradient */}
+      <div className="relative overflow-hidden rounded-xl md:rounded-2xl bg-gradient-to-r from-primary/20 via-primary/10 to-transparent border border-primary/20 p-4 md:p-6">
+        <div className="absolute top-0 right-0 w-32 md:w-48 h-32 md:h-48 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex items-center gap-2 md:gap-3">
+            <div className="p-2 md:p-3 bg-primary/10 rounded-lg md:rounded-xl">
+              <Layers className="w-5 h-5 md:w-6 md:h-6 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-xl md:text-2xl font-bold text-foreground">
+                Sources
+              </h1>
+              <p className="text-xs md:text-sm text-muted-foreground">
+                Where AI finds & cites your brand
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-10 justify-center">
+            <div className="text-center sm:text-center">
+              <div className="text-2xl md:text-3xl font-bold text-primary">
+                {totalSources}
+              </div>
+              <div className="text-[10px] md:text-xs text-muted-foreground">
+                source categories
               </div>
             </div>
-          ))}
+            <div className="text-center sm:text-center">
+              <div className="text-2xl md:text-3xl font-bold text-primary">
+                {totalMentionsAll}
+              </div>
+              <div className="text-[10px] md:text-xs text-muted-foreground">
+                mentions in total for {brandName}
+              </div>
+            </div>
+            <div className="text-center sm:text-center">
+              <div className="text-2xl md:text-3xl font-bold text-primary">
+                {totalUniqueSources}
+              </div>
+              <div className="text-[10px] md:text-xs text-muted-foreground">
+                unique sources
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Search */}
-      <div className="relative mt-4">
-        <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: '#737E8F' }} />
-        <input type="text" placeholder="Search source categories or URLs..."
-          value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-11 pr-4 py-3 rounded-lg text-sm placeholder:text-[#737E8F] focus:outline-none transition-all"
-          style={{ background: '#FFFFFF', border: '1px solid #E3EAF2', color: '#1E2433', boxShadow: 'var(--shadow-card)' }}
-          onFocus={(e) => { e.currentTarget.style.borderColor = '#4DA6FF'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(77,166,255,0.15)'; }}
-          onBlur={(e) => { e.currentTarget.style.borderColor = '#E3EAF2'; e.currentTarget.style.boxShadow = 'var(--shadow-card)'; }}
+      <div className="relative">
+        <Search className="absolute left-3 md:left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-muted-foreground" />
+        <input
+          type="text"
+          placeholder="Search source categories or URLs..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full pl-10 md:pl-12 pr-3 md:pr-4 py-2.5 md:py-3 bg-card border border-border rounded-lg md:rounded-xl text-sm md:text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
         />
       </div>
 
       {/* All Sources Dropdown */}
-      <div className="ds-card overflow-hidden mt-4" style={{ padding: 0 }}>
-        <div className="p-5 flex items-center justify-between gap-3 cursor-pointer hover:bg-[#F8FAFC] transition-colors"
-          onClick={() => setShowAllSources(!showAllSources)}>
+      <div className="bg-card rounded-xl border border-border overflow-hidden shadow-sm">
+        <div
+          className="p-4 md:p-5 flex items-center justify-between gap-3 cursor-pointer hover:bg-muted/30 transition-colors"
+          onClick={() => setShowAllSources(!showAllSources)}
+        >
           <div className="flex items-center gap-3 flex-1 min-w-0">
-            <ChevronDown className={`w-5 h-5 flex-shrink-0 transition-transform duration-200 ${showAllSources ? '' : '-rotate-90'}`}
-              style={{ color: showAllSources ? '#4DA6FF' : '#737E8F' }} />
-            <FolderOpen className="w-5 h-5 flex-shrink-0" style={{ color: '#4DA6FF' }} />
+            {showAllSources ? (
+              <ChevronDown className="w-5 h-5 text-primary flex-shrink-0" />
+            ) : (
+              <ChevronRight className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+            )}
+            <FolderOpen className="w-5 h-5 text-primary flex-shrink-0" />
             <div className="min-w-0">
-              <span className="font-semibold text-sm block" style={{ color: '#1E2433' }}>All Sources</span>
-              <span className="text-[12px]" style={{ color: '#737E8F' }}>{totalUniqueSources} total sources across all categories</span>
+              <span className="font-semibold text-foreground text-sm md:text-base block">
+                All Sources
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {totalUniqueSources} total sources across all categories
+              </span>
             </div>
           </div>
-          <span className="ds-badge ds-badge-info">{totalUniqueSources}</span>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <span className="inline-flex items-center justify-center px-3 py-1.5 rounded-full text-xs font-bold bg-primary/20 text-primary">
+              {totalUniqueSources}
+            </span>
+          </div>
         </div>
+
+        {/* All Sources Content */}
         {showAllSources && (
-          <div style={{ borderTop: '1px solid #E3EAF2', background: '#F8FAFC' }}>
-            <div className="p-5 space-y-6">
+          <div className="border-t border-border/50 bg-muted/20">
+            <div className="p-4 md:p-5 space-y-6">
               {filteredAllSources.map((category, idx) => (
                 <div key={idx}>
-                  <h4 className="text-sm font-semibold flex items-center gap-2 mb-3" style={{ color: '#1E2433' }}>
-                    <Layers className="w-4 h-4" style={{ color: '#4DA6FF' }} />{category.categoryName}
+                  <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                    <Layers className="w-4 h-4 text-primary" />
+                    {category.categoryName}
                   </h4>
                   <div className="space-y-2 pl-6">
-                    {category.urls.map((url, urlIdx) => {
-                      const domain = extractDomain(url);
-                      return (
-                        <div key={urlIdx} className="flex items-center gap-2">
-                          <span className="text-[11px] flex-shrink-0" style={{ color: '#737E8F' }}>{urlIdx + 1}.</span>
-                          {domain && <img src={`https://www.google.com/s2/favicons?domain=${domain}&sz=16`} alt="" className="w-4 h-4 flex-shrink-0" onError={(e) => { e.currentTarget.style.display = 'none'; }} />}
-                          <a href={url.startsWith("http") ? url : `https://${url}`} target="_blank" rel="noopener noreferrer"
-                            className="text-sm hover:underline truncate max-w-[500px]" style={{ color: '#4DA6FF' }} title={url}>{url}</a>
-                        </div>
-                      );
-                    })}
+                    {category.urls.map((url, urlIdx) => (
+                      <div key={urlIdx} className="flex items-start gap-2">
+                        <span className="text-xs text-muted-foreground mt-0.5 flex-shrink-0">
+                          {urlIdx + 1}.
+                        </span>
+                        <a
+                          href={url.startsWith("http") ? url : `https://${url}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-primary hover:underline break-all"
+                        >
+                          {url}
+                        </a>
+                      </div>
+                    ))}
                   </div>
                 </div>
               ))}
+
               {filteredAllSources.length === 0 && (
-                <div className="text-center py-6 text-sm" style={{ color: '#737E8F' }}>No sources found matching "{searchQuery}"</div>
+                <div className="text-center py-6 text-muted-foreground text-sm">
+                  No sources found matching &quot;{searchQuery}&quot;
+                </div>
               )}
             </div>
           </div>
         )}
       </div>
 
-      <div className="mt-4" style={{ borderTop: '1px solid #E3EAF2' }} />
+      <div className="border-t" />
 
-      {/* Source Categories */}
-      <div className="space-y-4 mt-4">
+      {/* Sources with Dropdown */}
+      <div className="space-y-4">
         {filteredSources.map((source) => {
           const isExpanded = expandedSource === source.name;
           const topCompetitor = getTopCompetitorForSource(source.mentions);
+          
+          // Use brand data if exists, otherwise use default
           const brandData = source.mentions[brandName] || DEFAULT_BRAND_DATA;
+          const hasBrandData = !!source.mentions[brandName];
 
           return (
-            <div key={source.name} className="ds-card overflow-hidden" style={{ padding: 0 }}>
-              <div className="p-5 flex items-center justify-between gap-3 cursor-pointer hover:bg-[#F8FAFC] transition-colors"
-                onClick={() => setExpandedSource(isExpanded ? null : source.name)}>
+            <div
+              key={source.name}
+              className="bg-card rounded-xl border border-border overflow-hidden shadow-sm"
+            >
+              {/* Source Header */}
+              <div
+                className="p-4 md:p-5 flex items-center justify-between gap-3 cursor-pointer hover:bg-muted/30 transition-colors"
+                onClick={() =>
+                  setExpandedSource(isExpanded ? null : source.name)
+                }
+              >
                 <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <ChevronDown className={`w-5 h-5 flex-shrink-0 transition-transform duration-200 ${isExpanded ? '' : '-rotate-90'}`}
-                    style={{ color: isExpanded ? '#4DA6FF' : '#737E8F' }} />
+                  {isExpanded ? (
+                    <ChevronDown className="w-5 h-5 text-primary flex-shrink-0" />
+                  ) : (
+                    <ChevronRight className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                  )}
                   <div className="min-w-0">
-                    <span className="font-semibold text-[14px] block truncate" style={{ color: '#1E2433' }}>{source.name}</span>
-                    <span className="text-[12px]" style={{ color: '#737E8F' }}>{source.pagesUsed.length} sources referenced</span>
+                    <span className="font-semibold text-foreground text-sm md:text-base block truncate">
+                      {source.name}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {source.pagesUsed.length} sources referenced
+                    </span>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 flex-shrink-0">
+                  {/* Brand Score Badge */}
                   <div className="flex flex-col items-center">
-                    <span className="inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold text-white"
-                      style={{ background: brandData.count > 0 ? '#22C55E' : '#F25454' }}>
+                    <span
+                      className={`inline-flex items-center justify-center w-10 h-10 rounded-full text-sm font-bold ${
+                        brandData.count >= 3
+                          ? "bg-green-500/20 text-green-500"
+                          : brandData.count >= 1
+                          ? "bg-amber-500/20 text-amber-500"
+                          : "bg-red-500/20 text-red-500"
+                      }`}
+                    >
                       {brandData.count}
                     </span>
-                    <span className="text-[10px] mt-1" style={{ color: '#737E8F' }}>Your brand</span>
+                    <span className="text-[10px] text-muted-foreground mt-1">
+                      Your brand's mentions
+                    </span>
                   </div>
+
+                  {/* Top Competitor */}
                   {topCompetitor.brand && (
-                    <div className="hidden md:flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: '#F8FAFC', border: '1px solid #E3EAF2' }}>
-                      <span className="text-[11px]" style={{ color: '#737E8F' }}>Top:</span>
-                      {topCompetitor.logo && <img src={topCompetitor.logo} alt="" className="w-4 h-4 rounded-full object-contain bg-white" />}
-                      <span className="text-[11px] font-medium" style={{ color: '#1E2433' }}>{topCompetitor.brand}</span>
-                      <span className="text-[11px] font-bold" style={{ color: '#4DA6FF' }}>{topCompetitor.count}</span>
+                    <div className="hidden md:flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-lg">
+                      <span className="text-xs text-muted-foreground">
+                        Top:
+                      </span>
+                      {topCompetitor.logo && (
+                        <img
+                          src={topCompetitor.logo}
+                          alt=""
+                          className="w-5 h-5 rounded-full object-contain bg-white"
+                        />
+                      )}
+                      <span className="text-xs font-medium">
+                        {topCompetitor.brand}
+                      </span>
+                      <span className="text-xs font-bold text-primary">
+                        Mentions: {topCompetitor.count}
+                      </span>
                     </div>
                   )}
                 </div>
               </div>
 
+              {/* Expanded Content */}
               {isExpanded && (
-                <div style={{ borderTop: '1px solid #E3EAF2', background: '#F8FAFC' }}>
-                  <div className="p-5 space-y-4">
-                    {source.brandInsight && (
-                      <div className="flex items-start gap-3 p-3 rounded-lg" style={{ background: '#FFFFFF', border: '1px solid #E3EAF2' }}>
-                        <Lightbulb className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: '#F5BE20' }} />
+                <div className="border-t border-border/50 bg-muted/20">
+                  <div className="p-4 md:p-5 space-y-4">
+                    {/* Brand Insight */}
+                    {hasBrandData && source.brandInsight && (
+                      <div className="flex items-start gap-3 p-3 bg-card rounded-lg border border-border/50">
+                        <Lightbulb className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
                         <div>
-                          <span className="text-[12px] font-semibold" style={{ color: '#1E2433' }}>Insight for {brandName}:</span>
-                          <p className="text-[13px] mt-1" style={{ color: '#737E8F' }}>{source.brandInsight}</p>
+                          <span className="text-xs font-semibold text-foreground">
+                            Insight for {brandName}:
+                          </span>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {source.brandInsight}
+                          </p>
                         </div>
                       </div>
                     )}
 
+                    {/* Pages Used */}
                     {source.pagesUsed.length > 0 && (
                       <div className="pt-2">
-                        <h4 className="text-sm font-semibold flex items-center gap-2 mb-3" style={{ color: '#1E2433' }}>
-                          <Link2 className="w-4 h-4" style={{ color: '#4DA6FF' }} />Sources Referenced ({source.pagesUsed.length})
+                        <h4 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-3">
+                          <Link2 className="w-4 h-4 text-primary" />
+                          Sources Referenced ({source.pagesUsed.length})
                         </h4>
                         <div className="flex flex-wrap gap-2">
-                          {source.pagesUsed.map((p: string, i: number) => {
-                            const domain = extractDomain(p);
-                            return (
-                              <a key={i} href={p.startsWith("http") ? p : `https://${p}`} target="_blank" rel="noopener noreferrer"
-                                onClick={(e) => e.stopPropagation()}
-                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[12px] hover:opacity-80 transition-opacity"
-                                style={{ background: '#EFF3F8', color: '#4DA6FF' }} title={p}>
-                                {domain && <img src={`https://www.google.com/s2/favicons?domain=${domain}&sz=16`} alt="" className="w-3.5 h-3.5" onError={(e) => { e.currentTarget.style.display = 'none'; }} />}
-                                <span className="max-w-[250px] truncate">{p.length > 55 ? p.substring(0, 55) + '…' : p}</span>
-                              </a>
-                            );
-                          })}
+                          {source.pagesUsed.map((p: string, i: number) => (
+                            <a
+                              key={i}
+                              href={p.startsWith("http") ? p : `https://${p}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-full text-xs hover:bg-primary/20 transition-colors"
+                            >
+                              <Globe className="w-3 h-3" />
+                              <span className="max-w-[300px] truncate">
+                                {p}
+                              </span>
+                            </a>
+                          ))}
                         </div>
                       </div>
                     )}
 
-                    <div className="pt-4" style={{ borderTop: '1px solid #E3EAF2' }}>
-                      <h4 className="text-sm font-semibold flex items-center gap-2 mb-3" style={{ color: '#1E2433' }}>
-                        <FileText className="w-4 h-4" style={{ color: '#4DA6FF' }} />Brand Mentions in "{source.name}"
+                    {/* Brand Mentions Table */}
+                    <div className="pt-4 border-t border-border/50">
+                      <h4 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-3">
+                        <FileText className="w-4 h-4 text-primary" />
+                        Brand Mentions in &quot;{source.name}&quot;
                       </h4>
-                      <div className="space-y-2">
-                        {Object.entries(source.mentions)
-                          .sort(([, a]: any, [, b]: any) => (b.count || 0) - (a.count || 0))
-                          .map(([brand, data]: [string, any]) => {
-                            const isPrimary = brand === brandName;
-                            const maxCount = Math.max(...Object.values(source.mentions).map((m: any) => m.count || 0), 1);
-                            return (
-                              <div key={brand} className="flex items-center gap-3 px-3 py-2 rounded-lg"
-                                style={isPrimary ? { background: '#EFF6FF', borderLeft: '3px solid #4DA6FF' } : {}}>
-                                <div className="flex items-center gap-2 w-32 flex-shrink-0">
-                                  {getBrandLogo(brand) && <img src={getBrandLogo(brand)} alt="" className="w-4 h-4 rounded-full bg-white" />}
-                                  <span className="text-[12px] font-medium" style={{ color: isPrimary ? '#4DA6FF' : '#1E2433' }}>{brand}</span>
-                                </div>
-                                <div className="flex-1 h-[6px] rounded-full" style={{ background: '#EFF3F8' }}>
-                                  <div className="h-full rounded-full transition-all duration-500" style={{ width: `${((data.count || 0) / maxCount) * 100}%`, background: isPrimary ? '#4DA6FF' : '#CBD5E1' }} />
-                                </div>
-                                <span className="text-[12px] font-bold w-6 text-right" style={{ color: (data.count || 0) === 0 ? '#CBD5E1' : '#1E2433' }}>{data.count || 0}</span>
-                              </div>
-                            );
-                          })}
+
+                      {/* Desktop Table */}
+                      <div className="hidden md:block bg-card rounded-lg border border-border overflow-hidden">
+                        {/* Table Header */}
+                        <div className="bg-muted/50 px-4 py-3 border-b border-border">
+                          <div className="grid grid-cols-12 gap-4 text-xs font-semibold text-muted-foreground uppercase">
+                            <span className="col-span-3">Brand</span>
+                            <span className="col-span-2 text-center">
+                              Mentions
+                            </span>
+                            <span className="col-span-2 text-center">
+                              Score
+                            </span>
+                            <span className="col-span-5">Insight</span>
+                          </div>
+                        </div>
+
+                        {/* Brand Row */}
+                        <div className="px-4 py-3 bg-primary/5">
+                          <div className="grid grid-cols-12 gap-4 items-center">
+                            {/* Brand */}
+                            <div className="col-span-3 flex items-center gap-2">
+                              {getBrandLogo(brandName) && (
+                                <img
+                                  src={getBrandLogo(brandName)}
+                                  alt=""
+                                  className="w-6 h-6 rounded-full bg-white border"
+                                />
+                              )}
+                              <span className="text-primary font-semibold">
+                                {brandName}
+                              </span>
+                            </div>
+
+                            {/* Mentions */}
+                            <div className="col-span-2 flex justify-center">
+                              <span
+                                className={`inline-flex items-center justify-center min-w-[2.5rem] h-10 px-3 rounded-full text-sm font-bold ${
+                                  brandData.count >= 3
+                                    ? "bg-green-500/20 text-green-500"
+                                    : brandData.count >= 1
+                                    ? "bg-amber-500/20 text-amber-500"
+                                    : "bg-red-500/20 text-red-500"
+                                }`}
+                              >
+                                {brandData.count}
+                              </span>
+                            </div>
+
+                            {/* Score */}
+                            <div className="col-span-2 flex justify-center">
+                              <span
+                                className={`text-sm font-bold ${
+                                  brandData.count >= 3
+                                    ? "text-green-500"
+                                    : brandData.count >= 1
+                                    ? "text-amber-500"
+                                    : "text-red-500"
+                                }`}
+                              >
+                                {Math.round(brandData.score * 100)}%
+                              </span>
+                            </div>
+
+                            {/* Insight */}
+                            <div className="col-span-5">
+                              <p className="text-xs text-muted-foreground">
+                                {brandData.insight}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Mobile Card */}
+                      <div className="md:hidden p-4 rounded-lg bg-primary/5 border border-primary/20">
+                        <div className="flex items-center gap-2 mb-3">
+                          {getBrandLogo(brandName) && (
+                            <img
+                              src={getBrandLogo(brandName)}
+                              alt=""
+                              className="w-6 h-6 rounded-full bg-white"
+                            />
+                          )}
+                          <span className="text-primary font-semibold">
+                            {brandName}
+                          </span>
+                        </div>
+
+                        <div className="ml-10 flex gap-20">
+                          <div className="text-center">
+                            <p
+                              className={`text-lg font-bold ${
+                                brandData.count >= 3
+                                  ? "text-green-500"
+                                  : brandData.count >= 1
+                                  ? "text-amber-500"
+                                  : "text-red-500"
+                              }`}
+                            >
+                              {brandData.count}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Mentions
+                            </p>
+                          </div>
+                          <div className="text-center">
+                            <p
+                              className={`text-lg font-bold ${
+                                brandData.count >= 3
+                                  ? "text-green-500"
+                                  : brandData.count >= 1
+                                  ? "text-amber-500"
+                                  : "text-red-500"
+                              }`}
+                            >
+                              {Math.round(brandData.score * 100)}%
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              AI Visibility Score
+                            </p>
+                          </div>
+                        </div>
+
+                        <p className="text-xs text-muted-foreground mt-3">
+                          {brandData.insight}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -251,11 +516,13 @@ const SourcesAllContent = () => {
             </div>
           );
         })}
-
-        {filteredSources.length === 0 && (
-          <div className="text-center py-8 ds-card text-sm" style={{ color: '#737E8F' }}>No sources found matching "{searchQuery}"</div>
-        )}
       </div>
+
+      {filteredSources.length === 0 && (
+        <div className="text-center py-8 md:py-12 text-muted-foreground bg-card rounded-xl border border-border text-sm md:text-base">
+          No source categories found matching &quot;{searchQuery}&quot;
+        </div>
+      )}
     </div>
   );
 };

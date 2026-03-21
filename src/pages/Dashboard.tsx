@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Layout } from "@/components/Layout";
+import { useAuth } from "@/contexts/auth-context";
 import { getDashboardUsers, DashboardUser } from "@/apiHelpers";
 import {
   Table,
@@ -53,6 +55,8 @@ type SortConfig = {
 
 
 export default function Dashboard() {
+  const navigate = useNavigate();
+  const { userRoleInt } = useAuth();
   const [users, setUsers] = useState<DashboardUser[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<DashboardUser[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -66,6 +70,13 @@ export default function Dashboard() {
     direction: "desc",
   });
   const { toast } = useToast();
+
+  // Only god role (0) can access dashboard
+  useEffect(() => {
+    if (userRoleInt > 0) {
+      navigate("/results", { replace: true });
+    }
+  }, [userRoleInt, navigate]);
 
   // Fetch users function (reusable)
   const fetchUsers = async (isRefresh = false) => {
@@ -84,7 +95,7 @@ export default function Dashboard() {
         toast({
           title: "Success",
           description: "Dashboard data refreshed successfully",
-          duration: 2000,
+          duration: Infinity,
         });
       }
     } catch (error: any) {

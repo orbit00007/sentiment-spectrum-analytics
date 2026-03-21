@@ -3,9 +3,11 @@
  * Used to scope localStorage/sessionStorage keys per user ID
  */
 
+import { getSecureUserId } from "@/lib/secureStorage";
+
 // Get user ID for use in storage keys
 export function getUserId(userId?: string): string {
-  return userId || localStorage.getItem("user_id") || "";
+  return userId || getSecureUserId() || "";
 }
 
 // Get user-ID-scoped key

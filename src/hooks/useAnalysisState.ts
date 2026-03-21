@@ -12,6 +12,7 @@
 
 import { useCallback, useSyncExternalStore } from "react";
 import { STORAGE_KEYS, getUserScopedKey } from "@/lib/storageKeys";
+import { getSecureUserId, setSecureUserId } from "@/lib/secureStorage";
 
 const STORAGE_KEY_PREFIX = "analysis_state";
 
@@ -40,7 +41,7 @@ function notifySubscribers() {
 
 // Get storage key scoped to user ID
 function getStorageKey(userId?: string): string {
-  const id = userId || currentUserId || localStorage.getItem("user_id") || "";
+  const id = userId || currentUserId || getSecureUserId() || "";
   if (id) {
     return `${STORAGE_KEY_PREFIX}_${id}`;
   }
@@ -80,7 +81,7 @@ function writeToStorage(state: AnalysisState) {
 
 // Initialize cache
 if (typeof window !== "undefined") {
-  currentUserId = localStorage.getItem("user_id");
+  currentUserId = getSecureUserId() || null;
   cachedState = readFromStorage();
 }
 
@@ -107,7 +108,7 @@ export function setAnalysisUserId(userId: string) {
   currentUserId = userId;
   
   try {
-    localStorage.setItem("user_id", userId);
+    setSecureUserId(userId);
   } catch {
     // ignore
   }

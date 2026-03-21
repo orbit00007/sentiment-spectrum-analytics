@@ -14,14 +14,12 @@ export function Toaster() {
   return (
     <ToastProvider>
       {toasts.map(function ({ id, title, description, action, ...props }) {
-        const isAnalysisUpdated = title === "Analysis Updated";
-        
         return (
-          <Toast key={id} {...props} className={isAnalysisUpdated ? "w-[340px]" : undefined}>
-            <div className="grid gap-1">
-              {title && <ToastTitle className={isAnalysisUpdated ? "text-base font-bold" : undefined}>{title}</ToastTitle>}
+          <Toast key={id} {...props}>
+            <div className="grid gap-1.5 w-full">
+              {title && <ToastTitle className="text-sm md:text-base font-semibold">{title}</ToastTitle>}
               {description && (
-                <ToastDescription className={isAnalysisUpdated ? "whitespace-pre-line font-mono text-xs leading-6" : "whitespace-pre-line"}>
+                <ToastDescription className="text-xs md:text-sm whitespace-pre-line leading-5 md:leading-6">
                   {description}
                 </ToastDescription>
               )}

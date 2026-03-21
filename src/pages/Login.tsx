@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Eye, EyeOff } from "lucide-react";
 import { getProductsByApplication } from "@/apiHelpers";
+import { getSecureAccessToken, getSecureApplicationId, setSecureProductId, setSecureKeywords, setSecureKeywordCount } from "@/lib/secureStorage";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -48,8 +49,8 @@ const Login = () => {
       });
 
       // Use the same logic as Index page
-      const accessToken = localStorage.getItem("access_token") || "";
-      const applicationId = localStorage.getItem("application_id") || "";
+      const accessToken = getSecureAccessToken();
+      const applicationId = getSecureApplicationId();
   
       if (!applicationId) {
         sessionStorage.setItem("app_initialized", "true");
@@ -63,9 +64,9 @@ const Login = () => {
         const firstProduct = products[0];
   
         // Store product id and keywords
-        localStorage.setItem("product_id", firstProduct.id);
-        localStorage.setItem("keywords", JSON.stringify(firstProduct.search_keywords || []));
-        localStorage.setItem("keyword_count", (firstProduct.search_keywords || []).length.toString());
+        setSecureProductId(firstProduct.id);
+        setSecureKeywords(firstProduct.search_keywords || []);
+        setSecureKeywordCount((firstProduct.search_keywords || []).length.toString());
         
         // Mark app as initialized to prevent auto-redirect on logo click
         sessionStorage.setItem("app_initialized", "true");
@@ -112,7 +113,7 @@ const Login = () => {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -124,7 +125,7 @@ const Login = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Password</Label>
               <div className="relative">
                 <Input
                   id="password"

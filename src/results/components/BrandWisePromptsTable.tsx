@@ -15,9 +15,14 @@ interface Brand {
   mention_breakdown?: Record<string, number>;
 }
 
+interface LLMPromptResult {
+  tier: string;
+  brands: string[];
+}
+
 interface Prompt {
   query: string;
-  brands_per_llm: Record<string, string[]>;
+  result: Record<string, LLMPromptResult>;
 }
 
 interface BrandWisePromptsTableProps {
@@ -50,7 +55,7 @@ const BrandWisePromptsTable = ({
     const foundInLLMs: string[] = [];
     
     modelNames.forEach((modelName) => {
-      const brandsForLLM = prompt.brands_per_llm[modelName] || [];
+      const brandsForLLM = prompt.result[modelName]?.brands || [];
       if (brandsForLLM.includes(brandName)) {
         foundInLLMs.push(getModelDisplayName(modelName));
       }
