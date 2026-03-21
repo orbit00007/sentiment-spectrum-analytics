@@ -622,26 +622,40 @@ export const Header = () => {
               </DropdownMenu>
             )}
 
-            {/* New Analysis Button */}
+            {/* New Analysis / Plan Expired Button */}
             <Button
               variant="outline"
               size="sm"
               className={cn(
                 "text-[10px] md:text-sm px-2 py-1 md:px-4 md:py-2 gap-1 h-7 md:h-9",
-                actionsDisabled
-                  ? "bg-muted text-muted-foreground cursor-not-allowed opacity-60"
-                  : "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground"
+                isPlanExpired
+                  ? "bg-amber-500 text-white hover:bg-amber-600 hover:text-white border-amber-500"
+                  : actionsDisabled
+                    ? "bg-muted text-muted-foreground cursor-not-allowed opacity-60"
+                    : "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground"
               )}
-              onClick={handleNewAnalysis}
-              disabled={actionsDisabled}
+              onClick={isPlanExpired ? () => navigate("/billing", { state: { from: location.pathname } }) : handleNewAnalysis}
+              disabled={!isPlanExpired && actionsDisabled}
             >
-              <Plus className="w-3 h-3 md:w-4 md:h-4" />
-              <span className="hidden sm:inline">
-                {isCooldownBlocked
-                  ? `New Analysis (${cooldownTimeLeft})`
-                  : "New Analysis"}
-              </span>
-              <span className="sm:hidden">New</span>
+              {isPlanExpired ? (
+                <>
+                  <AlertTriangle className="w-3 h-3 md:w-4 md:h-4" />
+                  <span className="hidden sm:inline">
+                    {isFreePlan ? "Choose a Plan" : "Plan Expired"}
+                  </span>
+                  <span className="sm:hidden">{isFreePlan ? "Upgrade" : "Expired"}</span>
+                </>
+              ) : (
+                <>
+                  <Plus className="w-3 h-3 md:w-4 md:h-4" />
+                  <span className="hidden sm:inline">
+                    {isCooldownBlocked
+                      ? `New Analysis (${cooldownTimeLeft})`
+                      : "New Analysis"}
+                  </span>
+                  <span className="sm:hidden">New</span>
+                </>
+              )}
             </Button>
 
             {/* User Menu */}
