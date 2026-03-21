@@ -587,23 +587,35 @@ export const Header = () => {
                   <div className="border-t border-border p-1">
                     <DropdownMenuItem
                       onClick={handleRegenerateAnalysis}
-                      disabled={actionsDisabled}
+                      disabled={actionsDisabled && !isPlanExpired}
                       className={cn(
-                        "flex items-center gap-2 px-3 py-2 text-sm font-medium text-primary focus:text-primary cursor-pointer",
-                        actionsDisabled && "opacity-50 cursor-not-allowed"
+                        "flex items-center gap-2 px-3 py-2 text-sm font-medium cursor-pointer",
+                        isPlanExpired
+                          ? "text-amber-600 focus:text-amber-600"
+                          : "text-primary focus:text-primary",
+                        actionsDisabled && !isPlanExpired && "opacity-50 cursor-not-allowed"
                       )}
                     >
-                      <RefreshCw
-                        className={cn(
-                          "w-3.5 h-3.5",
-                          isRegenerating && "animate-spin"
-                        )}
-                      />
-                      <span>
-                        {isCooldownBlocked
-                          ? `Regenerate (${cooldownTimeLeft})`
-                          : "Regenerate Analysis"}
-                      </span>
+                      {isPlanExpired ? (
+                        <>
+                          <AlertTriangle className="w-3.5 h-3.5" />
+                          <span>{isFreePlan ? "Choose a Plan" : "Plan Expired"}</span>
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw
+                            className={cn(
+                              "w-3.5 h-3.5",
+                              isRegenerating && "animate-spin"
+                            )}
+                          />
+                          <span>
+                            {isCooldownBlocked
+                              ? `Regenerate (${cooldownTimeLeft})`
+                              : "Regenerate Analysis"}
+                          </span>
+                        </>
+                      )}
                     </DropdownMenuItem>
                   </div>
                 </DropdownMenuContent>
