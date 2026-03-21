@@ -259,6 +259,11 @@ export const Header = () => {
     getCompletionShownKey,
   ]);
 
+  // Plan expiry check
+  const isPlanExpired = planExpiresAt ? Date.now() / 1000 > planExpiresAt : false;
+  const isFreePlan = pricingPlan === "free";
+  const isPaidPlanExpired = isPlanExpired && !isFreePlan;
+
   // Compute cooldown using plan-aware midnight-based logic
   const planLimits =
     PLAN_LIMITS[pricingPlan as PricingPlanName] || PLAN_LIMITS.free;
@@ -299,7 +304,8 @@ export const Header = () => {
     isRegenerating ||
     analysisLocked ||
     isCooldownBlocked ||
-    !canGenerateAnalytics;
+    !canGenerateAnalytics ||
+    isPlanExpired;
 
   useEffect(() => {
     const storedProductId = getSecureProductId();
