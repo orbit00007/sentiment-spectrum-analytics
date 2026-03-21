@@ -20,6 +20,7 @@ import {
   MailPlus,
   Lock,
   Settings,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -259,6 +260,11 @@ export const Header = () => {
     getCompletionShownKey,
   ]);
 
+  // Plan expiry check
+  const isPlanExpired = planExpiresAt ? Date.now() / 1000 > planExpiresAt : false;
+  const isFreePlan = pricingPlan === "free";
+  const isPaidPlanExpired = isPlanExpired && !isFreePlan;
+
   // Compute cooldown using plan-aware midnight-based logic
   const planLimits =
     PLAN_LIMITS[pricingPlan as PricingPlanName] || PLAN_LIMITS.free;
@@ -299,7 +305,8 @@ export const Header = () => {
     isRegenerating ||
     analysisLocked ||
     isCooldownBlocked ||
-    !canGenerateAnalytics;
+    !canGenerateAnalytics ||
+    isPlanExpired;
 
   useEffect(() => {
     const storedProductId = getSecureProductId();
@@ -324,6 +331,10 @@ export const Header = () => {
   };
 
   const handleNewAnalysis = () => {
+    if (isPlanExpired) {
+      navigate("/billing", { state: { from: location.pathname } });
+      return;
+    }
     if (actionsDisabled) return;
 
     const currentWebsite = products?.[0]?.website || "";
@@ -340,6 +351,10 @@ export const Header = () => {
   };
 
   const handleRegenerateAnalysis = async () => {
+    if (isPlanExpired) {
+      navigate("/billing", { state: { from: location.pathname } });
+      return;
+    }
     if (!productId) return;
     if (actionsDisabled) return;
 
@@ -573,49 +588,75 @@ export const Header = () => {
                   <div className="border-t border-border p-1">
                     <DropdownMenuItem
                       onClick={handleRegenerateAnalysis}
-                      disabled={actionsDisabled}
+                      disabled={actionsDisabled && !isPlanExpired}
                       className={cn(
-                        "flex items-center gap-2 px-3 py-2 text-sm font-medium text-primary focus:text-primary cursor-pointer",
-                        actionsDisabled && "opacity-50 cursor-not-allowed"
+                        "flex items-center gap-2 px-3 py-2 text-sm font-medium cursor-pointer",
+                        isPlanExpired
+                          ? "text-amber-600 focus:text-amber-600"
+                          : "text-primary focus:text-primary",
+                        actionsDisabled && !isPlanExpired && "opacity-50 cursor-not-allowed"
                       )}
                     >
-                      <RefreshCw
-                        className={cn(
-                          "w-3.5 h-3.5",
-                          isRegenerating && "animate-spin"
-                        )}
-                      />
-                      <span>
-                        {isCooldownBlocked
-                          ? `Regenerate (${cooldownTimeLeft})`
-                          : "Regenerate Analysis"}
-                      </span>
+                      {isPlanExpired ? (
+                        <>
+                          <AlertTriangle className="w-3.5 h-3.5" />
+                          <span>{isFreePlan ? "Choose a Plan" : "Plan Expired"}</span>
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw
+                            className={cn(
+                              "w-3.5 h-3.5",
+                              isRegenerating && "animate-spin"
+                            )}
+                          />
+                          <span>
+                            {isCooldownBlocked
+                              ? `Regenerate (${cooldownTimeLeft})`
+                              : "Regenerate Analysis"}
+                          </span>
+                        </>
+                      )}
                     </DropdownMenuItem>
                   </div>
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
 
-            {/* New Analysis Button */}
+            {/* New Analysis / Plan Expired Button */}
             <Button
               variant="outline"
               size="sm"
               className={cn(
                 "text-[10px] md:text-sm px-2 py-1 md:px-4 md:py-2 gap-1 h-7 md:h-9",
-                actionsDisabled
-                  ? "bg-muted text-muted-foreground cursor-not-allowed opacity-60"
-                  : "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground"
+                isPlanExpired
+                  ? "bg-amber-500 text-white hover:bg-amber-600 hover:text-white border-amber-500"
+                  : actionsDisabled
+                    ? "bg-muted text-muted-foreground cursor-not-allowed opacity-60"
+                    : "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground"
               )}
-              onClick={handleNewAnalysis}
-              disabled={actionsDisabled}
+              onClick={isPlanExpired ? () => navigate("/billing", { state: { from: location.pathname } }) : handleNewAnalysis}
+              disabled={!isPlanExpired && actionsDisabled}
             >
-              <Plus className="w-3 h-3 md:w-4 md:h-4" />
-              <span className="hidden sm:inline">
-                {isCooldownBlocked
-                  ? `New Analysis (${cooldownTimeLeft})`
-                  : "New Analysis"}
-              </span>
-              <span className="sm:hidden">New</span>
+              {isPlanExpired ? (
+                <>
+                  <AlertTriangle className="w-3 h-3 md:w-4 md:h-4" />
+                  <span className="hidden sm:inline">
+                    {isFreePlan ? "Choose a Plan" : "Plan Expired"}
+                  </span>
+                  <span className="sm:hidden">{isFreePlan ? "Upgrade" : "Expired"}</span>
+                </>
+              ) : (
+                <>
+                  <Plus className="w-3 h-3 md:w-4 md:h-4" />
+                  <span className="hidden sm:inline">
+                    {isCooldownBlocked
+                      ? `New Analysis (${cooldownTimeLeft})`
+                      : "New Analysis"}
+                  </span>
+                  <span className="sm:hidden">New</span>
+                </>
+              )}
             </Button>
 
             {/* User Menu */}

@@ -174,14 +174,15 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ productId, className, 
           timestamp: new Date().toISOString()
         }));
       }
-    } else if (result.status === 429) {
+    } else if ('status' in result && result.status === 429) {
       // Limit hit: remove optimistic user message, set usage, add limit message
-      setUsage(result.usage);
+      const usage429 = (result as { ok: false; status: 429; usage: ChatUsage }).usage;
+      setUsage(usage429);
       setMessages(prev => prev.slice(0, -1));
 
       const limitMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
-        content: `You've reached today's chat limit. Chat will be available again ${formatResetsAt(result.usage.resets_at)}.`,
+        content: `You've reached today's chat limit. Chat will be available again ${formatResetsAt(usage429.resets_at)}.`,
         role: 'assistant',
         timestamp: new Date().toISOString()
       };

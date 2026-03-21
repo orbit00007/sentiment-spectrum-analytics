@@ -14,12 +14,39 @@ import { getUserScopedKey, STORAGE_KEYS } from "@/lib/storageKeys";
 import { useAuth } from "@/contexts/auth-context";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, Sparkles, ArrowRight } from "lucide-react";
+import planExpiredImage from "@/assets/plan-expired.png";
 
 const scrollToTop = () => {
   window.scrollTo({ top: 0, left: 0, behavior: "auto" });
 };
 
-/** Plan expiration banner — shown when plan is expired */
+/** Full-page overlay when free trial has expired — blocks all results */
+const FreeTrialExpiredOverlay = () => {
+  const navigate = useNavigate();
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 py-12">
+      <img
+        src={planExpiredImage}
+        alt="Plan expired"
+        className="w-full max-w-2xl rounded-2xl border border-border shadow-lg mb-8"
+      />
+      <h2 className="text-2xl font-bold text-foreground mb-2">Your free trial has ended</h2>
+      <p className="text-muted-foreground text-center max-w-md mb-6">
+        Choose a plan to continue accessing your dashboard, analytics, and AI insights.
+      </p>
+      <Button
+        size="lg"
+        className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold"
+        onClick={() => navigate("/billing")}
+      >
+        <Sparkles className="w-4 h-4 mr-2" />
+        Choose a Plan
+      </Button>
+    </div>
+  );
+};
+
+/** Plan expiration banner — shown when paid plan is expired */
 const PlanExpiredBanner = () => {
   const { pricingPlan, planExpiresAt } = useAuth();
   const navigate = useNavigate();
@@ -27,42 +54,12 @@ const PlanExpiredBanner = () => {
   if (!planExpiresAt) return null;
   const isExpired = Date.now() / 1000 > planExpiresAt;
   if (!isExpired) return null;
+  // Free plan shows full overlay, not banner
+  if (pricingPlan === "free") return null;
 
-  // Free trial expired
-  if (pricingPlan === "free") {
-    return (
-      <div className="mx-auto max-w-4xl mt-6 mb-4 px-4">
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30 p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-start gap-4">
-            <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center">
-              <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-            </div>
-            <div>
-              <p className="font-semibold text-amber-900 dark:text-amber-200 text-sm">
-                Your free trial is over
-              </p>
-              <p className="text-amber-700 dark:text-amber-400 text-xs mt-0.5">
-                Please choose a plan to continue accessing your dashboard and analytics.
-              </p>
-            </div>
-          </div>
-          <Button
-            size="sm"
-            className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold flex-shrink-0"
-            onClick={() => navigate("/billing")}
-          >
-            <Sparkles className="w-3.5 h-3.5 mr-1.5" />
-            Choose a Plan
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  // Paid plan expired (launch, grow, enterprise)
   return (
     <div className="mx-auto max-w-4xl mt-6 mb-4 px-4">
-      <div className="rounded-2xl border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30 p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="rounded-2xl border-2 border-amber-400 bg-amber-50 dark:border-amber-600 dark:bg-amber-950/30 p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-start gap-4">
           <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center">
             <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
@@ -78,11 +75,10 @@ const PlanExpiredBanner = () => {
         </div>
         <Button
           size="sm"
-          variant="outline"
-          className="border-amber-300 text-amber-800 hover:bg-amber-100 dark:border-amber-700 dark:text-amber-200 dark:hover:bg-amber-900/50 font-semibold flex-shrink-0"
+          className="bg-amber-500 text-white hover:bg-amber-600 font-semibold flex-shrink-0 border-0"
           onClick={() => navigate("/billing")}
         >
-          Go to plans <ArrowRight className="w-3.5 h-3.5 mr-1.5" />
+          Renew Plan <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
         </Button>
       </div>
     </div>
@@ -91,7 +87,11 @@ const PlanExpiredBanner = () => {
 
 const ResultsContent = () => {
   const { activeTab, dataReady, currentAnalytics, analyticsList, isAnalyzing } = useResults();
+  const { pricingPlan, planExpiresAt } = useAuth();
   const location = useLocation();
+
+  // Check if free plan is expired — block everything
+  const isFreePlanExpired = pricingPlan === "free" && planExpiresAt && Date.now() / 1000 > planExpiresAt;
 
   // Pipeline should ONLY be shown when navigating from the input page
   // (location.state?.isNew === true) for the very first analysis
@@ -119,6 +119,15 @@ const ResultsContent = () => {
     null;
   const isAlreadyCompleted =
     currentAnalytics?.status?.toLowerCase() === "completed";
+
+  // Free plan expired: show full-page overlay, no API calls / results
+  if (isFreePlanExpired) {
+    return (
+      <Layout>
+        <FreeTrialExpiredOverlay />
+      </Layout>
+    );
+  }
 
   if (!pipelineDone) {
     return (
