@@ -662,7 +662,9 @@ const Billing = () => {
                       ? plan.monthlyPrice
                       : plan.quarterlyPrice;
                   const isCurrent =
-                    planState === "active" && plan.name === currentPlan;
+                    plan.planKey === pricingPlan;
+                  const isCurrentExpired = isCurrent && planState === "expiring";
+                  const isCurrentActive = isCurrent && planState === "active";
                   const isPopular = !!plan.popular && !isCurrent;
 
                   return (
@@ -682,7 +684,9 @@ const Billing = () => {
                       className={`relative flex flex-col rounded-2xl bg-card cursor-pointer border-2 ${
                         isPopular
                           ? "border-primary shadow-[0_0_0_3px_hsl(var(--primary)/0.08),0_8px_24px_hsl(var(--primary)/0.12)]"
-                          : isCurrent
+                          : isCurrentExpired
+                          ? "border-amber-400 shadow-[0_0_0_3px_rgba(251,191,36,0.15)]"
+                          : isCurrentActive
                           ? "border-success"
                           : "border-border shadow-card"
                       }`}
@@ -702,7 +706,15 @@ const Billing = () => {
                           </span>
                         </div>
                       )}
-                      {isCurrent && (
+                      {isCurrentExpired && (
+                        <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-10">
+                          <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-bold bg-amber-500 text-white shadow-sm">
+                            <AlertTriangle className="w-2.5 h-2.5" />
+                            Plan Expired
+                          </span>
+                        </div>
+                      )}
+                      {isCurrentActive && !isPopular && (
                         <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-10">
                           <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-bold bg-emerald-600 text-white shadow-sm">
                             <Check className="w-2.5 h-2.5" />
