@@ -895,6 +895,13 @@ export const ResultsProvider: React.FC<ResultsProviderProps> = ({ children }) =>
 
     if (!productId) return;
 
+    // Block all API calls for free expired plans
+    if (isFreePlanExpired) {
+      console.log("🚫 [POLL] Free plan expired — blocking all API calls");
+      setIsLoading(false);
+      return;
+    }
+
     if (currentProductIdRef.current === productId && hasFetchedRef.current) {
       return;
     }
