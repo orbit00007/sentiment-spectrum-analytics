@@ -976,6 +976,7 @@ export const ResultsProvider: React.FC<ResultsProviderProps> = ({ children }) =>
 
   useEffect(() => {
     if (!productData?.id) return;
+    if (isFreePlanExpired) return; // Block API for free expired
     if (analyticsList.length > 0) {
       console.log("⏭️ [EFFECT] Analytics list already loaded, skipping refresh");
       return;
@@ -983,12 +984,13 @@ export const ResultsProvider: React.FC<ResultsProviderProps> = ({ children }) =>
     
     console.log("📋 [EFFECT] Initial analytics list load for product:", productData.id);
     refreshAnalyticsList();
-  }, [productData?.id, refreshAnalyticsList, analyticsList.length]);
+  }, [productData?.id, refreshAnalyticsList, analyticsList.length, isFreePlanExpired]);
 
   // Independent trend summary fetch — not plan-capped, does not affect any existing state
   useEffect(() => {
     const productId = productData?.id;
     if (!productId) return;
+    if (isFreePlanExpired) return; // Block API for free expired
     getAnalyticsTrendSummary(productId)
       .then((runs) => {
         if (mountedRef.current) setTrendRuns(runs);
