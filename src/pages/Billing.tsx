@@ -789,7 +789,14 @@ const Billing = () => {
                         </p>
 
                         {/* CTA */}
-                        {isCurrent ? (
+                        {isCurrent && isCurrentExpired ? (
+                          <button
+                            onClick={() => openCheckout(plan.name, price!)}
+                            className="w-full py-2.5 rounded-xl text-sm font-semibold border-2 border-amber-400 bg-amber-50 text-amber-700 hover:bg-amber-100 transition-all duration-200 mb-5"
+                          >
+                            Renew Plan
+                          </button>
+                        ) : isCurrent ? (
                           <button
                             disabled
                             className="w-full py-2.5 rounded-xl text-sm font-semibold border border-emerald-200 bg-emerald-50 text-emerald-600 cursor-default mb-5"
@@ -806,14 +813,14 @@ const Billing = () => {
                               boxShadow: "0 3px 10px rgba(245,158,11,0.35)",
                             }}
                           >
-                            Get Started →
+                            {getCtaLabel()} →
                           </button>
                         ) : price ? (
                           <button
                             onClick={() => openCheckout(plan.name, price)}
                             className="w-full py-2.5 rounded-xl text-sm font-semibold border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 hover:border-gray-300 transition-all duration-200 mb-5"
                           >
-                            Get Started
+                            {getCtaLabel()}
                           </button>
                         ) : (
                           <a href="mailto:support@georankers.co" className="w-full py-2.5 rounded-xl text-sm font-semibold border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 transition-colors mb-5 block text-center">

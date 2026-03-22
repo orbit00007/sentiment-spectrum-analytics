@@ -1096,18 +1096,27 @@ function HistoryRow({
         {userRoleInt >= 4 ? (
           <span className="text-xs text-muted-foreground italic">Your account is Viewer only</span>
         ) : !canExport ? (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              navigate("/billing", { state: { from: "/settings" } });
-            }}
-            className="text-muted-foreground"
-          >
-            <Sparkles className="w-3.5 h-3.5 mr-1.5" />
-            Upgrade to Grow
-          </Button>
+          (() => {
+            const isPlanExpired = planExpiresAt && Date.now() / 1000 > planExpiresAt;
+            return (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate("/billing", { state: { from: "/settings" } });
+                }}
+                className={isPlanExpired ? "text-amber-600 border-amber-300 hover:bg-amber-50" : "text-muted-foreground"}
+              >
+                {isPlanExpired ? (
+                  <AlertTriangle className="w-3.5 h-3.5 mr-1.5" />
+                ) : (
+                  <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                )}
+                {isPlanExpired ? "Plan Expired" : "Upgrade to Grow"}
+              </Button>
+            );
+          })()
         ) : (
           <Button
             variant="outline"
