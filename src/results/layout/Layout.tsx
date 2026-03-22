@@ -14,6 +14,7 @@ import {
 import { ChatCacheClearTrigger } from "@/hooks/useChatCacheClear";
 import { PanelLeft } from "lucide-react";
 import { getSecureProductId } from "@/lib/secureStorage";
+import { useAuth } from "@/contexts/auth-context";
 
 interface LayoutProps {
   children: React.ReactNode;
