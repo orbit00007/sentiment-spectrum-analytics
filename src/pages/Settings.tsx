@@ -1149,6 +1149,7 @@ interface AnalysisRunHistoryTabProps {
   userRoleInt: number;
   pricingPlan: string;
   planLimits: (typeof PLAN_LIMITS)[PricingPlanName];
+  planExpiresAt: number | null;
   navigate: ReturnType<typeof useNavigate>;
   toast: ReturnType<typeof useToast>["toast"];
   historyPage: number;
@@ -1165,6 +1166,7 @@ function AnalysisRunHistoryTab({
   userRoleInt,
   pricingPlan,
   planLimits,
+  planExpiresAt,
   navigate,
   toast,
   historyPage,
