@@ -683,6 +683,7 @@ export default function Settings() {
                   userRoleInt={userRoleInt}
                   pricingPlan={pricingPlan}
                   planLimits={planLimits}
+                  planExpiresAt={planExpiresAt ?? null}
                   navigate={navigate}
                   toast={toast}
                   historyPage={historyPage}
