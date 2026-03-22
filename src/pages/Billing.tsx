@@ -571,14 +571,26 @@ const Billing = () => {
                   </p>
                 </div>
               </div>
-              <Button
-                size="sm"
-                variant="outline"
-                className="border-amber-300 text-amber-800 hover:bg-amber-100"
-                onClick={openRenewCheckout}
-              >
-                Renew Plan
-              </Button>
+              {isAdmin ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-amber-300 text-amber-800 hover:bg-amber-100"
+                  onClick={openRenewCheckout}
+                >
+                  Renew Plan
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled
+                  title={`Only admins can manage the subscription. Your role: ${getRoleName(userRoleInt)}`}
+                  className="border-amber-200 text-amber-400 cursor-not-allowed opacity-50"
+                >
+                  Renew Plan
+                </Button>
+              )}
             </motion.div>
           )}
 
@@ -790,12 +802,22 @@ const Billing = () => {
 
                         {/* CTA */}
                         {isCurrent && isCurrentExpired ? (
-                          <button
-                            onClick={() => openCheckout(plan.name, price!)}
-                            className="w-full py-2.5 rounded-xl text-sm font-semibold border-2 border-amber-400 bg-amber-50 text-amber-700 hover:bg-amber-100 transition-all duration-200 mb-5"
-                          >
-                            Renew Plan
-                          </button>
+                          isAdmin ? (
+                            <button
+                              onClick={() => openCheckout(plan.name, price!)}
+                              className="w-full py-2.5 rounded-xl text-sm font-semibold border-2 border-amber-400 bg-amber-50 text-amber-700 hover:bg-amber-100 transition-all duration-200 mb-5"
+                            >
+                              Renew Plan
+                            </button>
+                          ) : (
+                            <button
+                              disabled
+                              title={`Only admins can manage the subscription. Your role: ${getRoleName(userRoleInt)}`}
+                              className="w-full py-2.5 rounded-xl text-sm font-semibold border-2 border-amber-200 bg-amber-50/50 text-amber-400 cursor-not-allowed opacity-50 mb-5"
+                            >
+                              Renew Plan
+                            </button>
+                          )
                         ) : isCurrent ? (
                           <button
                             disabled
@@ -804,27 +826,51 @@ const Billing = () => {
                             ✓ Current Plan
                           </button>
                         ) : isPopular ? (
-                          <button
-                            onClick={() => openCheckout(plan.name, price!)}
-                            className="w-full py-2.5 rounded-xl text-sm font-bold text-amber-950 mb-5 transition-all duration-200 hover:brightness-105 active:scale-[0.98]"
-                            style={{
-                              background:
-                                "linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)",
-                              boxShadow: "0 3px 10px rgba(245,158,11,0.35)",
-                            }}
-                          >
-                            {getCtaLabel()} →
-                          </button>
+                          isAdmin ? (
+                            <button
+                              onClick={() => openCheckout(plan.name, price!)}
+                              className="w-full py-2.5 rounded-xl text-sm font-bold text-amber-950 mb-5 transition-all duration-200 hover:brightness-105 active:scale-[0.98]"
+                              style={{
+                                background:
+                                  "linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)",
+                                boxShadow: "0 3px 10px rgba(245,158,11,0.35)",
+                              }}
+                            >
+                              {getCtaLabel()} →
+                            </button>
+                          ) : (
+                            <button
+                              disabled
+                              title={`Only admins can manage the subscription. Your role: ${getRoleName(userRoleInt)}`}
+                              className="w-full py-2.5 rounded-xl text-sm font-bold text-amber-950/40 mb-5 cursor-not-allowed opacity-50"
+                              style={{
+                                background:
+                                  "linear-gradient(135deg, #fbbf2480 0%, #f59e0b80 100%)",
+                              }}
+                            >
+                              {getCtaLabel()}
+                            </button>
+                          )
                         ) : price ? (
-                          <button
-                            onClick={() => openCheckout(plan.name, price)}
-                            className="w-full py-2.5 rounded-xl text-sm font-semibold border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 hover:border-gray-300 transition-all duration-200 mb-5"
-                          >
-                            {getCtaLabel()}
-                          </button>
+                          isAdmin ? (
+                            <button
+                              onClick={() => openCheckout(plan.name, price)}
+                              className="w-full py-2.5 rounded-xl text-sm font-semibold border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 hover:border-gray-300 transition-all duration-200 mb-5"
+                            >
+                              {getCtaLabel()}
+                            </button>
+                          ) : (
+                            <button
+                              disabled
+                              title={`Only admins can manage the subscription. Your role: ${getRoleName(userRoleInt)}`}
+                              className="w-full py-2.5 rounded-xl text-sm font-semibold border border-gray-200 bg-white text-gray-400 cursor-not-allowed opacity-50 mb-5"
+                            >
+                              {getCtaLabel()}
+                            </button>
+                          )
                         ) : (
                           <a href="mailto:support@georankers.co" className="w-full py-2.5 rounded-xl text-sm font-semibold border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 transition-colors mb-5 block text-center">
-                            Contact Sales →
+                            Contact Us →
                           </a>
                         )}
 
@@ -1138,12 +1184,24 @@ const Billing = () => {
                   </div>
 
                   <div className="flex gap-2 pt-1">
-                    <button
+                  {isAdmin ? (
+                      <button
                       onClick={() => setActiveTab("plans")}
-                      className="px-4 py-2 rounded-xl text-sm font-semibold border border-border bg-card text-foreground hover:bg-muted transition-all"
-                    >
-                      ⬆ Change Plan
-                    </button>
+                        className="px-4 py-2 rounded-xl text-sm font-semibold border border-border bg-card text-foreground hover:bg-muted transition-all"
+                      >
+                        ⬆ Change Plan
+                      </button>
+                    ) : (
+                      <button
+                        disabled
+                        title={`Only admins can cancel the subscription. Your role: ${getRoleName(
+                          userRoleInt
+                        )}`}
+                        className="px-4 py-2 rounded-xl text-sm font-semibold bg-muted border border-border text-muted-foreground cursor-not-allowed opacity-50"
+                      >
+                        ⬆ Change Plan
+                      </button>
+                    )}
                     {/* ── Cancel Subscription — admin/god only ── */}
                     {isAdmin ? (
                       <button

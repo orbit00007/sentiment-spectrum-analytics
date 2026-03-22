@@ -159,7 +159,6 @@ export default function Settings() {
   const application = applications?.[0];
   const [companyName, setCompanyName] = useState(analyticsCompanyName || "");
   const [websiteUrl, setWebsiteUrl] = useState(analyticsWebsite || "");
-  const [industry, setIndustry] = useState("");
   const [aboutCompany, setAboutCompany] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
@@ -217,7 +216,6 @@ export default function Settings() {
       else if (product?.website) setWebsiteUrl(product.website);
     }
     if (product) {
-      setIndustry(product.business_domain || "");
       setAboutCompany(product.description || "");
     }
     if (user) {
@@ -504,17 +502,6 @@ export default function Settings() {
                           className="bg-background cursor-default pointer-events-none select-none"
                         />
                       </div>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                        Industry
-                      </Label>
-                      <Input
-                        value={industry}
-                        readOnly
-                        className="bg-background cursor-default pointer-events-none select-none"
-                      />
                     </div>
 
                     <div className="space-y-1.5">
