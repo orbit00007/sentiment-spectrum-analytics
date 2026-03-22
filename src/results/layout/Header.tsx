@@ -455,13 +455,15 @@ export const Header = () => {
               )}
             </button>
 
-            <button
-              onClick={toggleSidebar}
-              className="hidden md:flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted transition-colors"
-              aria-label="Toggle sidebar"
-            >
-              <PanelLeft className="h-5 w-5 text-foreground" />
-            </button>
+            {!isFreePlanExpired && (
+              <button
+                onClick={toggleSidebar}
+                className="hidden md:flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted transition-colors"
+                aria-label="Toggle sidebar"
+              >
+                <PanelLeft className="h-5 w-5 text-foreground" />
+              </button>
+            )}
 
             <Link to="/" className="flex items-center gap-1.5 md:gap-2">
               <span className="text-lg md:text-2xl font-bold gradient-text">
