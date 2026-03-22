@@ -263,6 +263,7 @@ export const Header = () => {
   // Plan expiry check
   const isPlanExpired = planExpiresAt ? Date.now() / 1000 > planExpiresAt : false;
   const isFreePlan = pricingPlan === "free";
+  const isFreePlanExpired = isFreePlan && isPlanExpired;
   const isPaidPlanExpired = isPlanExpired && !isFreePlan;
 
   // Compute cooldown using plan-aware midnight-based logic
