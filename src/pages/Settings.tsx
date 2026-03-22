@@ -1283,6 +1283,7 @@ function AnalysisRunHistoryTab({
                   idx={idx}
                   canExport={canExport}
                   userRoleInt={userRoleInt}
+                  planExpiresAt={planExpiresAt ?? null}
                   navigate={navigate}
                   toast={toast}
                 />
