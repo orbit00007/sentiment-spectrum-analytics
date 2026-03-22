@@ -663,7 +663,19 @@ const Billing = () => {
                       : plan.quarterlyPrice;
                   const isCurrent =
                     plan.planKey === pricingPlan;
-                  const isCurrentExpired = isCurrent && planState === "expiring";
+                  const isCurrentExpired = isCurrent && (planState === "expiring" || (planState === "trial" && expiryInfo?.isExpired));
+                  
+                  // Plan hierarchy for upgrade/downgrade labels
+                  const planHierarchy: Record<string, number> = { free: 0, launch: 1, grow: 2, enterprise: 3, agency: 4 };
+                  const currentPlanLevel = planHierarchy[pricingPlan] ?? 0;
+                  const thisPlanLevel = planHierarchy[plan.planKey] ?? 0;
+                  const isUpgrade = thisPlanLevel > currentPlanLevel;
+                  const getCtaLabel = () => {
+                    if (isCurrent && isCurrentExpired) return "Renew Plan";
+                    if (isCurrent) return "✓ Current Plan";
+                    if (isUpgrade) return `Upgrade to ${plan.name}`;
+                    return `Downgrade to ${plan.name}`;
+                  };
                   const isCurrentActive = isCurrent && planState === "active";
                   const isPopular = !!plan.popular && !isCurrent;
 
