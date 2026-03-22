@@ -23,25 +23,101 @@ const scrollToTop = () => {
 /** Full-page overlay when free trial has expired — blocks all results */
 const FreeTrialExpiredOverlay = () => {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Freeze the chatbot: block all pointer events and clicks on it
+    const freezeChatbot = () => {
+      // Target common chatbot widget selectors — adjust if your chatbot uses a specific id/class
+      const selectors = [
+        '[id*="geo-ai"]',
+        '[id*="geoai"]',
+        '[class*="geo-ai"]',
+        '[class*="geoai"]',
+        '[id*="chat-widget"]',
+        '[class*="chat-widget"]',
+        '[id*="chatbot"]',
+        '[class*="chatbot"]',
+        "iframe[title*='chat' i]",
+        "iframe[title*='geo' i]",
+      ];
+      selectors.forEach((sel) => {
+        document.querySelectorAll<HTMLElement>(sel).forEach((el) => {
+          el.style.pointerEvents = "none";
+          el.style.opacity = "0.4";
+          el.style.cursor = "not-allowed";
+          el.setAttribute("aria-disabled", "true");
+          // Prevent clicks from reaching it
+          el.addEventListener("click", (e) => e.stopPropagation(), true);
+        });
+      });
+    };
+
+    // Run immediately and observe for late-mounted widgets
+    freezeChatbot();
+    const observer = new MutationObserver(freezeChatbot);
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 py-12">
+    <div
+      className="relative w-full overflow-hidden"
+      style={{ minHeight: "calc(100vh - 60px)" }}
+    >
+      {/* Full-width blurred dashboard screenshot as background */}
       <img
         src={planExpiredImage}
-        alt="Plan expired"
-        className="w-full max-w-2xl rounded-2xl border border-border shadow-lg mb-8"
+        alt=""
+        aria-hidden="true"
+        className="absolute inset-0 w-md h-md"
+        style={{
+          filter: "",
+          transform: "scale(1)",
+          userSelect: "none",
+          pointerEvents: "none",
+        }}
       />
-      <h2 className="text-2xl font-bold text-foreground mb-2">Your free trial has ended</h2>
-      <p className="text-muted-foreground text-center max-w-md mb-6">
-        Choose a plan to continue accessing your dashboard, analytics, and AI insights.
-      </p>
-      <Button
-        size="lg"
-        className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold"
-        onClick={() => navigate("/billing")}
+
+      {/* Dark gradient overlay — stronger at bottom so CTA pops */}
+      <div className="absolute inset-0" />
+
+      {/* Centred content sitting above the image */}
+      <div
+        className="relative z-10 items-center justify-center text-center px-6"
+        style={{ position: "absolute", inset: 0 }}
       >
-        <Sparkles className="w-4 h-4 mr-2" />
-        Choose a Plan
-      </Button>
+
+        <div className="flex flex-col bg-white m-10 p-10 items-center justify-center text-center">
+          <h2 className="text-4xl font-bold text-foreground mb-3 drop-shadow-lg">
+            Your free trial has ended
+          </h2>
+
+          <p className="text-foreground text-lg max-w-md mb-10">
+            Choose a plan to continue accessing your dashboard, analytics, and
+            AI insights.
+          </p>
+
+          <Button
+            size="lg"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold px-8 py-6 text-base shadow-xl"
+            onClick={() => navigate("/billing")}
+          >
+            <Sparkles className="w-5 h-5 mr-2" />
+            Choose a Plan
+          </Button>
+
+          <p className="mt-6 text-foreground text-sm">
+            Questions? Contact{" "}
+            <a
+              href="mailto:support@georankers.com"
+              className="underline text-primary hover:text-white transition-colors"
+            >
+              support@georankers.com
+            </a>
+          </p>
+        </div>
+      </div>
     </div>
   );
 };
@@ -66,7 +142,8 @@ const PlanExpiredBanner = () => {
           </div>
           <div>
             <p className="font-semibold text-amber-900 dark:text-amber-200 text-sm">
-              Your {pricingPlan.charAt(0).toUpperCase() + pricingPlan.slice(1)} plan has expired
+              Your {pricingPlan.charAt(0).toUpperCase() + pricingPlan.slice(1)}{" "}
+              plan has expired
             </p>
             <p className="text-amber-700 dark:text-amber-400 text-xs mt-0.5">
               Renew your plan to restore full access to analytics and features.
@@ -86,12 +163,16 @@ const PlanExpiredBanner = () => {
 };
 
 const ResultsContent = () => {
-  const { activeTab, dataReady, currentAnalytics, analyticsList, isAnalyzing } = useResults();
+  const { activeTab, dataReady, currentAnalytics, analyticsList, isAnalyzing } =
+    useResults();
   const { pricingPlan, planExpiresAt } = useAuth();
   const location = useLocation();
 
   // Check if free plan is expired — block everything
-  const isFreePlanExpired = pricingPlan === "free" && planExpiresAt && Date.now() / 1000 > planExpiresAt;
+  const isFreePlanExpired =
+    pricingPlan === "free" &&
+    planExpiresAt &&
+    Date.now() / 1000 > planExpiresAt;
 
   // Pipeline should ONLY be shown when navigating from the input page
   // (location.state?.isNew === true) for the very first analysis
@@ -120,7 +201,7 @@ const ResultsContent = () => {
   const isAlreadyCompleted =
     currentAnalytics?.status?.toLowerCase() === "completed";
 
-  // Free plan expired: show full-page overlay, no API calls / results
+  // Free plan expired: show full-page overlay inside Layout (keeps nav visible)
   if (isFreePlanExpired) {
     return (
       <Layout>
@@ -194,7 +275,9 @@ const NewResultsContainer = () => {
     console.log("🎬 [NewResultsContainer] Mount - checking auth");
     const accessToken = localStorage.getItem("access_token");
     if (!accessToken) {
-      console.log("🔒 [NewResultsContainer] No token - will redirect in context");
+      console.log(
+        "🔒 [NewResultsContainer] No token - will redirect in context"
+      );
     }
     const timer = setTimeout(() => {
       setInitializing(false);
