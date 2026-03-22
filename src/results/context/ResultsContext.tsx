@@ -80,8 +80,14 @@ export const ResultsProvider: React.FC<ResultsProviderProps> = ({ children }) =>
   const [analyticsVersion, setAnalyticsVersion] = useState<number>(0);
   const [nextAnalyticsGenerationTime, setNextAnalyticsGenerationTime] = useState<string | null>(null);
 
-  const { products } = useAuth();
+  const { products, pricingPlan, planExpiresAt } = useAuth();
   const { toast } = useToast();
+
+  // Block all API calls for free plan expired users
+  const isFreePlanExpired =
+    pricingPlan === "free" &&
+    planExpiresAt != null &&
+    Date.now() / 1000 > planExpiresAt;
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -889,6 +895,13 @@ export const ResultsProvider: React.FC<ResultsProviderProps> = ({ children }) =>
 
     if (!productId) return;
 
+    // Block all API calls for free expired plans
+    if (isFreePlanExpired) {
+      console.log("🚫 [POLL] Free plan expired — blocking all API calls");
+      setIsLoading(false);
+      return;
+    }
+
     if (currentProductIdRef.current === productId && hasFetchedRef.current) {
       return;
     }
@@ -963,6 +976,7 @@ export const ResultsProvider: React.FC<ResultsProviderProps> = ({ children }) =>
 
   useEffect(() => {
     if (!productData?.id) return;
+    if (isFreePlanExpired) return; // Block API for free expired
     if (analyticsList.length > 0) {
       console.log("⏭️ [EFFECT] Analytics list already loaded, skipping refresh");
       return;
@@ -970,12 +984,13 @@ export const ResultsProvider: React.FC<ResultsProviderProps> = ({ children }) =>
     
     console.log("📋 [EFFECT] Initial analytics list load for product:", productData.id);
     refreshAnalyticsList();
-  }, [productData?.id, refreshAnalyticsList, analyticsList.length]);
+  }, [productData?.id, refreshAnalyticsList, analyticsList.length, isFreePlanExpired]);
 
   // Independent trend summary fetch — not plan-capped, does not affect any existing state
   useEffect(() => {
     const productId = productData?.id;
     if (!productId) return;
+    if (isFreePlanExpired) return; // Block API for free expired
     getAnalyticsTrendSummary(productId)
       .then((runs) => {
         if (mountedRef.current) setTrendRuns(runs);

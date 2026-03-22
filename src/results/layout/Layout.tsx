@@ -14,6 +14,7 @@ import {
 import { ChatCacheClearTrigger } from "@/hooks/useChatCacheClear";
 import { PanelLeft } from "lucide-react";
 import { getSecureProductId } from "@/lib/secureStorage";
+import { useAuth } from "@/contexts/auth-context";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -74,6 +75,13 @@ const ChatBubbleButton = ({
 export const Layout = ({ children, hideNav }: LayoutProps) => {
   const [isMobileChatOpen, setIsMobileChatOpen] = useState(false);
   const productId = getSecureProductId() || "";
+  const { pricingPlan, planExpiresAt } = useAuth();
+
+  // Check if free plan is expired — hide chatbot entirely
+  const isFreePlanExpired =
+    pricingPlan === "free" &&
+    planExpiresAt &&
+    Date.now() / 1000 > planExpiresAt;
 
   const handleCloseMobileChat = useCallback(() => {
     setIsMobileChatOpen(false);
@@ -88,20 +96,24 @@ export const Layout = ({ children, hideNav }: LayoutProps) => {
       defaultOpen={false}
       style={{ "--sidebar-width": "24rem" } as React.CSSProperties}
     >
-      <ChatCacheClearTrigger
-        productId={productId}
-        isMobileChatOpen={isMobileChatOpen}
-      />
-      {/* Desktop Sidebar */}
-      <Sidebar
-        side="left"
-        collapsible="offcanvas"
-        className="no-print hidden md:flex"
-      >
-        <SidebarContent>
-          <ChatSidebarWhenOpen productId={productId} />
-        </SidebarContent>
-      </Sidebar>
+      {!isFreePlanExpired && (
+        <ChatCacheClearTrigger
+          productId={productId}
+          isMobileChatOpen={isMobileChatOpen}
+        />
+      )}
+      {/* Desktop Sidebar — hidden for expired free plan */}
+      {!isFreePlanExpired && (
+        <Sidebar
+          side="left"
+          collapsible="offcanvas"
+          className="no-print hidden md:flex"
+        >
+          <SidebarContent>
+            <ChatSidebarWhenOpen productId={productId} />
+          </SidebarContent>
+        </Sidebar>
+      )}
 
       <SidebarInset className="flex-1 min-w-0 overflow-x-hidden">
         <div className="min-h-screen bg-background flex flex-col w-full overflow-x-hidden pt-[56px]">
@@ -112,11 +124,13 @@ export const Layout = ({ children, hideNav }: LayoutProps) => {
           </main>
         </div>
 
-        {/* Chat Bubble */}
-        <ChatBubbleButton onMobileChatOpen={handleMobileChatOpen} />
+        {/* Chat Bubble — hidden for expired free plan */}
+        {!isFreePlanExpired && (
+          <ChatBubbleButton onMobileChatOpen={handleMobileChatOpen} />
+        )}
 
-        {/* Mobile Chat Overlay */}
-        {isMobileChatOpen && (
+        {/* Mobile Chat Overlay — hidden for expired free plan */}
+        {!isFreePlanExpired && isMobileChatOpen && (
           <div className="fixed inset-0 z-50 bg-background md:hidden overflow-hidden">
             <ChatSidebar
               productId={productId}

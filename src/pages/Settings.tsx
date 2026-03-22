@@ -683,6 +683,7 @@ export default function Settings() {
                   userRoleInt={userRoleInt}
                   pricingPlan={pricingPlan}
                   planLimits={planLimits}
+                  planExpiresAt={planExpiresAt ?? null}
                   navigate={navigate}
                   toast={toast}
                   historyPage={historyPage}
@@ -970,6 +971,7 @@ function HistoryRow({
   idx,
   canExport,
   userRoleInt,
+  planExpiresAt,
   navigate,
   toast,
 }: {
@@ -977,6 +979,7 @@ function HistoryRow({
   idx: number;
   canExport: boolean;
   userRoleInt: number;
+  planExpiresAt: number | null;
   navigate: ReturnType<typeof useNavigate>;
   toast: ReturnType<typeof useToast>["toast"];
 }) {
@@ -1096,18 +1099,27 @@ function HistoryRow({
         {userRoleInt >= 4 ? (
           <span className="text-xs text-muted-foreground italic">Your account is Viewer only</span>
         ) : !canExport ? (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              navigate("/billing", { state: { from: "/settings" } });
-            }}
-            className="text-muted-foreground"
-          >
-            <Sparkles className="w-3.5 h-3.5 mr-1.5" />
-            Upgrade to Grow
-          </Button>
+          (() => {
+            const isPlanExpired = planExpiresAt && Date.now() / 1000 > planExpiresAt;
+            return (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate("/billing", { state: { from: "/settings" } });
+                }}
+                className={isPlanExpired ? "text-amber-600 border-amber-300 hover:bg-amber-50" : "text-muted-foreground"}
+              >
+                {isPlanExpired ? (
+                  <AlertTriangle className="w-3.5 h-3.5 mr-1.5" />
+                ) : (
+                  <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                )}
+                {isPlanExpired ? "Plan Expired" : "Upgrade to Grow"}
+              </Button>
+            );
+          })()
         ) : (
           <Button
             variant="outline"
@@ -1137,6 +1149,7 @@ interface AnalysisRunHistoryTabProps {
   userRoleInt: number;
   pricingPlan: string;
   planLimits: (typeof PLAN_LIMITS)[PricingPlanName];
+  planExpiresAt: number | null;
   navigate: ReturnType<typeof useNavigate>;
   toast: ReturnType<typeof useToast>["toast"];
   historyPage: number;
@@ -1153,6 +1166,7 @@ function AnalysisRunHistoryTab({
   userRoleInt,
   pricingPlan,
   planLimits,
+  planExpiresAt,
   navigate,
   toast,
   historyPage,
@@ -1272,6 +1286,7 @@ function AnalysisRunHistoryTab({
                   idx={idx}
                   canExport={canExport}
                   userRoleInt={userRoleInt}
+                  planExpiresAt={planExpiresAt ?? null}
                   navigate={navigate}
                   toast={toast}
                 />
