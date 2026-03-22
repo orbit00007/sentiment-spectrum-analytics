@@ -970,6 +970,7 @@ function HistoryRow({
   idx,
   canExport,
   userRoleInt,
+  planExpiresAt,
   navigate,
   toast,
 }: {
@@ -977,6 +978,7 @@ function HistoryRow({
   idx: number;
   canExport: boolean;
   userRoleInt: number;
+  planExpiresAt: number | null;
   navigate: ReturnType<typeof useNavigate>;
   toast: ReturnType<typeof useToast>["toast"];
 }) {
