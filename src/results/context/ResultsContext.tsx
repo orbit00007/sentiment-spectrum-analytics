@@ -80,8 +80,14 @@ export const ResultsProvider: React.FC<ResultsProviderProps> = ({ children }) =>
   const [analyticsVersion, setAnalyticsVersion] = useState<number>(0);
   const [nextAnalyticsGenerationTime, setNextAnalyticsGenerationTime] = useState<string | null>(null);
 
-  const { products } = useAuth();
+  const { products, pricingPlan, planExpiresAt } = useAuth();
   const { toast } = useToast();
+
+  // Block all API calls for free plan expired users
+  const isFreePlanExpired =
+    pricingPlan === "free" &&
+    planExpiresAt != null &&
+    Date.now() / 1000 > planExpiresAt;
   const navigate = useNavigate();
   const location = useLocation();
 
